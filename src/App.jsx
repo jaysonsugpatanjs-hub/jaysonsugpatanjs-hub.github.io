@@ -1,3 +1,13 @@
+import { useEffect, useState } from "react";
+
+const navigation = [
+  ["work", "Work"],
+  ["capabilities", "Capabilities"],
+  ["credentials", "Credentials"],
+  ["evidence", "Evidence"],
+  ["contact", "Contact"],
+];
+
 const projects = [
   {
     index: "01",
@@ -182,18 +192,60 @@ const publicProof = [
 ];
 
 export default function App() {
+  const [activeSection, setActiveSection] = useState("");
+  const [headerCondensed, setHeaderCondensed] = useState(false);
+
+  useEffect(() => {
+    const sections = navigation
+      .map(([id]) => document.getElementById(id))
+      .filter(Boolean);
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visibleSection = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+
+        if (visibleSection) {
+          setActiveSection(visibleSection.target.id);
+        }
+      },
+      {
+        rootMargin: "-18% 0px -64% 0px",
+        threshold: [0.05, 0.2, 0.45],
+      },
+    );
+
+    sections.forEach((section) => observer.observe(section));
+
+    const updateHeader = () => setHeaderCondensed(window.scrollY > 32);
+    updateHeader();
+    window.addEventListener("scroll", updateHeader, { passive: true });
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("scroll", updateHeader);
+    };
+  }, []);
+
   return (
     <main>
-      <header className="site-header">
+      <header className={`site-header${headerCondensed ? " is-scrolled" : ""}`}>
         <a className="wordmark" href="#top" aria-label="Jayson Sugpatan portfolio home">
           JS<span>/IE</span>
         </a>
         <nav aria-label="Portfolio navigation">
-          <a href="#work">Work</a>
-          <a href="#capabilities">Capabilities</a>
-          <a href="#credentials">Credentials</a>
-          <a href="#evidence">Evidence</a>
-          <a href="#contact">Contact</a>
+          {navigation.map(([id, label]) => (
+            <a
+              className={activeSection === id ? "is-active" : undefined}
+              href={`#${id}`}
+              aria-current={activeSection === id ? "location" : undefined}
+              onClick={() => setActiveSection(id)}
+              key={id}
+            >
+              {label}
+            </a>
+          ))}
         </nav>
       </header>
 

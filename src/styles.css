@@ -10,6 +10,7 @@
 
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
+[id] { scroll-margin-top: 92px; }
 body {
   margin: 0;
   background: var(--paper);
@@ -20,7 +21,8 @@ body {
 a { color: inherit; }
 
 .site-header {
-  position: relative;
+  position: sticky;
+  top: 0;
   z-index: 10;
   display: flex;
   align-items: center;
@@ -28,13 +30,46 @@ a { color: inherit; }
   min-height: 78px;
   padding: 0 5vw;
   border-bottom: 1px solid var(--ink);
-  background: rgba(243, 241, 233, 0.96);
+  background: rgba(243, 241, 233, 0.94);
+  backdrop-filter: blur(14px);
+  transition: min-height 180ms ease, background 180ms ease, box-shadow 180ms ease;
+}
+.site-header.is-scrolled {
+  min-height: 64px;
+  background: rgba(243, 241, 233, 0.985);
+  box-shadow: 0 8px 24px rgba(17, 21, 18, 0.1);
 }
 .wordmark { font-weight: 900; font-size: 1.15rem; letter-spacing: -0.04em; text-decoration: none; }
 .wordmark span { color: var(--signal); }
 nav { display: flex; gap: 2rem; }
-nav a { font-size: 0.74rem; font-weight: 800; letter-spacing: 0.12em; text-decoration: none; text-transform: uppercase; }
-nav a:hover, nav a:focus-visible { text-decoration: underline; text-underline-offset: 6px; }
+nav a {
+  position: relative;
+  padding: 0.45rem 0;
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-decoration: none;
+  text-transform: uppercase;
+  transition: color 160ms ease;
+}
+nav a::after {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  background: var(--signal);
+  content: "";
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 180ms ease;
+}
+nav a:hover,
+nav a:focus-visible,
+nav a.is-active { color: var(--steel); }
+nav a:hover::after,
+nav a:focus-visible::after,
+nav a.is-active::after { transform: scaleX(1); }
 
 .technical-grid {
   background-image:
@@ -427,8 +462,26 @@ footer { display: flex; justify-content: space-between; gap: 2rem; padding: 1.2r
 }
 
 @media (max-width: 680px) {
-  .site-header { align-items: flex-start; gap: 1rem; padding-top: 1.1rem; padding-bottom: 1.1rem; }
-  nav { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem 1rem; }
+  [id] { scroll-margin-top: 118px; }
+  .site-header {
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.55rem 1rem;
+    padding-top: 0.7rem;
+    padding-bottom: 0.65rem;
+  }
+  .site-header.is-scrolled { min-height: 0; }
+  nav {
+    display: flex;
+    width: 100%;
+    gap: 1.35rem;
+    overflow-x: auto;
+    padding-bottom: 0.2rem;
+    scrollbar-width: none;
+    white-space: nowrap;
+  }
+  nav::-webkit-scrollbar { display: none; }
+  nav a { flex: 0 0 auto; }
   nav a { font-size: 0.62rem; }
   .hero { padding-top: 5rem; }
   .hero h1 { font-size: clamp(3.6rem, 17vw, 5.4rem); }
