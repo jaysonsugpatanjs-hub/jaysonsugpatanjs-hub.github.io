@@ -258,6 +258,34 @@ nav a.is-active::after { transform: scaleX(1); }
 .proof-band p { margin: 0; padding: 1.3rem 5vw; border-right: 1px solid var(--ink); font-weight: 900; letter-spacing: -0.02em; }
 .proof-band p:last-child { border-right: 0; }
 
+.nav-section {
+  --section-entry-x: 34px;
+  position: relative;
+  isolation: isolate;
+}
+#capabilities.nav-section,
+#evidence.nav-section { --section-entry-x: -34px; }
+.nav-section.is-selected > * {
+  animation: portfolio-section-enter 680ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.nav-section.is-selected > *:nth-child(2) { animation-delay: 70ms; }
+.nav-section.is-selected > *:nth-child(3) { animation-delay: 130ms; }
+.nav-section.is-selected > *:nth-child(4) { animation-delay: 190ms; }
+.nav-section.is-selected > *:nth-child(5) { animation-delay: 250ms; }
+
+@keyframes portfolio-section-enter {
+  from {
+    opacity: 0;
+    filter: blur(5px);
+    transform: translate3d(var(--section-entry-x), 24px, 0) scale(0.988);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
 .section { padding: 8rem 5vw; }
 .section-heading { display: grid; grid-template-columns: 0.35fr 1fr 0.7fr; gap: 3vw; align-items: start; margin-bottom: 4rem; }
 .section-heading .eyebrow { margin-top: 0.5rem; }
@@ -508,4 +536,8 @@ footer { display: flex; justify-content: space-between; gap: 2rem; padding: 1.2r
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
+  .site-header,
+  nav a,
+  nav a::after { transition: none; }
+  .nav-section.is-selected > * { animation: none; }
 }

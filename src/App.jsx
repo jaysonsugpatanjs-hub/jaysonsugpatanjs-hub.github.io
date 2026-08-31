@@ -322,7 +322,10 @@ export default function App() {
         <p>Build the system.</p>
       </section>
 
-      <section className="section work-section" id="work">
+      <section
+        className={`section work-section nav-section${activeSection === "work" ? " is-selected" : ""}`}
+        id="work"
+      >
         <div className="section-heading">
           <p className="eyebrow">Selected work</p>
           <h2>Evidence before adjectives.</h2>
@@ -351,7 +354,10 @@ export default function App() {
         </div>
       </section>
 
-      <section className="section capability-section" id="capabilities">
+      <section
+        className={`section capability-section nav-section${activeSection === "capabilities" ? " is-selected" : ""}`}
+        id="capabilities"
+      >
         <div className="section-heading inverse">
           <p className="eyebrow">What I bring</p>
           <h2>One profile. Three working languages.</h2>
@@ -393,7 +399,10 @@ export default function App() {
         </div>
       </section>
 
-      <section className="section credential-section" id="credentials">
+      <section
+        className={`section credential-section nav-section${activeSection === "credentials" ? " is-selected" : ""}`}
+        id="credentials"
+      >
         <div className="section-heading">
           <p className="eyebrow">Credentials & learning</p>
           <h2>Qualifications backed by applied work.</h2>
@@ -424,7 +433,10 @@ export default function App() {
         </p>
       </section>
 
-      <section className="section evidence-section" id="evidence">
+      <section
+        className={`section evidence-section nav-section${activeSection === "evidence" ? " is-selected" : ""}`}
+        id="evidence"
+      >
         <div className="section-heading inverse">
           <p className="eyebrow">Employer-accessible evidence</p>
           <h2>Open the work. Check the public record.</h2>
@@ -467,7 +479,10 @@ export default function App() {
         </div>
       </section>
 
-      <section className="contact-section technical-grid" id="contact">
+      <section
+        className={`contact-section technical-grid nav-section${activeSection === "contact" ? " is-selected" : ""}`}
+        id="contact"
+      >
         <p className="eyebrow">Open to the right work</p>
         <h2>Need someone who understands both the process and the people doing it?</h2>
         <p>
