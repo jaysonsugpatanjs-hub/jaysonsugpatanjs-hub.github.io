@@ -220,13 +220,15 @@ export default function App() {
 
         <aside className="profile-plate" aria-label="Professional snapshot">
           <div className="profile-photo-frame">
-            <img
-              className="profile-photo"
-              src="/images/jayson-profile-headshot.jpg"
-              alt="Jayson P. Sugpatan at the Australian Institute of Engineering"
-              width="900"
-              height="900"
-            />
+            <div className="profile-photo-shell">
+              <img
+                className="profile-photo"
+                src="/images/jayson-profile-circular.png"
+                alt="Jayson P. Sugpatan at the Australian Institute of Engineering"
+                width="495"
+                height="514"
+              />
+            </div>
             <span>Industrial + digital</span>
           </div>
           <div className="plate-code">PROFILE / 2026</div>
