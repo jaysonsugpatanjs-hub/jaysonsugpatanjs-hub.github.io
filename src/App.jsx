@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
 
+const CONTACT_EMAIL = "jayson.sugpatan.js@gmail.com";
+const FORM_ENDPOINT = `https://formsubmit.co/ajax/${CONTACT_EMAIL}`;
+
 const navigation = [
   ["work", "Work"],
   ["capabilities", "Capabilities"],
@@ -7,6 +10,45 @@ const navigation = [
   ["evidence", "Evidence"],
   ["contact", "Contact"],
 ];
+
+const inquiryTypes = [
+  "Employment opportunity",
+  "Project or consulting inquiry",
+  "Workflow or data support",
+  "Professional collaboration",
+  "Other",
+];
+
+function trackEvent(name, metadata) {
+  if (!import.meta.env.PROD || typeof window === "undefined") return;
+
+  if (typeof window.sa_event === "function") {
+    if (metadata) window.sa_event(name, metadata);
+    else window.sa_event(name);
+  }
+}
+
+function createEmailFallback(submission) {
+  const subject = `Portfolio inquiry — ${submission.inquiry_type}`;
+  const details = [
+    `Name: ${submission.name}`,
+    `Email: ${submission.email}`,
+  ];
+
+  if (submission.organisation) {
+    details.push(`Organisation: ${submission.organisation}`);
+  }
+
+  const body = [
+    "Hello Jayson,",
+    "",
+    submission.message,
+    "",
+    details.join("\n"),
+  ].join("\n");
+
+  return `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+}
 
 const projects = [
   {
@@ -194,6 +236,18 @@ const publicProof = [
 export default function App() {
   const [activeSection, setActiveSection] = useState("");
   const [headerCondensed, setHeaderCondensed] = useState(false);
+  const [inquiryState, setInquiryState] = useState(() => {
+    const sentByFormRedirect = typeof window !== "undefined"
+      && new URLSearchParams(window.location.search).get("inquiry") === "sent";
+
+    return sentByFormRedirect
+      ? {
+          status: "success",
+          message: "Thank you—your inquiry was sent. Jayson can reply directly to the email you provided.",
+          fallbackHref: "",
+        }
+      : { status: "idle", message: "", fallbackHref: "" };
+  });
 
   useEffect(() => {
     const sections = navigation
@@ -228,6 +282,73 @@ export default function App() {
     };
   }, []);
 
+  async function handleInquirySubmit(event) {
+    event.preventDefault();
+
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+
+    if (formData.get("_honey")) {
+      form.reset();
+      setInquiryState({ status: "success", message: "Thank you—your inquiry was sent.", fallbackHref: "" });
+      return;
+    }
+
+    const submission = {
+      name: String(formData.get("name") || "").trim(),
+      email: String(formData.get("email") || "").trim(),
+      organisation: String(formData.get("organisation") || "").trim(),
+      inquiry_type: String(formData.get("inquiry_type") || "General inquiry"),
+      message: String(formData.get("message") || "").trim(),
+    };
+    const fallbackHref = createEmailFallback(submission);
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 12000);
+
+    setInquiryState({ status: "sending", message: "Sending your inquiry…", fallbackHref: "" });
+
+    try {
+      const response = await fetch(FORM_ENDPOINT, {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ...submission,
+          _replyto: submission.email,
+          _subject: `New portfolio inquiry — ${submission.inquiry_type}`,
+          _template: "table",
+        }),
+        signal: controller.signal,
+      });
+      const result = await response.json().catch(() => ({}));
+      const rejected = result.success === false || result.success === "false";
+      const awaitingActivation = /activat|confirm your email/i.test(result.message || "");
+
+      if (!response.ok || rejected || awaitingActivation) {
+        throw new Error(result.message || "The inquiry service did not confirm delivery.");
+      }
+
+      form.reset();
+      setInquiryState({
+        status: "success",
+        message: "Thank you—your inquiry was sent. Jayson can reply directly to the email you provided.",
+        fallbackHref: "",
+      });
+      trackEvent("inquiry_sent", { inquiry_type: submission.inquiry_type });
+    } catch {
+      setInquiryState({
+        status: "error",
+        message: "The form could not confirm delivery. Use the prepared email below so your message is not lost.",
+        fallbackHref,
+      });
+      trackEvent("inquiry_delivery_failed");
+    } finally {
+      window.clearTimeout(timeout);
+    }
+  }
+
   return (
     <main>
       <header className={`site-header${headerCondensed ? " is-scrolled" : ""}`}>
@@ -240,7 +361,10 @@ export default function App() {
               className={activeSection === id ? "is-active" : undefined}
               href={`#${id}`}
               aria-current={activeSection === id ? "location" : undefined}
-              onClick={() => setActiveSection(id)}
+              onClick={() => {
+                setActiveSection(id);
+                if (id === "contact") trackEvent("contact_section_opened");
+              }}
               key={id}
             >
               {label}
@@ -261,11 +385,21 @@ export default function App() {
           </p>
           <div className="hero-actions">
             <a className="primary-link" href="#work">View selected work <span aria-hidden="true">↘</span></a>
-            <a className="secondary-link" href="mailto:jayson.sugpatan.js@gmail.com">Email Jayson</a>
+            <a
+              className="secondary-link"
+              href={`mailto:${CONTACT_EMAIL}`}
+              onClick={() => trackEvent("contact_email_clicked", { location: "hero" })}
+            >
+              Email Jayson
+            </a>
           </div>
           <div className="hero-contact" aria-label="Quick contact details">
-            <a href="mailto:jayson.sugpatan.js@gmail.com">jayson.sugpatan.js@gmail.com</a>
-            <a href="tel:+61423632786">+61 423 632 786</a>
+            <a href={`mailto:${CONTACT_EMAIL}`} onClick={() => trackEvent("contact_email_clicked", { location: "hero_details" })}>
+              {CONTACT_EMAIL}
+            </a>
+            <a href="tel:+61423632786" onClick={() => trackEvent("contact_phone_clicked", { location: "hero_details" })}>
+              +61 423 632 786
+            </a>
             <span>Philippines-based · Australian industry experience</span>
           </div>
         </div>
@@ -452,7 +586,13 @@ export default function App() {
               <p>{resource.description}</p>
               <div className="resource-links">
                 {resource.links.map((link) => (
-                  <a href={link.href} key={link.href} target="_blank" rel="noreferrer">
+                  <a
+                    href={link.href}
+                    key={link.href}
+                    target="_blank"
+                    rel="noreferrer"
+                    onClick={() => trackEvent("portfolio_downloaded", { asset: link.label })}
+                  >
                     {link.label} <span aria-hidden="true">↓</span>
                   </a>
                 ))}
@@ -485,17 +625,123 @@ export default function App() {
       >
         <p className="eyebrow">Open to the right work</p>
         <h2>Need someone who understands both the process and the people doing it?</h2>
-        <p>
+        <p className="contact-intro">
           I am open to industrial operations, process analysis, data and reporting, workflow coordination, and documentation-focused opportunities—including remote roles.
         </p>
-        <div className="contact-actions">
-          <a className="primary-link" href="mailto:jayson.sugpatan.js@gmail.com">Send an email <span aria-hidden="true">↗</span></a>
-          <a className="secondary-link" href="tel:+61423632786">Call +61 423 632 786</a>
-          <a className="secondary-link" href="https://www.researchgate.net/scientific-contributions/Jayson-Sugpatan-2217120874" target="_blank" rel="noreferrer">View published work</a>
+
+        <div className="contact-grid">
+          <aside className="contact-options" aria-labelledby="direct-contact-title">
+            <p className="contact-label">Direct contact</p>
+            <h3 id="direct-contact-title">Prefer email or phone?</h3>
+            <p>Use either direct option, or send a structured inquiry so I can understand the opportunity before replying.</p>
+            <div className="contact-actions">
+              <a
+                className="primary-link"
+                href={`mailto:${CONTACT_EMAIL}?subject=Portfolio%20inquiry`}
+                onClick={() => trackEvent("contact_email_clicked", { location: "contact" })}
+              >
+                Send an email <span aria-hidden="true">↗</span>
+              </a>
+              <a
+                className="secondary-link"
+                href="tel:+61423632786"
+                onClick={() => trackEvent("contact_phone_clicked", { location: "contact" })}
+              >
+                Call +61 423 632 786
+              </a>
+            </div>
+            <dl className="contact-details">
+              <div>
+                <dt>Email</dt>
+                <dd>
+                  <a href={`mailto:${CONTACT_EMAIL}`} onClick={() => trackEvent("contact_email_clicked", { location: "contact_details" })}>
+                    {CONTACT_EMAIL}
+                  </a>
+                </dd>
+              </div>
+              <div><dt>Location</dt><dd>Philippines · Australian industry experience</dd></div>
+              <div><dt>Work focus</dt><dd>Remote roles · Projects · Operations support</dd></div>
+            </dl>
+          </aside>
+
+          <form
+            className="inquiry-form"
+            action={`https://formsubmit.co/${CONTACT_EMAIL}`}
+            method="POST"
+            onSubmit={handleInquirySubmit}
+            aria-busy={inquiryState.status === "sending"}
+          >
+            <div className="form-heading">
+              <p className="contact-label">Employer & client inquiry</p>
+              <h3>Start with the essentials.</h3>
+              <p>Share enough context for a focused reply. Fields marked * are required.</p>
+            </div>
+
+            <input type="hidden" name="_subject" defaultValue="New portfolio inquiry" />
+            <input type="hidden" name="_template" defaultValue="table" />
+            <input type="hidden" name="_next" defaultValue="https://jaysonsugpatanjs-hub.github.io/?inquiry=sent#contact" />
+            <label className="form-honeypot" aria-hidden="true">
+              Leave this field empty
+              <input type="text" name="_honey" tabIndex="-1" autoComplete="off" />
+            </label>
+
+            <div className="form-grid">
+              <label className="form-field">
+                <span>Name *</span>
+                <input type="text" name="name" autoComplete="name" maxLength="100" required />
+              </label>
+              <label className="form-field">
+                <span>Work email *</span>
+                <input type="email" name="email" autoComplete="email" maxLength="160" required />
+              </label>
+              <label className="form-field">
+                <span>Company / organisation</span>
+                <input type="text" name="organisation" autoComplete="organization" maxLength="140" />
+              </label>
+              <label className="form-field">
+                <span>Inquiry type *</span>
+                <select name="inquiry_type" defaultValue="" required>
+                  <option value="" disabled>Select one</option>
+                  {inquiryTypes.map((type) => <option value={type} key={type}>{type}</option>)}
+                </select>
+              </label>
+              <label className="form-field form-message">
+                <span>How can I help? *</span>
+                <textarea name="message" rows="7" minLength="20" maxLength="2000" required />
+              </label>
+            </div>
+
+            <div className="form-actions">
+              <button className="primary-link" type="submit" disabled={inquiryState.status === "sending"}>
+                {inquiryState.status === "sending" ? "Sending…" : "Send inquiry"}
+                <span aria-hidden="true">↗</span>
+              </button>
+              <span>No account or sign-in required.</span>
+            </div>
+
+            {inquiryState.status !== "idle" && (
+              <p
+                className={`form-status is-${inquiryState.status}`}
+                role={inquiryState.status === "error" ? "alert" : "status"}
+                aria-live="polite"
+              >
+                {inquiryState.message}
+                {inquiryState.fallbackHref && (
+                  <> <a href={inquiryState.fallbackHref} onClick={() => trackEvent("inquiry_email_fallback_clicked")}>Prepare email instead</a>.</>
+                )}
+              </p>
+            )}
+
+            <p className="form-privacy">
+              Please do not include passwords or sensitive personal information. Submissions are delivered through{" "}
+              <a href="https://formsubmit.co/privacy.pdf" target="_blank" rel="noreferrer">FormSubmit</a>.
+            </p>
+          </form>
         </div>
+
         <div className="contact-line">
           <span>Jayson P. Sugpatan</span>
-          <a href="mailto:jayson.sugpatan.js@gmail.com">jayson.sugpatan.js@gmail.com</a>
+          <a href={`mailto:${CONTACT_EMAIL}`} onClick={() => trackEvent("contact_email_clicked", { location: "footer_contact" })}>{CONTACT_EMAIL}</a>
           <span>Philippines-based · Australia industry experience</span>
         </div>
       </section>
@@ -503,6 +749,9 @@ export default function App() {
       <footer>
         <span>Jayson P. Sugpatan</span>
         <span>Industrial systems, made usable.</span>
+        <a href="https://www.simpleanalytics.com/" target="_blank" rel="noreferrer">
+          Analytics by Simple Analytics
+        </a>
       </footer>
     </main>
   );
