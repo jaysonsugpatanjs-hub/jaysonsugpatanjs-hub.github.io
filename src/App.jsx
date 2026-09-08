@@ -1,7 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const CONTACT_EMAIL = "jayson.sugpatan.js@gmail.com";
-const FORM_ENDPOINT = `https://formsubmit.co/ajax/${CONTACT_EMAIL}`;
+const HUBSPOT_PORTAL_ID = "247233549";
+const HUBSPOT_FORM_ID = "afd02813-0d3b-4d0f-a069-430518298b4c";
+const HUBSPOT_REGION = "na2";
+const HUBSPOT_SCRIPT_ID = "hubspot-portfolio-form-script";
+const HUBSPOT_SCRIPT_URL = `https://js-${HUBSPOT_REGION}.hsforms.net/forms/embed/${HUBSPOT_PORTAL_ID}.js`;
 
 const navigation = [
   ["work", "Work"],
@@ -9,14 +13,6 @@ const navigation = [
   ["credentials", "Credentials"],
   ["evidence", "Evidence"],
   ["contact", "Contact"],
-];
-
-const inquiryTypes = [
-  "Employment opportunity",
-  "Project or consulting inquiry",
-  "Workflow or data support",
-  "Professional collaboration",
-  "Other",
 ];
 
 function trackEvent(name, metadata) {
@@ -28,26 +24,147 @@ function trackEvent(name, metadata) {
   }
 }
 
-function createEmailFallback(submission) {
-  const subject = `Portfolio inquiry — ${submission.inquiry_type}`;
-  const details = [
-    `Name: ${submission.name}`,
-    `Email: ${submission.email}`,
-  ];
+function getAcquisitionType() {
+  if (typeof window === "undefined") return "unknown";
 
-  if (submission.organisation) {
-    details.push(`Organisation: ${submission.organisation}`);
+  const params = new URLSearchParams(window.location.search);
+  if (params.has("utm_source")) return "campaign";
+
+  if (!document.referrer) return "direct";
+
+  try {
+    return new URL(document.referrer).origin === window.location.origin ? "internal" : "referral";
+  } catch {
+    return "unknown";
   }
+}
 
-  const body = [
-    "Hello Jayson,",
-    "",
-    submission.message,
-    "",
-    details.join("\n"),
-  ].join("\n");
+function HubSpotInquiryForm() {
+  const formFrameRef = useRef(null);
+  const [shouldLoadForm, setShouldLoadForm] = useState(false);
+  const [formStatus, setFormStatus] = useState("waiting");
 
-  return `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  useEffect(() => {
+    const formFrame = formFrameRef.current;
+    if (!formFrame || typeof IntersectionObserver === "undefined") {
+      setFormStatus("loading");
+      setShouldLoadForm(true);
+      return undefined;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting) return;
+        setFormStatus("loading");
+        setShouldLoadForm(true);
+        observer.disconnect();
+      },
+      { rootMargin: "600px 0px" },
+    );
+
+    observer.observe(formFrame);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!shouldLoadForm) return undefined;
+
+    let readyTimeout;
+
+    const isPortfolioForm = (event) => event.detail?.formId === HUBSPOT_FORM_ID;
+    const handleReady = (event) => {
+      if (!isPortfolioForm(event)) return;
+      window.clearTimeout(readyTimeout);
+      setFormStatus("ready");
+    };
+    const handleSuccess = (event) => {
+      if (!isPortfolioForm(event)) return;
+      window.clearTimeout(readyTimeout);
+      setFormStatus("success");
+      trackEvent("inquiry_sent", {
+        provider: "hubspot",
+        acquisition: getAcquisitionType(),
+      });
+    };
+    const handleFailure = (event) => {
+      if (!isPortfolioForm(event)) return;
+      setFormStatus("error");
+      trackEvent("inquiry_delivery_failed", { provider: "hubspot" });
+    };
+
+    window.addEventListener("hs-form-event:on-ready", handleReady);
+    window.addEventListener("hs-form-event:on-submission:success", handleSuccess);
+    window.addEventListener("hs-form-event:on-submission:failed", handleFailure);
+
+    let script = document.getElementById(HUBSPOT_SCRIPT_ID);
+    if (!script) {
+      script = document.createElement("script");
+      script.id = HUBSPOT_SCRIPT_ID;
+      script.src = HUBSPOT_SCRIPT_URL;
+      script.defer = true;
+      script.onerror = () => {
+        setFormStatus("error");
+        trackEvent("inquiry_form_unavailable", { provider: "hubspot" });
+      };
+      document.body.appendChild(script);
+    }
+
+    readyTimeout = window.setTimeout(() => {
+      setFormStatus((current) => current === "loading" ? "delayed" : current);
+    }, 12000);
+
+    return () => {
+      window.clearTimeout(readyTimeout);
+      window.removeEventListener("hs-form-event:on-ready", handleReady);
+      window.removeEventListener("hs-form-event:on-submission:success", handleSuccess);
+      window.removeEventListener("hs-form-event:on-submission:failed", handleFailure);
+    };
+  }, [shouldLoadForm]);
+
+  const formUnavailable = formStatus === "error" || formStatus === "delayed";
+
+  return (
+    <section className="inquiry-form" aria-labelledby="hubspot-inquiry-title">
+      <div className="form-heading">
+        <p className="contact-label">Employer & client inquiry</p>
+        <h3 id="hubspot-inquiry-title">Start with the essentials.</h3>
+        <p>Your submission creates a secure lead record so the opportunity and follow-up are not lost.</p>
+      </div>
+
+      {formStatus === "loading" && (
+        <p className="hubspot-form-status" role="status">Loading the secure inquiry form…</p>
+      )}
+
+      <div
+        ref={formFrameRef}
+        className="hs-form-frame"
+        data-region={HUBSPOT_REGION}
+        data-form-id={HUBSPOT_FORM_ID}
+        data-portal-id={HUBSPOT_PORTAL_ID}
+        aria-busy={formStatus === "loading"}
+      />
+
+      {formStatus === "success" && (
+        <p className="hubspot-form-status is-success" role="status" aria-live="polite">
+          Thank you—your inquiry is now recorded. Jayson can follow up using the details you provided.
+        </p>
+      )}
+
+      {formUnavailable && (
+        <p className="hubspot-form-status is-error" role="alert">
+          The secure form is taking too long to load. Please{" "}
+          <a href={`mailto:${CONTACT_EMAIL}?subject=Portfolio%20inquiry`} onClick={() => trackEvent("inquiry_email_fallback_clicked")}>
+            send your inquiry by email
+          </a>.
+        </p>
+      )}
+
+      <p className="form-privacy">
+        Your details are stored in HubSpot and used only to assess and respond to your inquiry. Please do not include passwords or sensitive personal information. Read the{" "}
+        <a href="https://legal.hubspot.com/privacy-policy" target="_blank" rel="noreferrer">HubSpot privacy policy</a>.
+      </p>
+    </section>
+  );
 }
 
 const projects = [
@@ -236,18 +353,6 @@ const publicProof = [
 export default function App() {
   const [activeSection, setActiveSection] = useState("");
   const [headerCondensed, setHeaderCondensed] = useState(false);
-  const [inquiryState, setInquiryState] = useState(() => {
-    const sentByFormRedirect = typeof window !== "undefined"
-      && new URLSearchParams(window.location.search).get("inquiry") === "sent";
-
-    return sentByFormRedirect
-      ? {
-          status: "success",
-          message: "Thank you—your inquiry was sent. Jayson can reply directly to the email you provided.",
-          fallbackHref: "",
-        }
-      : { status: "idle", message: "", fallbackHref: "" };
-  });
 
   useEffect(() => {
     const sections = navigation
@@ -281,73 +386,6 @@ export default function App() {
       window.removeEventListener("scroll", updateHeader);
     };
   }, []);
-
-  async function handleInquirySubmit(event) {
-    event.preventDefault();
-
-    const form = event.currentTarget;
-    const formData = new FormData(form);
-
-    if (formData.get("_honey")) {
-      form.reset();
-      setInquiryState({ status: "success", message: "Thank you—your inquiry was sent.", fallbackHref: "" });
-      return;
-    }
-
-    const submission = {
-      name: String(formData.get("name") || "").trim(),
-      email: String(formData.get("email") || "").trim(),
-      organisation: String(formData.get("organisation") || "").trim(),
-      inquiry_type: String(formData.get("inquiry_type") || "General inquiry"),
-      message: String(formData.get("message") || "").trim(),
-    };
-    const fallbackHref = createEmailFallback(submission);
-    const controller = new AbortController();
-    const timeout = window.setTimeout(() => controller.abort(), 12000);
-
-    setInquiryState({ status: "sending", message: "Sending your inquiry…", fallbackHref: "" });
-
-    try {
-      const response = await fetch(FORM_ENDPOINT, {
-        method: "POST",
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          ...submission,
-          _replyto: submission.email,
-          _subject: `New portfolio inquiry — ${submission.inquiry_type}`,
-          _template: "table",
-        }),
-        signal: controller.signal,
-      });
-      const result = await response.json().catch(() => ({}));
-      const rejected = result.success === false || result.success === "false";
-      const awaitingActivation = /activat|confirm your email/i.test(result.message || "");
-
-      if (!response.ok || rejected || awaitingActivation) {
-        throw new Error(result.message || "The inquiry service did not confirm delivery.");
-      }
-
-      form.reset();
-      setInquiryState({
-        status: "success",
-        message: "Thank you—your inquiry was sent. Jayson can reply directly to the email you provided.",
-        fallbackHref: "",
-      });
-      trackEvent("inquiry_sent", { inquiry_type: submission.inquiry_type });
-    } catch {
-      setInquiryState({
-        status: "error",
-        message: "The form could not confirm delivery. Use the prepared email below so your message is not lost.",
-        fallbackHref,
-      });
-      trackEvent("inquiry_delivery_failed");
-    } finally {
-      window.clearTimeout(timeout);
-    }
-  }
 
   return (
     <main>
@@ -664,79 +702,7 @@ export default function App() {
             </dl>
           </aside>
 
-          <form
-            className="inquiry-form"
-            action={`https://formsubmit.co/${CONTACT_EMAIL}`}
-            method="POST"
-            onSubmit={handleInquirySubmit}
-            aria-busy={inquiryState.status === "sending"}
-          >
-            <div className="form-heading">
-              <p className="contact-label">Employer & client inquiry</p>
-              <h3>Start with the essentials.</h3>
-              <p>Share enough context for a focused reply. Fields marked * are required.</p>
-            </div>
-
-            <input type="hidden" name="_subject" defaultValue="New portfolio inquiry" />
-            <input type="hidden" name="_template" defaultValue="table" />
-            <input type="hidden" name="_next" defaultValue="https://jaysonsugpatanjs-hub.github.io/?inquiry=sent#contact" />
-            <label className="form-honeypot" aria-hidden="true">
-              Leave this field empty
-              <input type="text" name="_honey" tabIndex="-1" autoComplete="off" />
-            </label>
-
-            <div className="form-grid">
-              <label className="form-field">
-                <span>Name *</span>
-                <input type="text" name="name" autoComplete="name" maxLength="100" required />
-              </label>
-              <label className="form-field">
-                <span>Work email *</span>
-                <input type="email" name="email" autoComplete="email" maxLength="160" required />
-              </label>
-              <label className="form-field">
-                <span>Company / organisation</span>
-                <input type="text" name="organisation" autoComplete="organization" maxLength="140" />
-              </label>
-              <label className="form-field">
-                <span>Inquiry type *</span>
-                <select name="inquiry_type" defaultValue="" required>
-                  <option value="" disabled>Select one</option>
-                  {inquiryTypes.map((type) => <option value={type} key={type}>{type}</option>)}
-                </select>
-              </label>
-              <label className="form-field form-message">
-                <span>How can I help? *</span>
-                <textarea name="message" rows="7" minLength="20" maxLength="2000" required />
-              </label>
-            </div>
-
-            <div className="form-actions">
-              <button className="primary-link" type="submit" disabled={inquiryState.status === "sending"}>
-                {inquiryState.status === "sending" ? "Sending…" : "Send inquiry"}
-                <span aria-hidden="true">↗</span>
-              </button>
-              <span>No account or sign-in required.</span>
-            </div>
-
-            {inquiryState.status !== "idle" && (
-              <p
-                className={`form-status is-${inquiryState.status}`}
-                role={inquiryState.status === "error" ? "alert" : "status"}
-                aria-live="polite"
-              >
-                {inquiryState.message}
-                {inquiryState.fallbackHref && (
-                  <> <a href={inquiryState.fallbackHref} onClick={() => trackEvent("inquiry_email_fallback_clicked")}>Prepare email instead</a>.</>
-                )}
-              </p>
-            )}
-
-            <p className="form-privacy">
-              Please do not include passwords or sensitive personal information. Submissions are delivered through{" "}
-              <a href="https://formsubmit.co/privacy.pdf" target="_blank" rel="noreferrer">FormSubmit</a>.
-            </p>
-          </form>
+          <HubSpotInquiryForm />
         </div>
 
         <div className="contact-line">
