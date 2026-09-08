@@ -555,55 +555,25 @@ button.primary-link:disabled { cursor: wait; opacity: 0.68; }
 .form-heading { display: grid; grid-template-columns: 0.45fr 0.85fr 0.7fr; gap: 2rem; align-items: start; margin-bottom: 2.2rem; }
 .form-heading .contact-label { color: var(--muted); }
 .form-heading > p:not(.contact-label) { margin-top: 0.1rem; color: var(--muted); font-size: 0.82rem; }
-.form-honeypot {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
-.form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.15rem; }
-.form-field { display: grid; gap: 0.45rem; }
-.form-field > span {
-  font-size: 0.68rem;
-  font-weight: 900;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-}
-.form-field input,
-.form-field select,
-.form-field textarea {
+.hs-form-frame {
   width: 100%;
-  min-height: 50px;
-  padding: 0.8rem 0.9rem;
-  border: 1px solid #858a85;
-  border-radius: 0;
-  background: var(--white);
-  color: var(--ink);
-  font: inherit;
-  font-size: 0.92rem;
+  min-height: 420px;
+  overflow: hidden;
+  border-top: 1px solid var(--line);
+  padding-top: 1.4rem;
 }
-.form-field select { cursor: pointer; }
-.form-field textarea { min-height: 150px; resize: vertical; }
-.form-field input:hover,
-.form-field select:hover,
-.form-field textarea:hover { border-color: var(--ink); }
-.form-field input:focus-visible,
-.form-field select:focus-visible,
-.form-field textarea:focus-visible {
-  border-color: var(--steel);
-  outline: 3px solid rgba(255,176,0,0.7);
-  outline-offset: 1px;
+.hs-form-frame iframe { width: 100% !important; }
+.hubspot-form-status {
+  margin: 0 0 1.2rem;
+  padding: 0.9rem 1rem;
+  border-left: 4px solid var(--steel);
+  background: #e5efec;
+  font-size: 0.83rem;
+  line-height: 1.55;
 }
-.form-message { grid-column: 1 / -1; }
-.form-actions { display: flex; align-items: center; gap: 1rem 1.4rem; margin-top: 1.4rem; }
-.form-actions > span { color: var(--muted); font-size: 0.72rem; }
-.form-status { margin: 1.2rem 0 0; padding: 0.9rem 1rem; border-left: 4px solid var(--steel); background: #e5ecee; font-size: 0.83rem; line-height: 1.55; }
-.form-status.is-error { border-left-color: #a13d2d; background: #f4e5df; }
-.form-status.is-success { border-left-color: #2f7251; background: #e2eee7; }
-.form-status a { font-weight: 900; text-underline-offset: 4px; }
+.hubspot-form-status.is-error { border-left-color: #a13d2d; background: #f4e5df; }
+.hubspot-form-status.is-success { margin-top: 1.2rem; border-left-color: #2f7251; background: #e2eee7; }
+.hubspot-form-status a { font-weight: 900; text-underline-offset: 4px; }
 .form-privacy { margin: 1.2rem 0 0; color: var(--muted); font-size: 0.7rem; line-height: 1.55; }
 .form-privacy a { font-weight: 800; text-underline-offset: 3px; }
 .contact-line { display: flex; justify-content: space-between; gap: 2rem; padding-top: 1.2rem; border-top: 1px solid var(--ink); font-size: 0.78rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
@@ -673,12 +643,9 @@ footer a:focus-visible { color: var(--signal); }
   .education-card span { text-align: left; }
   .contact-options,
   .inquiry-form { padding: 1.4rem; }
-  .form-heading,
-  .form-grid { grid-template-columns: 1fr; }
-  .form-heading > p:not(.contact-label),
-  .form-message { grid-column: 1; }
-  .form-actions { align-items: stretch; flex-direction: column; }
-  .form-actions .primary-link { justify-content: center; }
+  .form-heading { grid-template-columns: 1fr; }
+  .form-heading > p:not(.contact-label) { grid-column: 1; }
+  .hs-form-frame { min-height: 500px; }
   .contact-line, footer { flex-direction: column; }
 }
 

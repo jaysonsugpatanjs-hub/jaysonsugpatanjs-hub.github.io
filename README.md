@@ -48,7 +48,17 @@ secret is required.
 
 ## Inquiry delivery
 
-The contact form sends to `jayson.sugpatan.js@gmail.com` through FormSubmit's
-static-site AJAX endpoint and falls back to a pre-filled email when delivery
-fails. FormSubmit requires a one-time email confirmation after the first test
-submission. Confirm that message before treating the form as live.
+The employer and client inquiry form is connected to HubSpot portal
+`247233549`, form `afd02813-0d3b-4d0f-a069-430518298b4c`, using HubSpot's
+external form embed. Valid submissions create or update CRM contacts without
+placing a private API key in the GitHub Pages bundle. The external form script
+is lazy-loaded as the contact section approaches the viewport.
+
+The page listens for HubSpot's updated form success and failure events so
+confirmed inquiries remain measurable in Simple Analytics. If the external
+form is blocked or takes too long to load, visitors are directed to the existing
+email contact path instead.
+
+Anonymous visits remain in Simple Analytics. Identifiable details are stored in
+HubSpot only after a visitor submits the inquiry form and are covered by the
+privacy notice displayed with the form.
