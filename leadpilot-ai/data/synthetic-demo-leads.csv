@@ -1,0 +1,4 @@
+first_name,last_name,email,company,company_domain,job_title,region,industry,company_size_band,service_need,urgency,source,notes
+Ava,Martin,ava.martin@example.com,Northstar Mechanical Services,example.com,Operations Manager,Victoria Australia,Industrial Services,20-49,Shutdown maintenance,Immediate,Website,High-fit fictional demo lead
+Liam,Chen,liam.chen@example.org,Demo Fabrication Group,example.org,Maintenance Manager,Victoria Australia,Fabrication,50-99,Coded welding,30 days,Referral,Fictional industrial demo record
+Mia,Patel,mia.patel@example.net,Sample Consumer Retail,example.net,Store Manager,Queensland Australia,Retail,5-19,Consumer marketing,Future,Other,Deliberate weak-fit record for qualification testing
