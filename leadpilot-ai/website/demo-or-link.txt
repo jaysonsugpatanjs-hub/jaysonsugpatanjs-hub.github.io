@@ -1,0 +1,7 @@
+LeadPilot AI public case study / demo:
+https://jaysonsugpatanjs-hub.github.io/leadpilot-ai/
+
+Main portfolio:
+https://jaysonsugpatanjs-hub.github.io/
+
+This file is intentionally a simple public reference. No credentials, tokens, private webhook URLs or confidential client information should be stored here.
