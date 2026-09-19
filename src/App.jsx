@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import LeadPilotInquiryForm from "./LeadPilotH8.jsx";
 
 const CONTACT_EMAIL = "jayson.sugpatan.js@gmail.com";
+const LINKEDIN_URL = "https://au.linkedin.com/in/jayson-sugpatan-0b038215b";
+const FACEBOOK_URL = "https://www.facebook.com/jayson.sugpatan1/";
 
 const navigation = [
   ["services", "Services"],
@@ -371,6 +373,24 @@ export default function App() {
           <div className="hero-contact" aria-label="Quick contact details">
             <a href={`mailto:${CONTACT_EMAIL}`} data-track="contact_click" data-track-label="Hero details: Email">
               {CONTACT_EMAIL}
+            </a>
+            <a
+              href={LINKEDIN_URL}
+              target="_blank"
+              rel="noreferrer"
+              data-track="external_link"
+              data-track-label="Hero details: LinkedIn"
+            >
+              LinkedIn profile <span aria-hidden="true">↗</span>
+            </a>
+            <a
+              href={FACEBOOK_URL}
+              target="_blank"
+              rel="noreferrer"
+              data-track="external_link"
+              data-track-label="Hero details: Facebook"
+            >
+              Facebook profile <span aria-hidden="true">↗</span>
             </a>
             <a
               href="/downloads/Jayson_Sugpatan_Professional_Portfolio.docx"
@@ -757,6 +777,8 @@ export default function App() {
         <span>Jayson P. Sugpatan</span>
         <span>Remote operations support, grounded in industry.</span>
         <div className="footer-controls">
+          <a href={LINKEDIN_URL} target="_blank" rel="noreferrer" data-track="external_link" data-track-label="Footer: LinkedIn">LinkedIn</a>
+          <a href={FACEBOOK_URL} target="_blank" rel="noreferrer" data-track="external_link" data-track-label="Footer: Facebook">Facebook</a>
           <a href="#privacy">Privacy & data use</a>
           <button type="button" data-leadpilot-consent-settings>Analytics preferences</button>
           <a href="https://jayson-sugpatan-portfolio.jayrisse1490.chatgpt.site/crm" target="_blank" rel="noreferrer">Owner CRM</a>
