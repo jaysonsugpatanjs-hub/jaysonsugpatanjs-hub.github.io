@@ -1,11 +1,7 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
+import LeadPilotInquiryForm from "./LeadPilotH8.jsx";
 
 const CONTACT_EMAIL = "jayson.sugpatan.js@gmail.com";
-const HUBSPOT_PORTAL_ID = "247233549";
-const HUBSPOT_FORM_ID = "afd02813-0d3b-4d0f-a069-430518298b4c";
-const HUBSPOT_REGION = "na2";
-const HUBSPOT_SCRIPT_ID = "hubspot-portfolio-form-script";
-const HUBSPOT_SCRIPT_URL = `https://js-${HUBSPOT_REGION}.hsforms.net/forms/embed/${HUBSPOT_PORTAL_ID}.js`;
 
 const navigation = [
   ["work", "Work"],
@@ -14,158 +10,6 @@ const navigation = [
   ["evidence", "Evidence"],
   ["contact", "Contact"],
 ];
-
-function trackEvent(name, metadata) {
-  if (!import.meta.env.PROD || typeof window === "undefined") return;
-
-  if (typeof window.sa_event === "function") {
-    if (metadata) window.sa_event(name, metadata);
-    else window.sa_event(name);
-  }
-}
-
-function getAcquisitionType() {
-  if (typeof window === "undefined") return "unknown";
-
-  const params = new URLSearchParams(window.location.search);
-  if (params.has("utm_source")) return "campaign";
-
-  if (!document.referrer) return "direct";
-
-  try {
-    return new URL(document.referrer).origin === window.location.origin ? "internal" : "referral";
-  } catch {
-    return "unknown";
-  }
-}
-
-function HubSpotInquiryForm() {
-  const formFrameRef = useRef(null);
-  const [shouldLoadForm, setShouldLoadForm] = useState(false);
-  const [formStatus, setFormStatus] = useState("waiting");
-
-  useEffect(() => {
-    const formFrame = formFrameRef.current;
-    if (!formFrame || typeof IntersectionObserver === "undefined") {
-      setFormStatus("loading");
-      setShouldLoadForm(true);
-      return undefined;
-    }
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (!entry.isIntersecting) return;
-        setFormStatus("loading");
-        setShouldLoadForm(true);
-        observer.disconnect();
-      },
-      { rootMargin: "600px 0px" },
-    );
-
-    observer.observe(formFrame);
-    return () => observer.disconnect();
-  }, []);
-
-  useEffect(() => {
-    if (!shouldLoadForm) return undefined;
-
-    let readyTimeout;
-
-    const isPortfolioForm = (event) => event.detail?.formId === HUBSPOT_FORM_ID;
-    const handleReady = (event) => {
-      if (!isPortfolioForm(event)) return;
-      window.clearTimeout(readyTimeout);
-      setFormStatus("ready");
-    };
-    const handleSuccess = (event) => {
-      if (!isPortfolioForm(event)) return;
-      window.clearTimeout(readyTimeout);
-      setFormStatus("success");
-      trackEvent("inquiry_sent", {
-        provider: "hubspot",
-        acquisition: getAcquisitionType(),
-      });
-    };
-    const handleFailure = (event) => {
-      if (!isPortfolioForm(event)) return;
-      setFormStatus("error");
-      trackEvent("inquiry_delivery_failed", { provider: "hubspot" });
-    };
-
-    window.addEventListener("hs-form-event:on-ready", handleReady);
-    window.addEventListener("hs-form-event:on-submission:success", handleSuccess);
-    window.addEventListener("hs-form-event:on-submission:failed", handleFailure);
-
-    let script = document.getElementById(HUBSPOT_SCRIPT_ID);
-    if (!script) {
-      script = document.createElement("script");
-      script.id = HUBSPOT_SCRIPT_ID;
-      script.src = HUBSPOT_SCRIPT_URL;
-      script.defer = true;
-      script.onerror = () => {
-        setFormStatus("error");
-        trackEvent("inquiry_form_unavailable", { provider: "hubspot" });
-      };
-      document.body.appendChild(script);
-    }
-
-    readyTimeout = window.setTimeout(() => {
-      setFormStatus((current) => current === "loading" ? "delayed" : current);
-    }, 12000);
-
-    return () => {
-      window.clearTimeout(readyTimeout);
-      window.removeEventListener("hs-form-event:on-ready", handleReady);
-      window.removeEventListener("hs-form-event:on-submission:success", handleSuccess);
-      window.removeEventListener("hs-form-event:on-submission:failed", handleFailure);
-    };
-  }, [shouldLoadForm]);
-
-  const formUnavailable = formStatus === "error" || formStatus === "delayed";
-
-  return (
-    <section className="inquiry-form" aria-labelledby="hubspot-inquiry-title">
-      <div className="form-heading">
-        <p className="contact-label">Employer & client inquiry</p>
-        <h3 id="hubspot-inquiry-title">Start with the essentials.</h3>
-        <p>Your submission creates a secure lead record so the opportunity and follow-up are not lost.</p>
-      </div>
-
-      {formStatus === "loading" && (
-        <p className="hubspot-form-status" role="status">Loading the secure inquiry form…</p>
-      )}
-
-      <div
-        ref={formFrameRef}
-        className="hs-form-frame"
-        data-region={HUBSPOT_REGION}
-        data-form-id={HUBSPOT_FORM_ID}
-        data-portal-id={HUBSPOT_PORTAL_ID}
-        aria-busy={formStatus === "loading"}
-      />
-
-      {formStatus === "success" && (
-        <p className="hubspot-form-status is-success" role="status" aria-live="polite">
-          Thank you—your inquiry is now recorded. Jayson can follow up using the details you provided.
-        </p>
-      )}
-
-      {formUnavailable && (
-        <p className="hubspot-form-status is-error" role="alert">
-          The secure form is taking too long to load. Please{" "}
-          <a href={`mailto:${CONTACT_EMAIL}?subject=Portfolio%20inquiry`} onClick={() => trackEvent("inquiry_email_fallback_clicked")}>
-            send your inquiry by email
-          </a>.
-        </p>
-      )}
-
-      <p className="form-privacy">
-        Your details are stored in HubSpot and used only to assess and respond to your inquiry. Please do not include passwords or sensitive personal information. Read the{" "}
-        <a href="https://legal.hubspot.com/privacy-policy" target="_blank" rel="noreferrer">HubSpot privacy policy</a>.
-      </p>
-    </section>
-  );
-}
 
 const projects = [
   {
@@ -399,9 +243,10 @@ export default function App() {
               className={activeSection === id ? "is-active" : undefined}
               href={`#${id}`}
               aria-current={activeSection === id ? "location" : undefined}
+              data-track="navigation"
+              data-track-label={`Header: ${label}`}
               onClick={() => {
                 setActiveSection(id);
-                if (id === "contact") trackEvent("contact_section_opened");
               }}
               key={id}
             >
@@ -422,20 +267,21 @@ export default function App() {
             I connect shop-floor experience, industrial engineering, and data-driven workflow design—so teams can see the work, improve it, and manage it with confidence.
           </p>
           <div className="hero-actions">
-            <a className="primary-link" href="#work">View selected work <span aria-hidden="true">↘</span></a>
+            <a className="primary-link" href="#work" data-track="project_view" data-track-label="Hero: View selected work">View selected work <span aria-hidden="true">↘</span></a>
             <a
               className="secondary-link"
               href={`mailto:${CONTACT_EMAIL}`}
-              onClick={() => trackEvent("contact_email_clicked", { location: "hero" })}
+              data-track="contact_click"
+              data-track-label="Hero: Email Jayson"
             >
               Email Jayson
             </a>
           </div>
           <div className="hero-contact" aria-label="Quick contact details">
-            <a href={`mailto:${CONTACT_EMAIL}`} onClick={() => trackEvent("contact_email_clicked", { location: "hero_details" })}>
+            <a href={`mailto:${CONTACT_EMAIL}`} data-track="contact_click" data-track-label="Hero details: Email">
               {CONTACT_EMAIL}
             </a>
-            <a href="tel:+61423632786" onClick={() => trackEvent("contact_phone_clicked", { location: "hero_details" })}>
+            <a href="tel:+61423632786" data-track="contact_click" data-track-label="Hero details: Phone">
               +61 423 632 786
             </a>
             <span>Philippines-based · Australian industry experience</span>
@@ -506,7 +352,13 @@ export default function App() {
 
         <div className="project-list">
           {projects.map((project) => (
-            <article className="project" id={`project-${project.index}`} key={project.index}>
+            <article
+              className="project"
+              id={`project-${project.index}`}
+              key={project.index}
+              data-track-view="project_view"
+              data-track-label={`Project viewed: ${project.title}`}
+            >
               <div className="project-index">{project.index}</div>
               <div className="project-main">
                 <div className="project-meta">
@@ -582,7 +434,12 @@ export default function App() {
         </div>
         <div className="credential-grid">
           {credentials.map((credential) => (
-            <article className="credential-card" key={credential.code}>
+            <article
+              className="credential-card"
+              key={credential.code}
+              data-track-view="credential_view"
+              data-track-label={`Credential viewed: ${credential.title}`}
+            >
               <div className="credential-topline">
                 <span>{credential.code}</span>
                 <span>{credential.status}</span>
@@ -629,7 +486,8 @@ export default function App() {
                     key={link.href}
                     target="_blank"
                     rel="noreferrer"
-                    onClick={() => trackEvent("portfolio_downloaded", { asset: link.label })}
+                    data-track="download"
+                    data-track-label={`${resource.title}: ${link.label}`}
                   >
                     {link.label} <span aria-hidden="true">↓</span>
                   </a>
@@ -646,7 +504,14 @@ export default function App() {
           </div>
           <div className="proof-links">
             {publicProof.map((item) => (
-              <a href={item.href} target="_blank" rel="noreferrer" key={item.title}>
+              <a
+                href={item.href}
+                target="_blank"
+                rel="noreferrer"
+                key={item.title}
+                data-track="external_link"
+                data-track-label={`Public proof: ${item.title}`}
+              >
                 <span>{item.label}</span>
                 <strong>{item.title}</strong>
                 <small>{item.detail}</small>
@@ -676,14 +541,16 @@ export default function App() {
               <a
                 className="primary-link"
                 href={`mailto:${CONTACT_EMAIL}?subject=Portfolio%20inquiry`}
-                onClick={() => trackEvent("contact_email_clicked", { location: "contact" })}
+                data-track="contact_click"
+                data-track-label="Contact: Email"
               >
                 Send an email <span aria-hidden="true">↗</span>
               </a>
               <a
                 className="secondary-link"
                 href="tel:+61423632786"
-                onClick={() => trackEvent("contact_phone_clicked", { location: "contact" })}
+                data-track="contact_click"
+                data-track-label="Contact: Phone"
               >
                 Call +61 423 632 786
               </a>
@@ -692,7 +559,7 @@ export default function App() {
               <div>
                 <dt>Email</dt>
                 <dd>
-                  <a href={`mailto:${CONTACT_EMAIL}`} onClick={() => trackEvent("contact_email_clicked", { location: "contact_details" })}>
+                  <a href={`mailto:${CONTACT_EMAIL}`} data-track="contact_click" data-track-label="Contact details: Email">
                     {CONTACT_EMAIL}
                   </a>
                 </dd>
@@ -702,12 +569,12 @@ export default function App() {
             </dl>
           </aside>
 
-          <HubSpotInquiryForm />
+          <LeadPilotInquiryForm />
         </div>
 
         <div className="contact-line">
           <span>Jayson P. Sugpatan</span>
-          <a href={`mailto:${CONTACT_EMAIL}`} onClick={() => trackEvent("contact_email_clicked", { location: "footer_contact" })}>{CONTACT_EMAIL}</a>
+          <a href={`mailto:${CONTACT_EMAIL}`} data-track="contact_click" data-track-label="Contact footer: Email">{CONTACT_EMAIL}</a>
           <span>Philippines-based · Australia industry experience</span>
         </div>
       </section>
@@ -715,9 +582,10 @@ export default function App() {
       <footer>
         <span>Jayson P. Sugpatan</span>
         <span>Industrial systems, made usable.</span>
-        <a href="https://www.simpleanalytics.com/" target="_blank" rel="noreferrer">
-          Analytics by Simple Analytics
-        </a>
+        <div className="footer-controls">
+          <button type="button" data-leadpilot-consent-settings>Analytics preferences</button>
+          <a href="https://jayson-sugpatan-portfolio.jayrisse1490.chatgpt.site/crm" target="_blank" rel="noreferrer">Owner CRM</a>
+        </div>
       </footer>
     </main>
   );

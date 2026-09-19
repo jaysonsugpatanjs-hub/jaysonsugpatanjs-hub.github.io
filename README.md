@@ -44,29 +44,32 @@ does not create a deployment loop.
 
 ## Visitor analytics
 
-The production page loads the Simple Analytics light script. It records
-anonymous page views and a small set of conversion events such as portfolio
-downloads, contact-link clicks, contact-section opens, and successful inquiry
-submissions. The provider does not record localhost visits.
-
-Add `jaysonsugpatanjs-hub.github.io` to a Simple Analytics dashboard to view the
-data. The integration uses the hostname, so no public API key or repository
-secret is required.
+The production page loads the consent-based LeadPilot tracker from the portfolio
+Sites backend. It records page views, project and credential views, downloads,
+contact actions, and referral/UTM context only after the visitor allows
+analytics. Anonymous activity remains anonymous until the visitor submits the
+enquiry form. Visitors can reopen their analytics preferences from the footer.
 
 ## LeadPilot inquiry delivery
 
-H8 replaces the visible legacy HubSpot embed with a native LeadPilot inquiry
-form. The browser sends the inquiry to the production n8n endpoint:
+The native enquiry form writes the consented lead to the private portfolio CRM:
+
+```text
+https://jayson-sugpatan-portfolio.jayrisse1490.chatgpt.site/crm
+```
+
+The owner-only workspace provides intent scoring, searchable leads, pipeline
+stages, priorities, next actions, follow-up dates, and internal activity notes.
+The same form also sends a non-blocking secondary copy to the existing n8n
+intake for HubSpot synchronization:
 
 ```text
 https://jaysonsugpatan1490.app.n8n.cloud/webhook/leadpilot-inbound
 ```
 
-The H7 inbound workflow normalizes and validates the submission, applies the
-current LeadPilot qualification rules, and forwards a canonical lead to the
-MAIN CRM workflow. MAIN CRM then creates or reuses the appropriate Company,
-Contact, Deal, and follow-up Task in the LeadPilot HubSpot portal according to
-the routing rules.
+The H7 inbound workflow can continue normalizing and routing that copy to the
+LeadPilot HubSpot portal. A HubSpot or n8n interruption does not prevent the
+primary private-CRM record from being saved.
 
 The website captures acquisition context including the page URL, referrer, UTM
 parameters, source detail, and submission timestamp. It also includes client
@@ -74,6 +77,6 @@ validation, a honeypot field, request timeout/error handling, and a direct-email
 fallback. No HubSpot private token or n8n credential is stored in the public
 GitHub Pages bundle.
 
-Anonymous visits remain in Simple Analytics. Identifiable details enter the CRM
-only after a visitor submits the inquiry form and are covered by the privacy
-notice displayed with the form.
+Identifiable details enter the CRM only after the visitor submits the form and
+accepts its disclosure. No private CRM, HubSpot, or n8n credential is stored in
+the public GitHub Pages bundle.

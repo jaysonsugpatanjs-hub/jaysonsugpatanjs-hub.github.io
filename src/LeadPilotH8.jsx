@@ -1,9 +1,13 @@
-import { useEffect, useMemo, useState } from "react";
-import { createPortal } from "react-dom";
+import { useMemo, useState } from "react";
 import "./leadpilot-h8.css";
 
-const LEADPILOT_INBOUND_URL = "https://jaysonsugpatan1490.app.n8n.cloud/webhook/leadpilot-inbound";
+const PORTFOLIO_CRM_INQUIRY_URL =
+  "https://jayson-sugpatan-portfolio.jayrisse1490.chatgpt.site/api/inquiry";
+const LEADPILOT_INBOUND_URL =
+  "https://jaysonsugpatan1490.app.n8n.cloud/webhook/leadpilot-inbound";
 const CONTACT_EMAIL = "jayson.sugpatan.js@gmail.com";
+const CONSENT_VERSION = "2026-09";
+
 const PUBLIC_EMAIL_DOMAINS = new Set([
   "gmail.com",
   "yahoo.com",
@@ -16,19 +20,26 @@ const PUBLIC_EMAIL_DOMAINS = new Set([
 ]);
 
 const SERVICE_OPTIONS = [
-  "Industrial Operations / Process Improvement",
-  "Data / Reporting / Workflow Automation",
-  "Fabrication / Technical Support",
-  "Business Development / CRM Automation",
-  "Shutdown & Maintenance / Coded Welding",
-  "Other",
+  { value: "employment", label: "Employment or contract role" },
+  { value: "operations", label: "Industrial operations or process improvement" },
+  { value: "data_automation", label: "Data, reporting or workflow automation" },
+  { value: "fabrication", label: "Fabrication or technical support" },
+  { value: "collaboration", label: "Business development or collaboration" },
+  { value: "general", label: "Other enquiry" },
 ];
 
-function trackLeadEvent(name, metadata = {}) {
-  if (typeof window === "undefined") return;
-  if (typeof window.sa_event === "function") {
-    window.sa_event(name, metadata);
-  }
+function randomId() {
+  return typeof crypto.randomUUID === "function"
+    ? crypto.randomUUID()
+    : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+}
+
+function trackingContext() {
+  return window.LeadPilotTracking?.getContext() ?? {
+    visitorId: randomId(),
+    sessionId: randomId(),
+    consentVersion: CONSENT_VERSION,
+  };
 }
 
 function normalizeDomain(value) {
@@ -46,7 +57,6 @@ function domainFromEmail(email) {
 }
 
 function acquisitionMetadata() {
-  if (typeof window === "undefined") return {};
   const params = new URLSearchParams(window.location.search);
   return {
     page_url: window.location.href,
@@ -59,13 +69,27 @@ function acquisitionMetadata() {
   };
 }
 
-function LeadPilotInquiryForm() {
+function mirrorToHubSpot(payload) {
+  const requestBody = new URLSearchParams();
+  Object.entries(payload).forEach(([key, value]) =>
+    requestBody.set(key, String(value ?? "")),
+  );
+
+  void fetch(LEADPILOT_INBOUND_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
+    body: requestBody.toString(),
+    keepalive: true,
+  }).catch(() => undefined);
+}
+
+export default function LeadPilotInquiryForm() {
   const [status, setStatus] = useState("idle");
   const [feedback, setFeedback] = useState("");
   const [startedAt] = useState(() => Date.now());
 
   const buttonLabel = useMemo(() => {
-    if (status === "sending") return "Sending inquiry…";
+    if (status === "sending") return "Saving inquiry…";
     if (status === "success") return "Inquiry received ✓";
     return "Send inquiry";
   }, [status]);
@@ -79,14 +103,19 @@ function LeadPilotInquiryForm() {
     const firstname = String(data.get("firstname") || "").trim();
     const lastname = String(data.get("lastname") || "").trim();
     const email = String(data.get("email") || "").trim().toLowerCase();
+    const phone = String(data.get("phone") || "").trim();
     const companyName = String(data.get("company_name") || "").trim();
+    const role = String(data.get("job_title") || "").trim();
+    const inquiryType = String(data.get("inquiry_type") || "").trim();
+    const timeline = String(data.get("timeline") || "exploring").trim();
+    const preferredContact = String(data.get("preferred_contact") || "email").trim();
     const suppliedDomain = normalizeDomain(data.get("company_domain"));
     const companyDomain = suppliedDomain || domainFromEmail(email);
-    const service = String(data.get("service_requirement") || "").trim();
     const message = String(data.get("message") || "").trim();
     const honeypot = String(data.get("website_check") || "").trim();
+    const consent = data.get("contact_consent") === "on";
 
-    if (!firstname || !lastname || !email || !companyName || !service || !message) {
+    if (!firstname || !lastname || !email || !companyName || !inquiryType || !message) {
       setStatus("error");
       setFeedback("Please complete all required fields before sending your inquiry.");
       return;
@@ -98,9 +127,9 @@ function LeadPilotInquiryForm() {
       return;
     }
 
-    if (!companyDomain) {
+    if (preferredContact === "phone" && !phone) {
       setStatus("error");
-      setFeedback("Please add your company website/domain when using Gmail, Yahoo, Outlook, or another personal email address.");
+      setFeedback("Please add a phone number if you would like a phone response.");
       return;
     }
 
@@ -110,128 +139,152 @@ function LeadPilotInquiryForm() {
       return;
     }
 
+    if (!consent) {
+      setStatus("error");
+      setFeedback("Please confirm that your enquiry details may be stored for assessment and follow-up.");
+      return;
+    }
+
     if (honeypot) {
       setStatus("success");
       setFeedback("Thank you. Your inquiry has been received.");
       return;
     }
 
+    const context = trackingContext();
+    const service =
+      SERVICE_OPTIONS.find((option) => option.value === inquiryType)?.label ?? "Other enquiry";
     const metadata = acquisitionMetadata();
-    const payload = {
-      firstname,
-      lastname,
-      email,
-      phone: String(data.get("phone") || "").trim(),
-      company_name: companyName,
-      company_domain: companyDomain,
-      job_title: String(data.get("job_title") || "").trim(),
-      service_requirement: service,
-      message,
-      leadpilot_source: "Website",
-      source_detail: "GitHub Portfolio — H8 Live Website Lead Capture",
-      submitted_at: new Date().toISOString(),
-      website_check: "",
-      client_form_seconds: Math.max(0, Math.round((Date.now() - startedAt) / 1000)),
-      ...metadata,
-    };
-
-    const requestBody = new URLSearchParams();
-    Object.entries(payload).forEach(([key, value]) => requestBody.set(key, String(value ?? "")));
 
     setStatus("sending");
-    setFeedback("Sending your inquiry securely to LeadPilot…");
+    setFeedback("Saving your inquiry to the private portfolio CRM…");
 
     try {
       const controller = new AbortController();
       const timeout = window.setTimeout(() => controller.abort(), 20000);
-      const response = await fetch(LEADPILOT_INBOUND_URL, {
+      const response = await fetch(PORTFOLIO_CRM_INQUIRY_URL, {
         method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
-        body: requestBody.toString(),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...context,
+          name: `${firstname} ${lastname}`,
+          email,
+          phone,
+          company: companyName,
+          role,
+          inquiryType,
+          timeline,
+          preferredContact,
+          message,
+          website: "",
+          path: `${window.location.pathname}${window.location.hash}`,
+          consent: true,
+        }),
         signal: controller.signal,
       });
       window.clearTimeout(timeout);
 
-      let result = null;
-      try {
-        result = await response.json();
-      } catch {
-        result = null;
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(result?.error || `Portfolio CRM returned ${response.status}`);
       }
 
-      if (!response.ok || result?.accepted === false) {
-        const serverMessage = Array.isArray(result?.errors) ? result.errors.join("; ") : "";
-        throw new Error(serverMessage || `LeadPilot returned ${response.status}`);
-      }
+      mirrorToHubSpot({
+        firstname,
+        lastname,
+        email,
+        phone,
+        company_name: companyName,
+        company_domain: companyDomain,
+        job_title: role,
+        service_requirement: service,
+        timeline,
+        preferred_contact: preferredContact,
+        message,
+        leadpilot_source: "Website",
+        source_detail: "GitHub Portfolio — consented private CRM capture",
+        submitted_at: new Date().toISOString(),
+        portfolio_inquiry_id: result?.inquiryId || "",
+        website_check: "",
+        client_form_seconds: Math.max(0, Math.round((Date.now() - startedAt) / 1000)),
+        ...metadata,
+      });
 
       setStatus("success");
-      setFeedback("Thank you—your inquiry is recorded and ready for follow-up.");
-      trackLeadEvent("leadpilot_inquiry_sent", {
-        source: "website",
-        service,
-        acquisition: metadata.utm_source ? "campaign" : metadata.referrer ? "referral" : "direct",
-        crm_status: result?.status || result?.crm?.status || "accepted",
-      });
+      setFeedback("Thank you—your inquiry is saved and ready for follow-up.");
       form.reset();
     } catch (error) {
-      const timeoutMessage = error?.name === "AbortError";
       setStatus("error");
       setFeedback(
-        timeoutMessage
-          ? "The inquiry service took too long to respond. Please try once more or use the email option beside this form."
+        error?.name === "AbortError"
+          ? "The inquiry service took too long to respond. Please try again or use the email option beside this form."
           : "I couldn’t confirm delivery. Please try again or use the email option beside this form.",
       );
-      trackLeadEvent("leadpilot_inquiry_failed", {
-        source: "website",
-        reason: error?.name || "request_error",
-      });
     }
   }
 
   return (
-    <div className="leadpilot-h8-shell">
-      <div className="form-heading leadpilot-h8-heading">
-        <p className="contact-label">LeadPilot live inquiry</p>
+    <section className="inquiry-form" aria-labelledby="leadpilot-inquiry-title">
+      <div className="leadpilot-h8-heading">
+        <p className="contact-label">Private portfolio CRM</p>
         <h3 id="leadpilot-inquiry-title">Tell me about the opportunity.</h3>
-        <p>Your inquiry now flows through LeadPilot for structured qualification, CRM capture, and follow-up.</p>
+        <p>Your enquiry is connected to the portfolio activity you chose to share, helping me respond with better context.</p>
       </div>
 
-      <form className="leadpilot-h8-form" onSubmit={handleSubmit} aria-labelledby="leadpilot-inquiry-title">
+      <form className="leadpilot-h8-form" onSubmit={handleSubmit} data-leadpilot-form>
         <div className="leadpilot-h8-grid">
           <label>
             <span>First name *</span>
-            <input name="firstname" autoComplete="given-name" required />
+            <input name="firstname" autoComplete="given-name" maxLength="60" required />
           </label>
           <label>
             <span>Last name *</span>
-            <input name="lastname" autoComplete="family-name" required />
+            <input name="lastname" autoComplete="family-name" maxLength="60" required />
           </label>
           <label>
             <span>Work email *</span>
-            <input name="email" type="email" autoComplete="email" required />
+            <input name="email" type="email" autoComplete="email" maxLength="180" required />
           </label>
           <label>
             <span>Phone</span>
-            <input name="phone" type="tel" autoComplete="tel" />
+            <input name="phone" type="tel" autoComplete="tel" maxLength="40" />
           </label>
           <label>
             <span>Company / organisation *</span>
-            <input name="company_name" autoComplete="organization" required />
+            <input name="company_name" autoComplete="organization" maxLength="140" required />
           </label>
           <label>
             <span>Role / job title</span>
-            <input name="job_title" autoComplete="organization-title" />
+            <input name="job_title" autoComplete="organization-title" maxLength="140" />
           </label>
           <label className="leadpilot-h8-wide">
             <span>Company website / domain</span>
-            <input name="company_domain" inputMode="url" placeholder="example.com" />
-            <small>Needed when you use a personal email address such as Gmail or Outlook.</small>
+            <input name="company_domain" inputMode="url" maxLength="180" placeholder="example.com" />
+            <small>Optional; helps match your enquiry to the right company record.</small>
           </label>
           <label className="leadpilot-h8-wide">
             <span>Service / opportunity *</span>
-            <select name="service_requirement" defaultValue="" required>
+            <select name="inquiry_type" defaultValue="" required>
               <option value="" disabled>Select the closest match</option>
-              {SERVICE_OPTIONS.map((option) => <option key={option} value={option}>{option}</option>)}
+              {SERVICE_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
+            </select>
+          </label>
+          <label>
+            <span>Timeframe</span>
+            <select name="timeline" defaultValue="exploring">
+              <option value="asap">As soon as possible</option>
+              <option value="one_month">Within one month</option>
+              <option value="one_to_three_months">Within 1–3 months</option>
+              <option value="exploring">Exploring options</option>
+            </select>
+          </label>
+          <label>
+            <span>Preferred response</span>
+            <select name="preferred_contact" defaultValue="email">
+              <option value="email">Email</option>
+              <option value="phone">Phone</option>
             </select>
           </label>
           <label className="leadpilot-h8-wide">
@@ -240,6 +293,7 @@ function LeadPilotInquiryForm() {
               name="message"
               rows="6"
               minLength="20"
+              maxLength="2000"
               placeholder="Scope, problem to solve, timing, location, deliverables, or the role you are hiring for."
               required
             />
@@ -251,50 +305,33 @@ function LeadPilotInquiryForm() {
           <input name="website_check" tabIndex="-1" autoComplete="off" />
         </label>
 
+        <label className="leadpilot-h8-consent">
+          <input name="contact_consent" type="checkbox" required />
+          <span>
+            I agree that my details and this visit’s activity may be stored in Jayson’s private portfolio CRM and sent to the connected HubSpot CRM for assessment and follow-up.
+          </span>
+        </label>
+
         <div className="leadpilot-h8-submit-row">
-          <button className="primary-link" type="submit" disabled={status === "sending" || status === "success"}>
+          <button
+            className="primary-link"
+            type="submit"
+            disabled={status === "sending" || status === "success"}
+            data-track="contact_click"
+            data-track-label="Contact form: Send inquiry"
+          >
             {buttonLabel}<span aria-hidden="true">↗</span>
           </button>
           <p className={`leadpilot-h8-status is-${status}`} role="status" aria-live="polite">
-            {feedback || "Required fields are marked with *. No passwords or sensitive personal information."}
+            {feedback || "Required fields are marked with *. Do not include passwords or sensitive personal information."}
           </p>
         </div>
       </form>
 
       <p className="form-privacy leadpilot-h8-privacy">
-        Your inquiry is sent to the LeadPilot n8n intake and stored in the connected HubSpot CRM for qualification and follow-up. If the form is unavailable, email{" "}
+        Anonymous portfolio activity is collected only when analytics is allowed. Your identity is linked only after this form is submitted. If the form is unavailable, email{" "}
         <a href={`mailto:${CONTACT_EMAIL}?subject=Portfolio%20inquiry`}>{CONTACT_EMAIL}</a>.
       </p>
-    </div>
+    </section>
   );
-}
-
-export default function LeadPilotH8() {
-  const [target, setTarget] = useState(null);
-
-  useEffect(() => {
-    let observer;
-
-    const attach = () => {
-      const inquirySection = document.querySelector(".inquiry-form");
-      if (!inquirySection) return false;
-      document.body.classList.add("leadpilot-h8-enabled");
-      setTarget(inquirySection);
-      return true;
-    };
-
-    if (!attach()) {
-      observer = new MutationObserver(() => {
-        if (attach()) observer.disconnect();
-      });
-      observer.observe(document.body, { childList: true, subtree: true });
-    }
-
-    return () => {
-      observer?.disconnect();
-      document.body.classList.remove("leadpilot-h8-enabled");
-    };
-  }, []);
-
-  return target ? createPortal(<LeadPilotInquiryForm />, target) : null;
 }
