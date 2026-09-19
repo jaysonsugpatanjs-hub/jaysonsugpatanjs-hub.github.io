@@ -4,92 +4,183 @@ import LeadPilotInquiryForm from "./LeadPilotH8.jsx";
 const CONTACT_EMAIL = "jayson.sugpatan.js@gmail.com";
 
 const navigation = [
-  ["work", "Work"],
-  ["capabilities", "Capabilities"],
-  ["credentials", "Credentials"],
+  ["services", "Services"],
+  ["work", "Case studies"],
+  ["capabilities", "Strengths"],
+  ["tools", "Tools"],
   ["evidence", "Evidence"],
   ["contact", "Contact"],
+];
+
+const remoteServices = [
+  {
+    code: "01",
+    title: "CRM & pipeline coordination",
+    body: "Keep lead records, follow-ups, stages, owners, and next actions organised so opportunities do not disappear between conversations.",
+    output: "Pipeline hygiene · follow-up control · management visibility",
+  },
+  {
+    code: "02",
+    title: "Lead & tender research",
+    body: "Research industrial opportunities, decision-makers, tender sources, and account context, then structure the findings for practical qualification.",
+    output: "Target lists · opportunity briefs · pursuit priorities",
+  },
+  {
+    code: "03",
+    title: "Reporting & data support",
+    body: "Turn operational, sales, or project data into usable trackers, summaries, and recurring reports for faster decisions.",
+    output: "Excel / Sheets trackers · KPI summaries · data cleanup",
+  },
+  {
+    code: "04",
+    title: "Quotations & business documents",
+    body: "Coordinate the information behind quotations, scopes, proposals, capability statements, and controlled internal documents.",
+    output: "Submission packs · document control · action registers",
+  },
+  {
+    code: "05",
+    title: "Workflow & automation design",
+    body: "Map handoffs, define ownership, and configure practical forms, rules, alerts, and task flows using no-code and AI-assisted tools.",
+    output: "SOPs · Asana workflows · n8n / Make logic",
+  },
+  {
+    code: "06",
+    title: "Industrial operations support",
+    body: "Provide remote coordination grounded in production, procurement, fabrication, inventory, maintenance, and site-facing experience.",
+    output: "Production support · supplier research · technical records",
+  },
 ];
 
 const projects = [
   {
     index: "01",
-    status: "Completed",
-    year: "2018",
-    title: "Production flow and time study",
-    organisation: "Cargill Joy Poultry Meats",
+    status: "AI-assisted implementation",
+    year: "2026",
+    title: "Consent-based portfolio lead capture",
+    organisation: "Personal portfolio system",
     brief:
-      "Mapped production activity at task level to expose bottlenecks and make standard work easier to define.",
-    methods: "Therbligs / process charts / time study / layout review",
+      "Needed a privacy-aware way to understand visitor intent, qualify genuine enquiries, and prevent promising contacts from being lost.",
+    methods: "Requirements / React / GitHub Pages / CRM API / consent events / n8n handoff",
     evidence:
-      "Produced a documented view of work content, constraints, and improvement priorities for production decision-making.",
+      "Specified and delivered a live intake path with explicit consent, structured qualification fields, an owner-only CRM, and the existing HubSpot automation retained as a secondary route.",
   },
   {
     index: "02",
-    status: "Completed",
-    year: "2020",
-    title: "ISO 9001:2015 readiness review",
-    organisation: "Pamantasan ng Cabuyao",
-    brief:
-      "Converted a quality-system gap assessment into a practical compliance roadmap for property and general services.",
-    methods: "Clause review / evidence audit / nonconformance analysis",
-    evidence:
-      "Established a 58.43% overall baseline and identified Clause 9 at 33%, focusing action on documented information, internal audit, and management review.",
-  },
-  {
-    index: "03",
-    status: "Completed",
-    year: "2021–22",
-    title: "Physical plant readiness program",
-    organisation: "Pamantasan ng Cabuyao",
-    brief:
-      "Coordinated evidence and facility improvements supporting the institution’s Level 1-to-Level 2 accreditation readiness.",
-    methods: "Facility audit / ventilation review / maintenance planning",
-    evidence:
-      "Integrated signage, accessibility, ventilation assessment, and predictive-maintenance actions into one improvement program.",
-  },
-  {
-    index: "04",
-    status: "Portfolio study",
-    year: "2026",
-    title: "Customer engagement analysis",
-    organisation: "365 Data Science project",
-    brief:
-      "Compared engagement behaviour across free- and paid-plan learners and translated descriptive statistics into business-facing insights.",
-    methods: "Segmentation / distribution analysis / visual comparison",
-    evidence:
-      "Examined central tendency, confidence intervals, skewness, kurtosis, and hypothesis tests to support a segmented business recommendation.",
-  },
-  {
-    index: "05",
     status: "System design",
     year: "2026",
     title: "90-day lead-generation workflow",
     organisation: "Panalo Pipes",
     brief:
-      "Designed an execution-ready workflow connecting industrial targeting, lead qualification, follow-up, and management reporting.",
-    methods: "Asana / forms / rules / custom fields / CRM logic",
+      "Needed an execution-ready system connecting industrial targeting, lead qualification, follow-up, ownership, and management reporting.",
+    methods: "Asana / forms / rules / custom fields / CRM logic / reporting cadence",
     evidence:
-      "Defined milestones, dependencies, ownership, next-action controls, and reporting fields for a measurable rollout.",
+      "Defined milestones, dependencies, next-action controls, escalation points, and reporting fields for a measurable 90-day pilot.",
+  },
+  {
+    index: "03",
+    status: "Portfolio study",
+    year: "2026",
+    title: "Customer engagement analysis",
+    organisation: "365 Data Science project",
+    brief:
+      "Needed to compare engagement behaviour across free- and paid-plan learners and translate statistics into business-facing insight.",
+    methods: "Segmentation / distribution analysis / confidence intervals / hypothesis tests",
+    evidence:
+      "Produced a segmented analysis of central tendency, skewness, kurtosis, and confidence intervals to support a practical business recommendation.",
+  },
+  {
+    index: "04",
+    status: "Completed",
+    year: "2020",
+    title: "ISO 9001:2015 readiness review",
+    organisation: "Pamantasan ng Cabuyao",
+    brief:
+      "Needed a clear baseline for quality-system readiness and a practical route from evidence gaps to corrective action.",
+    methods: "Clause review / evidence audit / nonconformance analysis / action planning",
+    evidence:
+      "Established a 58.43% overall baseline and identified Clause 9 at 33%, focusing action on documented information, internal audit, and management review.",
+  },
+  {
+    index: "05",
+    status: "Completed",
+    year: "2018",
+    title: "Production flow and time study",
+    organisation: "Cargill Joy Poultry Meats",
+    brief:
+      "Needed a task-level view of production activity to expose bottlenecks and make standard work easier to define.",
+    methods: "Therbligs / process charts / time study / layout review",
+    evidence:
+      "Produced a documented view of work content, constraints, and improvement priorities for production decision-making.",
+  },
+  {
+    index: "06",
+    status: "Completed",
+    year: "2021–22",
+    title: "Physical plant readiness program",
+    organisation: "Pamantasan ng Cabuyao",
+    brief:
+      "Needed coordinated facility evidence and improvements to support the institution’s Level 1-to-Level 2 accreditation readiness.",
+    methods: "Facility audit / ventilation review / maintenance planning / evidence coordination",
+    evidence:
+      "Integrated signage, accessibility, ventilation assessment, and predictive-maintenance actions into one improvement program.",
   },
 ];
 
 const capabilities = [
   {
     number: "A",
-    title: "Industrial engineering",
-    body: "Time and motion study, process mapping, capacity thinking, standard work, facility planning, quality systems, and continuous improvement.",
+    title: "Operations & coordination",
+    body: "Production control, procurement support, records, priorities, action tracking, stakeholder coordination, and practical follow-through.",
   },
   {
     number: "B",
-    title: "Data and workflow design",
-    body: "Descriptive analysis, Excel-based reporting, Python foundations, KPI definition, Asana workflow architecture, and practical automation logic.",
+    title: "Data & reporting",
+    body: "Excel and Google Sheets reporting, descriptive analysis, KPI definition, tracker design, data cleanup, and management-ready summaries.",
   },
   {
     number: "C",
-    title: "Fabrication context",
-    body: "MIG fabrication, rebar cage production, drawing interpretation, Pedax Permatic operations, material handling, forklift, crane, and inventory coordination.",
+    title: "CRM & commercial support",
+    body: "Lead research, pipeline administration, follow-up controls, tender monitoring, capability documents, and business-development coordination.",
   },
+  {
+    number: "D",
+    title: "Industrial field context",
+    body: "Industrial engineering, production, facilities, fabrication, drawings, materials, inventory, and Australian workshop experience.",
+  },
+];
+
+const toolGroups = [
+  {
+    status: "Applied",
+    title: "Operations & delivery",
+    tools: ["Microsoft Excel", "Google Sheets", "SAP", "Asana"],
+    note: "Production control, trackers, task governance, records, procurement support, and recurring reporting.",
+  },
+  {
+    status: "Applied",
+    title: "CRM & growth support",
+    tools: ["HubSpot", "Lead research", "Pipeline reporting", "Proposal support"],
+    note: "Structured lead capture, qualification, next actions, opportunity research, and management visibility.",
+  },
+  {
+    status: "Applied / developing",
+    title: "Automation & AI",
+    tools: ["n8n", "Make", "ChatGPT", "Workflow logic"],
+    note: "AI-assisted requirements, forms, routing, alerts, integrations, SOPs, and repeatable work instructions.",
+  },
+  {
+    status: "Developing",
+    title: "Analytics stack",
+    tools: ["SQL", "Power BI", "Python", "Business statistics"],
+    note: "Clearly labelled development supported by portfolio exercises rather than presented as unverified expert-level experience.",
+  },
+];
+
+const workModes = [
+  ["Location", "Philippines-based remote support"],
+  ["Coverage", "Practical overlap with Australian business hours"],
+  ["Engagement", "Part-time contract · 90-day pilot · project-based · ongoing role"],
+  ["Best fit", "Industrial · construction · manufacturing · technical services"],
 ];
 
 const timeline = [
@@ -258,33 +349,39 @@ export default function App() {
 
       <section className="hero technical-grid" id="top">
         <div className="hero-copy">
-          <p className="eyebrow">Industrial Engineer · Operations · Data · Fabrication</p>
+          <p className="eyebrow">Remote Operations & Business Support · Industrial & Technical Teams</p>
           <h1>
-            I turn real work into
-            <span>clearer systems.</span>
+            Remote support for
+            <span>real industrial work.</span>
           </h1>
           <p className="hero-intro">
-            I connect shop-floor experience, industrial engineering, and data-driven workflow design—so teams can see the work, improve it, and manage it with confidence.
+            I help Australian industrial, construction, manufacturing, and technical-service teams manage CRM, lead and tender research, reporting, documentation, and workflow coordination—from the Philippines with practical overlap to Australian business hours.
           </p>
           <div className="hero-actions">
-            <a className="primary-link" href="#work" data-track="project_view" data-track-label="Hero: View selected work">View selected work <span aria-hidden="true">↘</span></a>
+            <a className="primary-link" href="#services" data-track="navigation" data-track-label="Hero: Explore remote services">Explore remote services <span aria-hidden="true">↘</span></a>
             <a
               className="secondary-link"
-              href={`mailto:${CONTACT_EMAIL}`}
-              data-track="contact_click"
-              data-track-label="Hero: Email Jayson"
+              href="#contact"
+              data-track="navigation"
+              data-track-label="Hero: Discuss remote support"
             >
-              Email Jayson
+              Discuss remote support
             </a>
           </div>
           <div className="hero-contact" aria-label="Quick contact details">
             <a href={`mailto:${CONTACT_EMAIL}`} data-track="contact_click" data-track-label="Hero details: Email">
               {CONTACT_EMAIL}
             </a>
-            <a href="tel:+61423632786" data-track="contact_click" data-track-label="Hero details: Phone">
-              +61 423 632 786
+            <a
+              href="/downloads/Jayson_Sugpatan_Professional_Portfolio.docx"
+              target="_blank"
+              rel="noreferrer"
+              data-track="download"
+              data-track-label="Hero: Download professional portfolio"
+            >
+              Download professional portfolio
             </a>
-            <span>Philippines-based · Australian industry experience</span>
+            <span>Philippines-based · Australian business-hours overlap</span>
           </div>
         </div>
 
@@ -299,9 +396,9 @@ export default function App() {
                 height="514"
               />
             </div>
-            <span>Industrial + digital</span>
+            <span>Remote + industrial</span>
           </div>
-          <div className="plate-code">PROFILE / 2026</div>
+          <div className="plate-code">REMOTE OPS / 2026</div>
           <div className="plate-name">Jayson P. Sugpatan</div>
           <div className="profile-context-grid" aria-label="Professional profile photos">
             <figure>
@@ -327,17 +424,52 @@ export default function App() {
           </div>
           <dl>
             <div><dt>Foundation</dt><dd>BS Industrial Engineering</dd></div>
+            <div><dt>Remote value</dt><dd>CRM, research, reporting, coordination</dd></div>
             <div><dt>Field depth</dt><dd>Production, facilities, fabrication</dd></div>
-            <div><dt>System lens</dt><dd>Quality, data, workflow automation</dd></div>
-            <div><dt>Perspective</dt><dd>Philippines + Australia experience</dd></div>
+            <div><dt>Coverage</dt><dd>Philippines base + Australian context</dd></div>
           </dl>
         </aside>
       </section>
 
       <section className="proof-band" aria-label="Professional value statement">
-        <p>Observe the work.</p>
-        <p>Structure the evidence.</p>
-        <p>Build the system.</p>
+        <p>Understand the work.</p>
+        <p>Control the follow-up.</p>
+        <p>Report what matters.</p>
+      </section>
+
+      <section
+        className={`section services-section technical-grid nav-section${activeSection === "services" ? " is-selected" : ""}`}
+        id="services"
+      >
+        <div className="section-heading">
+          <p className="eyebrow">Remote services</p>
+          <h2>Specialised support, not generic task handling.</h2>
+          <p>I combine virtual delivery with industrial context, so the work is organised around real operations, commercial priorities, and management decisions.</p>
+        </div>
+
+        <div className="service-grid">
+          {remoteServices.map((service) => (
+            <article className="service-card" key={service.code}>
+              <div className="service-code">{service.code}</div>
+              <h3>{service.title}</h3>
+              <p>{service.body}</p>
+              <small>{service.output}</small>
+            </article>
+          ))}
+        </div>
+
+        <div className="work-mode-panel" aria-labelledby="work-mode-title">
+          <div>
+            <p className="eyebrow">Working arrangement</p>
+            <h3 id="work-mode-title">Built for practical remote collaboration.</h3>
+            <p>Clear deliverables, visible next actions, and reporting that lets managers see progress without chasing updates.</p>
+          </div>
+          <dl>
+            {workModes.map(([label, value]) => (
+              <div key={label}><dt>{label}</dt><dd>{value}</dd></div>
+            ))}
+          </dl>
+        </div>
       </section>
 
       <section
@@ -345,9 +477,9 @@ export default function App() {
         id="work"
       >
         <div className="section-heading">
-          <p className="eyebrow">Selected work</p>
-          <h2>Evidence before adjectives.</h2>
-          <p>Completed projects, portfolio studies, and system designs are labelled separately so the scope is always clear.</p>
+          <p className="eyebrow">Case studies</p>
+          <h2>Problems, contribution, evidence.</h2>
+          <p>Each example states whether it is completed work, a portfolio study, a system design, or an AI-assisted implementation—so the scope remains clear.</p>
         </div>
 
         <div className="project-list">
@@ -370,8 +502,8 @@ export default function App() {
                 <p className="project-brief">{project.brief}</p>
               </div>
               <div className="project-detail">
-                <p><strong>Method</strong>{project.methods}</p>
-                <p><strong>Evidence</strong>{project.evidence}</p>
+                <p><strong>Contribution</strong>{project.methods}</p>
+                <p><strong>Outcome / evidence</strong>{project.evidence}</p>
               </div>
             </article>
           ))}
@@ -383,9 +515,9 @@ export default function App() {
         id="capabilities"
       >
         <div className="section-heading inverse">
-          <p className="eyebrow">What I bring</p>
-          <h2>One profile. Three working languages.</h2>
-          <p>I can speak with operators, analysts, and managers because my experience crosses their day-to-day realities.</p>
+          <p className="eyebrow">Transferable strengths</p>
+          <h2>Remote support with operational context.</h2>
+          <p>I can work across operators, analysts, commercial teams, and managers because my experience connects their day-to-day realities.</p>
         </div>
         <div className="capability-list">
           {capabilities.map((item) => (
@@ -395,6 +527,36 @@ export default function App() {
               <p>{item.body}</p>
             </article>
           ))}
+        </div>
+      </section>
+
+      <section
+        className={`section tools-section nav-section${activeSection === "tools" ? " is-selected" : ""}`}
+        id="tools"
+      >
+        <div className="section-heading">
+          <p className="eyebrow">Tools & systems</p>
+          <h2>Applied capability, clearly labelled.</h2>
+          <p>Tools used in operations and portfolio work are separated from developing analytics skills, avoiding inflated proficiency claims.</p>
+        </div>
+        <div className="tools-grid">
+          {toolGroups.map((group) => (
+            <article className="tool-card" key={group.title}>
+              <div className="tool-card-topline">
+                <span>{group.status}</span>
+                <span aria-hidden="true">↗</span>
+              </div>
+              <h3>{group.title}</h3>
+              <ul>
+                {group.tools.map((tool) => <li key={tool}>{tool}</li>)}
+              </ul>
+              <p>{group.note}</p>
+            </article>
+          ))}
+        </div>
+        <div className="tools-positioning-note">
+          <strong>Positioning advantage</strong>
+          <p>I am not presenting as a generalist VA who happens to know industrial words. I bring real production, facilities, fabrication, procurement, and Australian workshop context into remote business support.</p>
         </div>
       </section>
 
@@ -526,17 +688,17 @@ export default function App() {
         className={`contact-section technical-grid nav-section${activeSection === "contact" ? " is-selected" : ""}`}
         id="contact"
       >
-        <p className="eyebrow">Open to the right work</p>
-        <h2>Need someone who understands both the process and the people doing it?</h2>
+        <p className="eyebrow">Remote operations support</p>
+        <h2>Need reliable follow-through behind the work?</h2>
         <p className="contact-intro">
-          I am open to industrial operations, process analysis, data and reporting, workflow coordination, and documentation-focused opportunities—including remote roles.
+          I am open to part-time contracts, 90-day pilots, project-based engagements, and ongoing remote roles supporting Australian industrial and technical businesses.
         </p>
 
         <div className="contact-grid">
           <aside className="contact-options" aria-labelledby="direct-contact-title">
             <p className="contact-label">Direct contact</p>
-            <h3 id="direct-contact-title">Prefer email or phone?</h3>
-            <p>Use either direct option, or send a structured inquiry so I can understand the opportunity before replying.</p>
+            <h3 id="direct-contact-title">Discuss the workload.</h3>
+            <p>Share the operating problem, recurring tasks, reporting need, or opportunity you want controlled. I can then assess the most practical support arrangement.</p>
             <div className="contact-actions">
               <a
                 className="primary-link"
@@ -565,7 +727,8 @@ export default function App() {
                 </dd>
               </div>
               <div><dt>Location</dt><dd>Philippines · Australian industry experience</dd></div>
-              <div><dt>Work focus</dt><dd>Remote roles · Projects · Operations support</dd></div>
+              <div><dt>Availability</dt><dd>Australian business-hours overlap</dd></div>
+              <div><dt>Engagement</dt><dd>Contract · 90-day pilot · Project · Ongoing role</dd></div>
             </dl>
           </aside>
 
@@ -575,14 +738,26 @@ export default function App() {
         <div className="contact-line">
           <span>Jayson P. Sugpatan</span>
           <a href={`mailto:${CONTACT_EMAIL}`} data-track="contact_click" data-track-label="Contact footer: Email">{CONTACT_EMAIL}</a>
-          <span>Philippines-based · Australia industry experience</span>
+          <span>Philippines-based · Australian industry experience</span>
+        </div>
+      </section>
+
+      <section className="privacy-section" id="privacy" aria-labelledby="privacy-title">
+        <div>
+          <p className="eyebrow">Privacy & data use</p>
+          <h2 id="privacy-title">Clear consent. Limited purpose.</h2>
+        </div>
+        <div className="privacy-copy">
+          <p>Anonymous portfolio activity is recorded only after a visitor allows analytics. Identifiable information is collected only when an enquiry form is submitted with consent.</p>
+          <p>Enquiry details are stored in Jayson’s private portfolio CRM and may be sent to the connected HubSpot workflow for assessment and follow-up. Visitors can request correction or deletion by emailing <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>.</p>
         </div>
       </section>
 
       <footer>
         <span>Jayson P. Sugpatan</span>
-        <span>Industrial systems, made usable.</span>
+        <span>Remote operations support, grounded in industry.</span>
         <div className="footer-controls">
+          <a href="#privacy">Privacy & data use</a>
           <button type="button" data-leadpilot-consent-settings>Analytics preferences</button>
           <a href="https://jayson-sugpatan-portfolio.jayrisse1490.chatgpt.site/crm" target="_blank" rel="noreferrer">Owner CRM</a>
         </div>

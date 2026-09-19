@@ -20,11 +20,11 @@ const PUBLIC_EMAIL_DOMAINS = new Set([
 ]);
 
 const SERVICE_OPTIONS = [
-  { value: "employment", label: "Employment or contract role" },
-  { value: "operations", label: "Industrial operations or process improvement" },
-  { value: "data_automation", label: "Data, reporting or workflow automation" },
-  { value: "fabrication", label: "Fabrication or technical support" },
-  { value: "collaboration", label: "Business development or collaboration" },
+  { value: "employment", label: "Remote employment or contract role" },
+  { value: "operations", label: "Remote operations or project coordination" },
+  { value: "data_automation", label: "CRM, lead generation, reporting or automation" },
+  { value: "fabrication", label: "Fabrication or technical operations support" },
+  { value: "collaboration", label: "Business development or industrial collaboration" },
   { value: "general", label: "Other enquiry" },
 ];
 
@@ -227,8 +227,8 @@ export default function LeadPilotInquiryForm() {
     <section className="inquiry-form" aria-labelledby="leadpilot-inquiry-title">
       <div className="leadpilot-h8-heading">
         <p className="contact-label">Private portfolio CRM</p>
-        <h3 id="leadpilot-inquiry-title">Tell me about the opportunity.</h3>
-        <p>Your enquiry is connected to the portfolio activity you chose to share, helping me respond with better context.</p>
+        <h3 id="leadpilot-inquiry-title">Tell me where support is needed.</h3>
+        <p>Share the work, current bottleneck, desired outcome, and timing. Your enquiry is connected to any portfolio activity you chose to share.</p>
       </div>
 
       <form className="leadpilot-h8-form" onSubmit={handleSubmit} data-leadpilot-form>
@@ -294,7 +294,7 @@ export default function LeadPilotInquiryForm() {
               rows="6"
               minLength="20"
               maxLength="2000"
-              placeholder="Scope, problem to solve, timing, location, deliverables, or the role you are hiring for."
+              placeholder="Recurring tasks, current bottleneck, deliverables, weekly coverage, timing, tools, or the role you are hiring for."
               required
             />
           </label>
