@@ -1,5 +1,5 @@
 const DECK = "../../ppt/pp-trn-wld-001/";
-const STORAGE_KEY = "panalo-pp-trn-wld-001-v3";
+const STORAGE_KEY = "panalo-pp-trn-wld-001-v4";
 const el = {
   landing: document.getElementById("landing"),
   lesson: document.getElementById("lesson"),
@@ -50,22 +50,23 @@ function renderProgress() {
 function renderNav() {
   if (!course) return;
   el.nav.replaceChildren();
+  const finalIndex = course.slides.length - 1;
   course.slides.forEach((slide, index) => {
     const button = document.createElement("button");
     const available = canOpen(index);
     button.disabled = !available;
-    button.classList.toggle("active", index === 14 ? !el.assessment.classList.contains("hidden") :
+    button.classList.toggle("active", index === finalIndex ? !el.assessment.classList.contains("hidden") :
       !el.lesson.classList.contains("hidden") && state.current === index);
     button.setAttribute("aria-label", `Slide ${slide.id}: ${slide.title}${available ? "" : ", locked"}`);
-    button.innerHTML = `<span class="navnum">${slide.id}</span><span>${safe(slide.title)}</span><span class="navstatus" aria-hidden="true">${index === 14 ? (state.final?.pass ? "✓" : available ? "" : "🔒") : isComplete(index) ? "✓" : available ? "" : "🔒"}</span>`;
-    button.addEventListener("click", () => index === 14 ? showAssessment() : showSlide(index));
+    button.innerHTML = `<span class="navnum">${slide.id}</span><span>${safe(slide.title)}</span><span class="navstatus" aria-hidden="true">${index === finalIndex ? (state.final?.pass ? "✓" : available ? "" : "🔒") : isComplete(index) ? "✓" : available ? "" : "🔒"}</span>`;
+    button.addEventListener("click", () => index === finalIndex ? showAssessment() : showSlide(index));
     el.nav.appendChild(button);
   });
 }
 function slideMarkup(slide) {
   const filename = slideURL(slide.id);
   return `<div class="slidehead"><div><p class="eyebrow">POWERPOINT SLIDE ${slide.id} OF ${course.slides.length}</p><h1>${safe(slide.title)}</h1></div><span class="slidepill">${slide.check?.critical ? "CRITICAL CHECK" : "TRAINING"}</span></div>
-    <div class="slidevisual"><div class="image-status" id="image-status" role="status">Loading slide ${slide.id}…</div><img id="slide-image" alt="PowerPoint slide ${slide.id}: ${safe(slide.title)}" width="1920" height="1080"><a href="${filename}" target="_blank" rel="noopener" class="fullsize">Open this slide at full size ↗</a></div>
+    <div class="slidevisual"><div class="image-status" id="image-status" role="status">Loading slide ${slide.id}…</div><img id="slide-image" alt="PowerPoint slide ${slide.id}: ${safe(slide.title)}" width="1921" height="1080"><a href="${filename}" target="_blank" rel="noopener" class="fullsize">Open this slide at full size ↗</a></div>
     <section class="contentcard transcript"><h2>Key points in plain language</h2><ul>${slide.bullets.map(point => `<li>${safe(point)}</li>`).join("")}</ul></section>
     ${slide.verify ? `<div class="contentcard verify"><h2>Complete before formal issue</h2><p>${safe(slide.verify)}</p></div>` : ""}`;
 }
@@ -114,17 +115,18 @@ function showSlide(index) {
 }
 
 function showAssessment() {
-  if (!canOpen(14)) return;
-  const slide = course.slides[14];
+  const finalIndex = course.slides.length - 1;
+  if (!canOpen(finalIndex)) return;
+  const slide = course.slides[finalIndex];
   const prior = state.final;
   el.assessment.innerHTML = slideMarkup(slide) +
     `<section class="checkpoint" aria-labelledby="exam-title"><span class="slidepill critical">FINAL THEORY ASSESSMENT</span><h2 id="exam-title">Apply what you learned</h2><p>Pass rule: at least 80% overall and every critical question correct. An online pass leaves practical verification pending.</p>
       ${course.exam.map((q, index) => `<fieldset class="examq ${q.critical ? "critical" : ""}"><legend>Q${index + 1}. ${safe(q.question)} ${q.critical ? '<span class="badge">CRITICAL</span>' : ""}</legend>${q.options.map((option, optionIndex) => `<label class="option"><input type="radio" name="exam-${index}" value="${optionIndex}" ${prior?.answers?.[index] === optionIndex ? "checked" : ""}> <span>${safe(option)}</span></label>`).join("")}</fieldset>`).join("")}
       <button class="primary large" id="submit-exam">${prior ? "Submit another attempt" : "Submit final assessment"}</button><div id="result" role="status" aria-live="polite"></div></section>
-      <div class="actions"><button class="secondary" id="back-slide">Back to slide 14</button></div>`;
+      <div class="actions"><button class="secondary" id="back-slide">Back to slide ${finalIndex}</button></div>`;
   show("assessment");
   loadSlideImage(el.assessment, slide.id);
-  el.assessment.querySelector("#back-slide").addEventListener("click", () => showSlide(13));
+  el.assessment.querySelector("#back-slide").addEventListener("click", () => showSlide(finalIndex - 1));
   el.assessment.querySelector("#submit-exam").addEventListener("click", grade);
   if (prior) renderResult(prior);
 }
@@ -185,15 +187,16 @@ async function init() {
     const response = await fetch(`${DECK}manifest.json`, { cache: "no-cache" });
     if (!response.ok) throw new Error(`Module manifest returned ${response.status}`);
     course = await response.json();
-    if (course.slides?.length !== 15 || course.slides.some((slide, index) => slide.id !== index + 1 || (index < 14 && (!slide.check || !Array.isArray(slide.check.options)))) || !Array.isArray(course.exam)) {
+    const finalIndex = course.slides?.length - 1;
+    if (finalIndex < 1 || course.slides.some((slide, index) => slide.id !== index + 1 || (index < finalIndex && (!slide.check || !Array.isArray(slide.check.options)))) || course.slides[finalIndex].check !== "final" || !Array.isArray(course.exam) || !course.exam.length) {
       throw new Error("The module is missing a slide or knowledge check");
     }
-    if (state.revision && state.revision !== course.revision) {
+    if (state.revision !== course.revision) {
       state = { passed: [], current: 0, final: null, attempts: 0, revision: course.revision };
     }
     state.revision = course.revision;
-    state.passed = [...new Set(state.passed.filter(index => Number.isInteger(index) && index >= 0 && index < 14))];
-    state.current = Math.max(0, Math.min(13, Number(state.current) || 0));
+    state.passed = [...new Set(state.passed.filter(index => Number.isInteger(index) && index >= 0 && index < finalIndex))];
+    state.current = Math.max(0, Math.min(finalIndex - 1, Number(state.current) || 0));
     el.start.disabled = false;
     el.start.textContent = "Start / Continue Training";
     el.start.addEventListener("click", () => showSlide(canOpen(state.current) ? state.current : 0));
