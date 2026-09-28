@@ -24,3 +24,11 @@ The intended company entry point is [panalopipesandstructurals.com.au](https://p
 - The approved certificate wording, signatory or record-verification policy, and where authoritative results must be retained.
 
 The provisional PDF feature can be used for pilot review, but it must not be treated as a controlled certificate until the server-side identity, grading, and record steps above are live.
+
+## Alternative using the existing Google account
+
+The existing **Panalo Pipes & Structurals Pty Ltd – Company Drive** folder is under **My Drive**; it is not an organisation-owned Google Workspace Shared Drive. It can support a small restricted pilot if the account owner manages each person's access. For controlled company records, an organisation-owned Shared Drive offers better continuity and role administration when the Workspace edition supports it.
+
+One low-development route is a **restricted Google Site** for the lessons and a **Google Forms quiz** shared only with named responders or an approved group. Store the PowerPoint and rendered images in restricted Drive folders, collect the signed-in learner's email, and record results in an administrator-controlled response Sheet. An Apps Script form-submit process can check both the 80% threshold and every critical question, then generate and store a Panalo-branded PDF with the score and submission date. The public Panalo website can link to the restricted Site. Keep practical sign-off as a separate controlled record.
+
+This route changes the current web experience: Google Sites and Forms do not by themselves preserve automatic progression from one PowerPoint slide to the matching knowledge check. To keep that exact interface, build a custom Google-backed application with restricted content access and server-side checking, or use the identity/private-service design above. Either route requires removing the current public slide files and answer-bearing manifest from GitHub Pages before announcing that access is controlled. Verify Google account ownership, responder restrictions, email collection, Apps Script execution identity, and record retention before rollout.
