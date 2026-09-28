@@ -67,8 +67,7 @@ function slideMarkup(slide) {
   const filename = slideURL(slide.id);
   return `<div class="slidehead"><div><p class="eyebrow">POWERPOINT SLIDE ${slide.id} OF ${course.slides.length}</p><h1>${safe(slide.title)}</h1></div><span class="slidepill">${slide.check?.critical ? "CRITICAL CHECK" : "TRAINING"}</span></div>
     <div class="slidevisual"><div class="image-status" id="image-status" role="status">Loading slide ${slide.id}…</div><img id="slide-image" alt="PowerPoint slide ${slide.id}: ${safe(slide.title)}" width="1921" height="1080"><a href="${filename}" target="_blank" rel="noopener" class="fullsize">Open this slide at full size ↗</a></div>
-    <section class="contentcard transcript"><h2>Key points</h2><ul>${slide.bullets.map(point => `<li>${safe(point)}</li>`).join("")}</ul></section>
-    ${slide.verify ? `<div class="contentcard verify"><h2>Complete before formal issue</h2><p>${safe(slide.verify)}</p></div>` : ""}`;
+    <section class="contentcard transcript"><h2>Key points</h2><ul>${slide.bullets.map(point => `<li>${safe(point)}</li>`).join("")}</ul></section>`;
 }
 function loadSlideImage(container, number) {
   const image = container.querySelector("#slide-image");
