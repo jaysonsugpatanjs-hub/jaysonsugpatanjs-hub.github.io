@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Panalo Pipes Training | PP-TRN-WLD-001</title>
+  <meta name="description" content="Interactive training pilot for Hot Work - MIG Welding and Grinding Safety." />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark">PP</div>
+      <div>
+        <strong>Panalo Pipes & Structurals</strong>
+        <span>Online Training Pilot</span>
+      </div>
+    </div>
+    <div class="module-id">PP-TRN-WLD-001 · DRAFT</div>
+  </header>
+
+  <main class="layout">
+    <aside class="sidebar">
+      <section class="learner-card">
+        <h2>Learner</h2>
+        <label>Name<input id="learnerName" autocomplete="name" placeholder="Enter full name" /></label>
+        <label>Employee ID<input id="employeeId" placeholder="Enter employee ID" /></label>
+        <button id="saveLearner" class="secondary">Save details</button>
+      </section>
+
+      <section class="progress-card">
+        <div class="progress-head">
+          <span>Course progress</span>
+          <strong id="progressText">0%</strong>
+        </div>
+        <div class="progress-track"><div id="progressBar"></div></div>
+      </section>
+
+      <nav id="lessonNav" aria-label="Training topics"></nav>
+      <button id="resetCourse" class="ghost">Reset pilot progress</button>
+    </aside>
+
+    <section class="content">
+      <div class="draft-banner">
+        <strong>DRAFT TRAINING MODULE</strong>
+        <span>Verify against current approved Panalo Pipes / client / legal requirements before issue.</span>
+      </div>
+
+      <section id="hero" class="hero">
+        <p class="eyebrow">HYBRID TRAINING · ONLINE FIRST + ONSITE VERIFICATION</p>
+        <h1>Hot Work – MIG Welding and Grinding Safety</h1>
+        <p>MIG welding, tack welding, grinding and hot-metal handling for Boilermakers, Welders and Trade Assistants as applicable.</p>
+        <div class="hero-grid">
+          <div><span>Delivery</span><strong>Interactive online learning</strong></div>
+          <div><span>Duration</span><strong>Approx. 30–45 min online</strong></div>
+          <div><span>Practical</span><strong>Onsite demonstration required</strong></div>
+          <div><span>Pass rule</span><strong>80% + all critical items correct</strong></div>
+        </div>
+        <button id="startBtn" class="primary">Start / Continue Training</button>
+      </section>
+
+      <section id="lessonView" class="lesson hidden" aria-live="polite"></section>
+      <section id="finalView" class="lesson hidden" aria-live="polite"></section>
+
+      <footer>
+        <p>This pilot records progress only in this browser. It does not yet create a controlled IMS training record or final work authorisation.</p>
+      </footer>
+    </section>
+  </main>
+
+  <script src="./app.js"></script>
+</body>
+</html>
