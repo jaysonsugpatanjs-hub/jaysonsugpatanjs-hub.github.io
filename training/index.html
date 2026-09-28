@@ -1,73 +1,79 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Panalo Pipes Training | PP-TRN-WLD-001</title>
-  <meta name="description" content="Interactive training pilot for Hot Work - MIG Welding and Grinding Safety." />
-  <link rel="stylesheet" href="./styles.css" />
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Panalo Pipes Training Portal</title>
+<meta name="description" content="Panalo Pipes & Structurals online training library">
+<link rel="stylesheet" href="./styles.css">
 </head>
 <body>
-  <header class="topbar">
-    <div class="brand">
-      <div class="brand-mark">PP</div>
-      <div>
-        <strong>Panalo Pipes & Structurals</strong>
-        <span>Online Training Pilot</span>
+<header class="topbar">
+  <a class="brand" href="./" aria-label="Panalo Pipes Training home">
+    <span class="brandmark">P</span>
+    <span><strong>PANALO PIPES & STRUCTURALS</strong><small>Online Training Portal</small></span>
+  </a>
+  <span class="draft">TRAINING PILOT</span>
+</header>
+
+<main class="page">
+  <section class="hero">
+    <p class="eyebrow">EMPLOYEE LEARNING & COMPETENCY</p>
+    <h1>Training Module Library</h1>
+    <p>Select an assigned training module to begin. Modules include interactive learning, knowledge checkpoints and a final theory assessment. Safety-critical modules may still require onsite practical verification.</p>
+  </section>
+
+  <section class="notice">
+    <strong>Controlled-release note</strong>
+    <span>Training content must be verified against the current approved Panalo Pipes / client / legal requirement before formal issue.</span>
+  </section>
+
+  <section class="library-head">
+    <div><p class="eyebrow">AVAILABLE TRAINING</p><h2>Assigned modules</h2></div>
+    <div class="filter">1 module available</div>
+  </section>
+
+  <section class="module-grid">
+    <a class="module-card available" href="./modules/pp-trn-wld-001/">
+      <div class="module-visual">
+        <img src="./assets/hazard-hotspot.svg" alt="Illustrated MIG welding and grinding hazard hotspot">
+        <span class="status">AVAILABLE</span>
       </div>
+      <div class="module-body">
+        <div class="code">PP-TRN-WLD-001</div>
+        <h3>Hot Work – MIG Welding and Grinding Safety</h3>
+        <p>MIG welding, tack welding, grinding and hot-metal handling.</p>
+        <div class="meta">
+          <span>30–45 min online</span>
+          <span>Hybrid delivery</span>
+          <span>Practical required</span>
+        </div>
+        <div class="open">Open training module <span>→</span></div>
+      </div>
+    </a>
+
+    <article class="module-card locked">
+      <div class="placeholder">NEXT MODULE</div>
+      <div class="module-body">
+        <div class="code">PLANNED</div>
+        <h3>Additional Panalo Training Modules</h3>
+        <p>Future modules will use the same controlled interactive format.</p>
+        <div class="meta"><span>Coming later</span></div>
+      </div>
+    </article>
+  </section>
+
+  <section class="how">
+    <p class="eyebrow">HOW IT WORKS</p>
+    <h2>Training pathway</h2>
+    <div class="steps">
+      <div><b>1</b><strong>Select module</strong><span>Open your assigned training.</span></div>
+      <div><b>2</b><strong>Learn</strong><span>Follow the PowerPoint-based lesson sequence.</span></div>
+      <div><b>3</b><strong>Pass checkpoints</strong><span>Key knowledge must be confirmed before progressing.</span></div>
+      <div><b>4</b><strong>Final assessment</strong><span>Pass theory, then complete practical verification where required.</span></div>
     </div>
-    <div class="module-id">PP-TRN-WLD-001 · DRAFT</div>
-  </header>
-
-  <main class="layout">
-    <aside class="sidebar">
-      <section class="learner-card">
-        <h2>Learner</h2>
-        <label>Name<input id="learnerName" autocomplete="name" placeholder="Enter full name" /></label>
-        <label>Employee ID<input id="employeeId" placeholder="Enter employee ID" /></label>
-        <button id="saveLearner" class="secondary">Save details</button>
-      </section>
-
-      <section class="progress-card">
-        <div class="progress-head">
-          <span>Course progress</span>
-          <strong id="progressText">0%</strong>
-        </div>
-        <div class="progress-track"><div id="progressBar"></div></div>
-      </section>
-
-      <nav id="lessonNav" aria-label="Training topics"></nav>
-      <button id="resetCourse" class="ghost">Reset pilot progress</button>
-    </aside>
-
-    <section class="content">
-      <div class="draft-banner">
-        <strong>DRAFT TRAINING MODULE</strong>
-        <span>Verify against current approved Panalo Pipes / client / legal requirements before issue.</span>
-      </div>
-
-      <section id="hero" class="hero">
-        <p class="eyebrow">HYBRID TRAINING · ONLINE FIRST + ONSITE VERIFICATION</p>
-        <h1>Hot Work – MIG Welding and Grinding Safety</h1>
-        <p>MIG welding, tack welding, grinding and hot-metal handling for Boilermakers, Welders and Trade Assistants as applicable.</p>
-        <div class="hero-grid">
-          <div><span>Delivery</span><strong>Interactive online learning</strong></div>
-          <div><span>Duration</span><strong>Approx. 30–45 min online</strong></div>
-          <div><span>Practical</span><strong>Onsite demonstration required</strong></div>
-          <div><span>Pass rule</span><strong>80% + all critical items correct</strong></div>
-        </div>
-        <button id="startBtn" class="primary">Start / Continue Training</button>
-      </section>
-
-      <section id="lessonView" class="lesson hidden" aria-live="polite"></section>
-      <section id="finalView" class="lesson hidden" aria-live="polite"></section>
-
-      <footer>
-        <p>This pilot records progress only in this browser. It does not yet create a controlled IMS training record or final work authorisation.</p>
-      </footer>
-    </section>
-  </main>
-
-  <script src="./app.js"></script>
+  </section>
+</main>
+<footer>Panalo Pipes & Structurals Pty Ltd · Online Training Pilot</footer>
 </body>
 </html>
