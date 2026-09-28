@@ -28,7 +28,7 @@ function safe(value) {
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
   })[character]);
 }
-function slideURL(number) { return `${DECK}slide-${String(number).padStart(2, "0")}.webp?v=${encodeURIComponent(course.contentVersion || course.revision)}`; }
+function slideURL(number) { return `${DECK}slide-${String(number).padStart(2, "0")}.webp?v=${encodeURIComponent(course.slideAssetVersion || course.contentVersion || course.revision)}`; }
 function isComplete(index) { return state.passed.includes(index); }
 function canOpen(index) { return index === 0 || isComplete(index - 1); }
 function show(view) {
