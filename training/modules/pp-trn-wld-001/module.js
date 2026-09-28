@@ -28,7 +28,7 @@ function safe(value) {
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
   })[character]);
 }
-function slideURL(number) { return `${DECK}slide-${String(number).padStart(2, "0")}.webp`; }
+function slideURL(number) { return `${DECK}slide-${String(number).padStart(2, "0")}.webp?v=${encodeURIComponent(course.contentVersion || course.revision)}`; }
 function isComplete(index) { return state.passed.includes(index); }
 function canOpen(index) { return index === 0 || isComplete(index - 1); }
 function show(view) {
@@ -165,7 +165,7 @@ function downloadResult(result) {
   const employeeId = el.assessment.querySelector("#worker-id").value.trim();
   const record = {
     status: "PROVISIONAL THEORY RESULT — NOT PRACTICAL AUTHORISATION",
-    module: course.code, revision: course.revision, employeeId,
+    module: course.code, revision: course.revision, contentVersion: course.contentVersion, employeeId,
     score: result.score, correct: result.correct, total: course.exam.length,
     criticalPassed: result.critical, theoryPassed: result.pass,
     practicalStatus: "PENDING", attempt: result.attempt, submittedAt: result.date,
@@ -191,10 +191,11 @@ async function init() {
     if (finalIndex < 1 || course.slides.some((slide, index) => slide.id !== index + 1 || (index < finalIndex && (!slide.check || !Array.isArray(slide.check.options)))) || course.slides[finalIndex].check !== "final" || !Array.isArray(course.exam) || !course.exam.length) {
       throw new Error("The module is missing a slide or knowledge check");
     }
-    if (state.revision !== course.revision) {
-      state = { passed: [], current: 0, final: null, attempts: 0, revision: course.revision };
+    const version = course.contentVersion || course.revision;
+    if (state.revision !== version) {
+      state = { passed: [], current: 0, final: null, attempts: 0, revision: version };
     }
-    state.revision = course.revision;
+    state.revision = version;
     state.passed = [...new Set(state.passed.filter(index => Number.isInteger(index) && index >= 0 && index < finalIndex))];
     state.current = Math.max(0, Math.min(finalIndex - 1, Number(state.current) || 0));
     el.start.disabled = false;
@@ -203,7 +204,7 @@ async function init() {
     el.reset.addEventListener("click", () => {
       if (window.confirm("Reset this module's progress and theory result on this browser?")) {
         localStorage.removeItem(STORAGE_KEY);
-        state = { passed: [], current: 0, final: null, attempts: 0, revision: course.revision };
+        state = { passed: [], current: 0, final: null, attempts: 0, revision: version };
         show("landing"); persist();
       }
     });

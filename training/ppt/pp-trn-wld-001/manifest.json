@@ -2,6 +2,7 @@
   "code": "PP-TRN-WLD-001",
   "title": "Hot Work: MIG Welding and Grinding Safety",
   "revision": "Draft Rev 1",
+  "contentVersion": "2026-09-28-v4",
   "status": "DRAFT FOR TECHNICAL AND IMS REVIEW",
   "source": "source.pptx",
   "slides": [
@@ -31,7 +32,7 @@
     },
     {
       "id": 5,
-      "title": "IMS requirements for hot work",
+      "title": "Panalo Pipes requirements for hot work",
       "bullets": ["Use the current approved task documents and record the applicable worker briefing or sign-on.", "Confirm induction, task competence, site conditions and consultation.", "File permits, inspections, training and nonconformance records in the approved IMS process."],
       "verify": "Insert the current Panalo Pipes document IDs, revision controls, records and role-specific competence requirements before controlled issue. A SWMS is legally required for Victorian high-risk construction work; other tasks still need their applicable risk controls.",
       "check": {"question": "A job pack contains a superseded task assessment. What should the crew do?", "options": ["Use it because the task looks familiar.", "Hold the work and obtain the current approved documents, then brief workers on the actual controls.", "Sign the old version and replace it after the shift."], "answer": 1, "feedback": "Document control and worker communication are part of the IMS control, not after-work paperwork."}
@@ -122,7 +123,7 @@
     },
     {
       "id": 19,
-      "title": "Quality and IMS controls",
+      "title": "Quality and Integrated Management System controls during hot work",
       "bullets": ["Confirm the current drawing, applicable WPS, welder qualification and material identification before production welding.", "Maintain weld and material traceability and observe assigned inspection hold points.", "Record NDT requests and nonconformances where the job requires them."],
       "verify": "Insert the exact approved WPS, WPQ, ITP, MTC, NDT and NCR document IDs and revisions for the assigned scope.",
       "check": {"question": "The job pack has a WPS for a different joint and the material heat number is unclear. What should happen?", "options": ["Choose the nearest WPS and reconstruct the heat number later.", "Hold the weld and obtain the correct approved WPS and traceability instructions.", "Weld first and ask quality staff to repair the record."], "answer": 1, "feedback": "Wrong procedure or missing traceability needs resolution before production welding."}
