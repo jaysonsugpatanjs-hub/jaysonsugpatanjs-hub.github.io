@@ -151,14 +151,54 @@ function grade() {
 }
 function renderResult(result) {
   const target = el.assessment.querySelector("#result");
-  const date = new Date(result.date).toLocaleString("en-AU", { dateStyle: "medium", timeStyle: "short" });
+  const date = new Date(result.date).toLocaleString("en-AU", { dateStyle: "medium", timeStyle: "short", timeZone: "Australia/Melbourne" });
   target.innerHTML = `<div class="result ${result.pass ? "pass" : "fail"}"><h2>${result.pass ? "THEORY PASSED · PRACTICAL PENDING" : "FURTHER TRAINING REQUIRED"}</h2>
     <p><strong>Score:</strong> ${result.correct}/${course.exam.length} (${result.score}%) · <strong>Critical questions:</strong> ${result.critical ? "PASS" : "NOT PASSED"} · <strong>Attempt:</strong> ${result.attempt} · ${safe(date)}</p>
     <p>${result.pass ? "A competent assessor must observe the task and confirm site requirements before authorisation." : `Review the lesson and retake the assessment. Questions to revisit: ${result.missed.join(", ")}.`}</p>
     <p class="record-note">Pilot result saved on this browser. Download a copy for IMS administration. The download is provisional and does not replace a controlled training record.</p>
-    <label for="worker-id">Employee ID for downloaded copy (optional; not saved on this site)</label><input type="text" id="worker-id" maxlength="80" autocomplete="off" placeholder="Employee ID">
-    <div class="result-actions"><button class="secondary" id="download-result">Download provisional result</button>${result.pass ? '<a class="secondary link-button" href="./practical-checklist.html" target="_blank" rel="noopener">Open practical checklist</a>' : ""}</div></div>`;
+    ${result.pass ? '<label for="learner-name">Full name for theory certificate</label><input type="text" id="learner-name" maxlength="70" autocomplete="name" placeholder="Learner full name" required>' : ""}
+    <label for="worker-id">Employee ID (optional; not saved on this site)</label><input type="text" id="worker-id" maxlength="40" autocomplete="off" placeholder="Employee ID">
+    <div class="result-actions"><button class="secondary" id="download-result">Download provisional result</button>${result.pass ? '<button class="primary" id="download-certificate">Download theory certificate (PDF)</button><a class="secondary link-button" href="./practical-checklist.html" target="_blank" rel="noopener">Open practical checklist</a>' : ""}</div><p class="certificate-message" id="certificate-message" role="alert"></p></div>`;
   target.querySelector("#download-result").addEventListener("click", () => downloadResult(result));
+  target.querySelector("#download-certificate")?.addEventListener("click", () => downloadCertificate(result));
+}
+async function downloadCertificate(result) {
+  const nameInput = el.assessment.querySelector("#learner-name");
+  const message = el.assessment.querySelector("#certificate-message");
+  const button = el.assessment.querySelector("#download-certificate");
+  if (!nameInput.value.trim()) {
+    message.textContent = "Enter the learner's full name before downloading the certificate.";
+    nameInput.focus();
+    return;
+  }
+  button.disabled = true;
+  message.textContent = "Preparing the certificate…";
+  try {
+    const { createTheoryCertificatePdf } = await import("./certificate-pdf.mjs");
+    const paths = ["../../assets/panalo-logo-certificate.jpg", "../../assets/certificate-regular.ttf", "../../assets/certificate-bold.ttf"];
+    const responses = await Promise.all(paths.map(path => fetch(path)));
+    if (responses.some(response => !response.ok)) throw new Error("A certificate asset could not be loaded.");
+    const [logoJpeg, regularFont, boldFont] = await Promise.all(responses.map(async response => new Uint8Array(await response.arrayBuffer())));
+    const criticalTotal = course.exam.filter(question => question.critical).length;
+    const criticalCorrect = course.exam.filter((question, index) => question.critical && result.answers[index] === question.answer).length;
+    const pdf = createTheoryCertificatePdf({
+      learnerName: nameInput.value, employeeId: el.assessment.querySelector("#worker-id").value,
+      moduleCode: course.code, moduleTitle: course.title, score: result.score,
+      correct: result.correct, total: course.exam.length, criticalCorrect, criticalTotal,
+      attempt: result.attempt, submittedAt: result.date, logoJpeg, regularFont, boldFont
+    });
+    const url = URL.createObjectURL(new Blob([pdf], { type: "application/pdf" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${course.code}-theory-certificate-${result.date.slice(0, 10)}.pdf`;
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    message.textContent = "Certificate downloaded. Practical verification remains pending.";
+  } catch (error) {
+    message.textContent = error.message || "The certificate could not be created. Please try again.";
+  } finally {
+    button.disabled = false;
+  }
 }
 function downloadResult(result) {
   const employeeId = el.assessment.querySelector("#worker-id").value.trim();
