@@ -6,6 +6,8 @@ The current `username.github.io` Pages site is a public pilot. GitHub Pages serv
 
 Use an identity provider and a private content/record service. A Supabase project is one workable choice; use a company-approved equivalent if Panalo Pipes already has one. The public site may keep a landing and sign-in shell, but it must contain no protected slides, answer key, employee records, or privileged API keys.
 
+The intended company entry point is [panalopipesandstructurals.com.au](https://panalopipesandstructurals.com.au/), a public RealBoss-powered marketing website. Subject to control of the company's DNS, use a separate address such as `training.panalopipesandstructurals.com.au` for the learner portal, and add a Training link on the marketing site only after the protected portal is working. Confirm with the RealBoss administrator whether its existing workspace login can authenticate external learners through a documented integration; do not assume that a staff console login or a website page protects training files. If that integration is unavailable, use a separate approved identity service for the training address.
+
 1. Provision the Panalo Pipes project and designate administrators. Configure email/password sign-in, verified email, password recovery, and administrator-created accounts or invitations. Disable open self-registration. Supply the web application only the project URL and publishable key. Keep service-role credentials solely on the server.
 2. Create an `allowed_learners` table keyed to the authenticated user ID, with an active/revoked flag and assigned module IDs. Enforce row-level security on all learner records and private storage; a signed-in account alone must not grant access until an administrator assigns it.
 3. Move the source PowerPoint and rendered slide images to a private bucket. Serve a learner only the assigned slide and a versioned, answer-free lesson payload after checking the account and assignment. Keep the answer key in server-only storage. Check slide answers and grade final assessments in a server function. Do not accept a client-supplied pass flag, score, or assessment date.
@@ -17,6 +19,7 @@ Use an identity provider and a private content/record service. A Supabase projec
 ## Inputs needed to activate
 
 - The company-approved identity/content service and its project URL plus **publishable** browser key; never put a service-role key or a user's password in this repository.
+- Administrative access to the Panalo Pipes DNS and the RealBoss website (or the contact who manages those), to point the training address and add its link after verification.
 - The administrator who will invite or create learner accounts and assign modules.
 - The approved certificate wording, signatory or record-verification policy, and where authoritative results must be retained.
 
