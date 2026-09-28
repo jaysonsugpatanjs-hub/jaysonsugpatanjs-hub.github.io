@@ -24,7 +24,7 @@ const lessons = [
     subtitle:"Control the risk using higher-order controls before relying on PPE.",
     html:`<div class="learning-card"><h3>Control principle</h3><p>Use the hierarchy of controls. Do not rely on PPE where higher-level controls are reasonably practicable.</p></div>
     <div class="visual"><div><b>Engineering / physical controls</b><span>Examples may include suitable fume control, guarding and separation.</span></div><div><b>Administrative controls</b><span>Approved SWMS/JSA, procedures, exclusion areas and supervision.</span></div><div><b>PPE</b><span>Final protective layer, selected from the approved source.</span></div></div>
-    <div class="learning-card warning"><h3>PPE status</h3><p>The exact required PPE has not been supplied in the input. <strong>VERIFY AGAINST CURRENT APPROVED PANALO PIPES / CLIENT / LEGAL REQUIREMENT BEFORE ISSUE.</strong></p></div>`,
+    <div class="learning-card warning"><h3>PPE status</h3><p>Select PPE from the current approved requirements for the task.</p></div>`,
     q:"What is the correct control approach when a higher-level control is reasonably practicable?",
     options:["Rely only on PPE.","Use the higher-level control and apply PPE as required by the approved source.","Ignore the hazard if the task is short.","Let each worker choose any control."], answer:1,
     remediation:"The training framework requires the hierarchy of controls, not PPE-only risk control."

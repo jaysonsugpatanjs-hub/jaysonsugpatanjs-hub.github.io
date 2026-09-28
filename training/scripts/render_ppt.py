@@ -6,13 +6,43 @@ Requires LibreOffice, PyMuPDF and Pillow. The PPTX remains the source of record.
 
 import argparse
 import json
+import os
 import shutil
 import subprocess
 import tempfile
 from pathlib import Path
+from zipfile import ZipFile
 
 import fitz
 from PIL import Image, ImageStat
+
+
+def remove_slide_footer(source: Path, footer: str, expected_count: int) -> None:
+    """Remove an editorial footer from editable slide text in the source deck."""
+    target = f"  |  {footer}".encode("utf-8")
+    replacements = 0
+    with ZipFile(source) as deck:
+        entries = [(entry, deck.read(entry.filename)) for entry in deck.infolist()]
+    updated = []
+    for entry, data in entries:
+        if entry.filename.startswith("ppt/slides/slide") and entry.filename.endswith(".xml"):
+            replacements += data.count(target)
+            data = data.replace(target, b"")
+        updated.append((entry, data))
+    if replacements == 0:
+        return
+    if replacements != expected_count:
+        raise ValueError(f"Expected {expected_count} slide footers; found {replacements}")
+    with tempfile.NamedTemporaryFile(dir=source.parent, suffix=".pptx", delete=False) as temporary:
+        temporary_name = temporary.name
+    try:
+        with ZipFile(temporary_name, "w") as deck:
+            for entry, data in updated:
+                deck.writestr(entry, data)
+        os.replace(temporary_name, source)
+    finally:
+        if os.path.exists(temporary_name):
+            os.unlink(temporary_name)
 
 
 def render(folder: Path) -> None:
@@ -21,6 +51,8 @@ def render(folder: Path) -> None:
     slides = manifest["slides"]
     if not source.is_file() or not slides:
         raise ValueError("The deck and manifest are required")
+    if manifest.get("removeSlideFooter"):
+        remove_slide_footer(source, manifest["removeSlideFooter"], manifest["removeSlideFooterCount"])
     if any(slide.get("id") != index or not slide.get("title") or not slide.get("bullets") or not slide.get("check") for index, slide in enumerate(slides, 1)):
         raise ValueError("Every PowerPoint slide needs a matching manifest entry and knowledge check")
     def valid_question(question: dict) -> bool:
