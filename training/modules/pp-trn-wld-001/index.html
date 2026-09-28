@@ -24,6 +24,7 @@
     <div class="progressbox">
       <div><span>Progress</span><strong id="pct">0%</strong></div>
       <div class="track"><i id="bar"></i></div>
+      <p id="progress-detail">Loading module…</p>
     </div>
     <nav id="nav"></nav>
     <button class="reset" id="reset">Reset progress</button>
@@ -36,10 +37,11 @@
         <div>
           <p class="eyebrow">PP-TRN-WLD-001</p>
           <h1>Hot Work – MIG Welding and Grinding Safety</h1>
-          <p class="lead">Interactive online learning for MIG welding, tack welding, grinding and hot-metal handling. The lesson sequence follows the approved training PowerPoint structure used as the reference for this pilot.</p>
+          <p class="lead">Work through the source PowerPoint one slide at a time. Each slide has a knowledge check directly below it. Slide images load when opened.</p>
           <button class="primary large" id="start">Start / Continue Training</button>
+          <p class="load-error" id="load-error" role="alert"></p>
         </div>
-        <img class="heroimg" src="../../assets/ppt/hazard-hotspot.webp" alt="MIG welding and grinding hazard hotspot">
+        <div class="deck-preview" aria-label="PowerPoint training deck overview"><span>PP-TRN-WLD-001</span><strong>15 slides</strong><p>One slide, one check</p><small>Draft Rev 0 · Practical verification required</small></div>
       </div>
 
       <div class="facts">
@@ -53,7 +55,7 @@
 
       <section class="objectives">
         <p class="eyebrow">LEARNING OBJECTIVES</p>
-        <h2>At the end of this training, the employee should be able to...</h2>
+        <h2>At the end of this training, the employee should be able to…</h2>
         <ul>
           <li>Identify MIG welding and grinding hazards.</li>
           <li>Select and inspect PPE and equipment.</li>
@@ -62,6 +64,7 @@
           <li>Recognise quality and traceability controls.</li>
         </ul>
       </section>
+      <p class="source-note">This is a draft pilot. The PowerPoint and controls require technical, IMS and client review before formal assignment. Completion on this browser is provisional.</p>
     </section>
 
     <section id="lesson" class="lesson hidden" aria-live="polite"></section>

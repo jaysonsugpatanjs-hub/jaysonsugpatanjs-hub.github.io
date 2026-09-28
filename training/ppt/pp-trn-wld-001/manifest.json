@@ -1,0 +1,112 @@
+{
+  "code": "PP-TRN-WLD-001",
+  "title": "Hot Work: MIG Welding and Grinding Safety",
+  "revision": "Draft Rev 0",
+  "status": "DRAFT FOR TECHNICAL AND IMS REVIEW",
+  "source": "source.pptx",
+  "slides": [
+    {
+      "id": 1,
+      "title": "Title and scope",
+      "bullets": ["This online module covers MIG welding, tack welding, grinding and hot metal handling.", "Only workers with the required role competence and task authorisation may perform the work.", "Online theory is followed by an onsite practical assessment."],
+      "check": {"question": "A worker completes this online module. What status can the online result establish?", "options": ["They may perform hot work alone at any client site.", "They have completed the theory component; practical verification and task authorisation are still required.", "Their welding procedure qualification is automatically approved."], "answer": 1, "feedback": "The online result is theory evidence only. An assessor must verify the practical task and authorisation."}
+    },
+    {
+      "id": 2,
+      "title": "Learning objectives",
+      "bullets": ["Identify hazards and choose controls before starting.", "Inspect the equipment and PPE used for the assigned task.", "Apply the current approved procedure, stop-work response and emergency arrangements.", "Recognise when quality documents and traceability records apply."],
+      "check": {"question": "A trade assistant passes the theory quiz and is asked to weld independently. What should be checked first?", "options": ["Only that the quiz score is over 80%.", "Their task competence, onsite verification and supervisor authorisation for welding.", "Whether they have previously watched someone weld."], "answer": 1, "feedback": "Training objectives do not grant a trade assistant permission to weld. Check the assigned role and practical authorisation."}
+    },
+    {
+      "id": 3,
+      "title": "What the activity is and why it matters",
+      "bullets": ["Hot work produces heat, sparks and fumes in a workshop or on a client site.", "Confirm the work scope, area and required controls before energising equipment.", "Changing the task or work location may change the hazards and approvals."],
+      "check": {"question": "A weld is ready to start, but nearby packaging has not been cleared. What is the next action?", "options": ["Start the weld and move the packaging during a break.", "Prepare and check the work area and its fire controls before making sparks.", "Ask another worker to watch the packaging without changing the setup."], "answer": 1, "feedback": "Hot work controls must be in place before sparks are created."}
+    },
+    {
+      "id": 4,
+      "title": "Main hazards: hotspot review",
+      "bullets": ["Look for arc radiation, fumes, sparks, hot metal and damaged leads.", "Check the grinder, secured cylinders and people near the work area.", "Look beyond the image for site hazards such as coatings, nearby combustible material and restricted spaces."],
+      "check": {"question": "In the hotspot slide, sparks could reach the bin of combustible rags. What control should be applied before work?", "options": ["Move or protect the combustible material and check the spark path and fire arrangements.", "Turn the welding current down and leave the rags in place.", "Warn the next shift after the work is finished."], "answer": 0, "critical": true, "feedback": "Remove or protect combustibles and check the fire controls and any permit or fire-watch requirements before starting."}
+    },
+    {
+      "id": 5,
+      "title": "Hierarchy of controls applied",
+      "bullets": ["Reduce fume generation where practicable, then use effective source capture or local exhaust ventilation.", "Keep the worker's breathing zone out of the fume plume.", "Use respiratory protection when the task assessment requires it; PPE does not replace practicable higher controls."],
+      "check": {"question": "The required extraction hood is unavailable just before MIG welding. What should the worker do?", "options": ["Start welding with a respirator and leave the hood unrepaired.", "Do not start; notify the supervisor and confirm an effective approved fume-control arrangement.", "Stand nearer the arc to check whether the fume is visible."], "answer": 1, "critical": true, "feedback": "A missing required control calls for reassessment. Source capture and other practicable higher controls must be considered before relying on PPE."}
+    },
+    {
+      "id": 6,
+      "title": "SWMS and procedure requirements",
+      "bullets": ["Use the current approved Panalo Pipes procedure and task risk assessment for the work.", "For high-risk construction work on a Victorian site, confirm that the applicable SWMS covers the actual work and controls.", "Check the host's hot-work permit, site induction and location rules where required.", "Pause when scope or conditions change; review the documents and controls before restart."],
+      "verify": "Insert the approved Panalo Pipes procedure/JSA IDs and revisions, HRCW screening outcome, and host permit requirements before formal issue.",
+      "check": {"question": "A client asks the crew to move welding to a different area. What happens before work resumes?", "options": ["Use the original controls because the welding process is unchanged.", "Pause, make safe, review the new location and update the relevant risk assessment, SWMS and permit as required.", "Move first, then tell the supervisor after welding."], "answer": 1, "critical": true, "feedback": "The new location may change fire, fume, access and emergency controls. The responsible person must confirm the revised arrangements."}
+    },
+    {
+      "id": 7,
+      "title": "PPE and pre-start checks",
+      "bullets": ["Inspect the welding helmet/lens, eye and face protection, hearing protection, FR clothing, gloves and boots.", "Check MIG leads, torch, hoses, regulator and secured cylinder before energising the welder.", "Check grinder guard, manufacturer-approved disc, disc condition and switch; secure the workpiece.", "Report and isolate defective equipment. Confirm the required PPE from the approved task and site assessment."],
+      "verify": "Confirm the required and conditional PPE with the current Panalo Pipes procedure, SDS and client site rules.",
+      "check": {"question": "A grinder disc is cracked during pre-start inspection. What should the worker do?", "options": ["Use it only for a quick clean-up pass.", "Do not use the grinder; make it safe, report the defect and replace the disc under the approved process.", "Fit a face shield and continue with the disc."], "answer": 1, "critical": true, "feedback": "A cracked disc is a stop-work defect. PPE does not make a damaged disc safe."}
+    },
+    {
+      "id": 8,
+      "title": "Correct vs unsafe grinder practice",
+      "bullets": ["Use the correct tool and disc specified by its manufacturer, with the guard fitted.", "Secure the workpiece and keep a stable two-handed grip where the task and tool design require it.", "Control spark direction, nearby people and combustible material.", "Do not use a damaged disc or fit a circular saw blade to an angle grinder."],
+      "check": {"question": "The grinder has a missing guard, but a replacement disc is available. What is the safe decision?", "options": ["Fit the disc and work carefully without the guard.", "Keep the grinder out of service until the correct guard and disc are fitted and the setup is checked.", "Ask a co-worker to stand behind the grinder."], "answer": 1, "critical": true, "feedback": "The guard is a required engineering control; changing the disc does not address the missing guard."}
+    },
+    {
+      "id": 9,
+      "title": "Safe work sequence",
+      "bullets": ["Before: confirm scope, authorisation, documents, permit and site-specific controls.", "Set up: clear or protect combustibles, arrange fume capture and screens, inspect tools and secure the workpiece.", "During: monitor sparks, fumes, people and changing conditions.", "After: shut down, identify hot metal, check for smouldering material and complete required records."],
+      "check": {"question": "The workpiece is loose although the welder, PPE and extraction have been checked. What must happen next?", "options": ["Secure the workpiece and complete the area check before starting.", "Tack weld it while another worker holds it by hand.", "Start welding because the electrical checks are complete."], "answer": 0, "feedback": "The safe work sequence includes controlling the workpiece and work area before welding."}
+    },
+    {
+      "id": 10,
+      "title": "Stop-work conditions",
+      "bullets": ["Stop and make the area safe without creating further risk.", "Notify the supervisor or responsible person; reassess the task and controls.", "Update the relevant documents and permit if required.", "Resume only after the responsible person authorises the revised arrangement."],
+      "check": {"question": "Extraction stops during a weld and the worker has made the equipment safe. What is the next step?", "options": ["Wait a few minutes and restart without telling anyone.", "Notify the responsible person, reassess and restore or approve controls before authorised restart.", "Finish the joint as fast as possible."], "answer": 1, "critical": true, "feedback": "A worker cannot simply restart after a required control fails. Notify, reassess and obtain authorisation."}
+    },
+    {
+      "id": 11,
+      "title": "Emergency and incident response",
+      "bullets": ["Raise the alarm and follow the site emergency plan; make the area safe only if safe to do so.", "Use firefighting equipment only when trained and safe; evacuate when directed.", "Arrange first aid for burns, eye injury, shock or fume symptoms.", "Notify the supervisor and record incidents and near misses."],
+      "verify": "Insert verified site emergency contacts, evacuation route, muster point and client reporting instructions before formal issue.",
+      "check": {"question": "Smoke is noticed near the hot-work area during a break. What should the worker do first?", "options": ["Raise the alarm and follow the approved emergency arrangements, making the area safe only if safe.", "Wait for the fire watch to return before telling anyone.", "Resume welding so the job is completed before evacuation."], "answer": 0, "critical": true, "feedback": "Prompt alarm and the site's emergency response come first. Post-work and break-time fire checks also matter."}
+    },
+    {
+      "id": 12,
+      "title": "Quality and IMS controls",
+      "bullets": ["Check the applicable approved WPS and welder qualification requirements before production welding.", "Follow the ITP and inspection hold points where assigned.", "Maintain material identification, MTC and weld traceability when specified.", "Record a nonconformance when work or materials do not meet the approved requirements."],
+      "verify": "Insert the exact approved WPS, WPQ, ITP, MTC and NCR form IDs and revisions for the relevant work scope.",
+      "check": {"question": "The job pack has a WPS that does not match the assigned joint. What should the welder do?", "options": ["Choose a similar WPS from memory.", "Hold the weld and obtain the applicable current approved WPS and instructions.", "Weld first and correct the paperwork later."], "answer": 1, "feedback": "The correct approved procedure must cover the assigned weld before production work proceeds."}
+    },
+    {
+      "id": 13,
+      "title": "Scenario discussion",
+      "bullets": ["A cracked disc, oily rags near sparks, lost extraction or a changed work area each requires action before work proceeds.", "State the hazard, make the area safe and involve the responsible person.", "Use the approved controls and obtain any revised permit or restart authorisation."],
+      "check": {"question": "The client moves the task beside oily rags and the extraction hood cannot reach the new position. What is the best response?", "options": ["Start with a respirator while a colleague watches the rags.", "Do not start; make safe, notify, reassess the location, restore fire and fume controls, then obtain required approval.", "Complete only the tack welds because they produce fewer sparks."], "answer": 1, "critical": true, "feedback": "Several critical controls changed. Work cannot proceed until the new area and control arrangement are reviewed and approved."}
+    },
+    {
+      "id": 14,
+      "title": "Five things to remember",
+      "bullets": ["Use the current task documents before starting.", "Control fumes and fire at source; protect others from the arc and sparks.", "Check grinder guard/disc, electrical leads and cylinders.", "Keep the work area controlled and check it after hot work.", "Stop and report unsafe or unclear conditions."],
+      "check": {"question": "The shift is ending and the weld is complete. Which action is still required?", "options": ["Leave immediately because no flame is visible.", "Shut down safely, manage hot metal, inspect for smouldering material and complete the required handover/records.", "Remove the fire equipment before the area is checked."], "answer": 1, "feedback": "Fire can start after hot work ends. Follow the approved post-work inspection and handover arrangements."}
+    },
+    {"id": 15, "title": "Assessment and next step", "bullets": ["Pass the online theory assessment with at least 80% overall and every critical question correct.", "Complete the required onsite practical assessment and site induction before task authorisation.", "Record the result in Panalo Pipes' controlled training system once that system is approved."], "check": "final"}
+  ],
+  "exam": [
+    {"question": "What is required before starting MIG hot work in an assigned area?", "options": ["Check the scope, current task documents, authorisation and area controls.", "Check only the welding machine's power switch.", "Ask a colleague whether the previous shift used the same area."], "answer": 0},
+    {"question": "Sparks could enter a nearby bin of oily rags. What should happen?", "options": ["Proceed because the rags are outside the immediate weld line.", "Remove or protect the combustibles, check the spark path and apply the required fire arrangements.", "Lower the welding current and leave the bin where it is."], "answer": 1, "critical": true},
+    {"question": "The required source extraction is not working. Which response is correct?", "options": ["Do not start; notify and confirm effective approved fume controls.", "Weld quickly with the workshop door open.", "Rely on a disposable mask without reassessing the job."], "answer": 0, "critical": true},
+    {"question": "A grinder disc has a visible crack. What should the worker do?", "options": ["Use the undamaged edge only.", "Keep the grinder out of service, report the defect and replace the disc properly.", "Fit a thicker glove and proceed."], "answer": 1, "critical": true},
+    {"question": "The client changes the hot-work location. What is needed before restart?", "options": ["Only a verbal direction to move.", "A review of hazards, controls and applicable permit/SWMS or task documents, with required authorisation.", "The original checklist, unchanged."], "answer": 1, "critical": true},
+    {"question": "In Victoria, when does the law require a SWMS for construction work?", "options": ["For every workshop weld without exception.", "For high-risk construction work as defined by the Victorian OHS Regulations.", "Only after an incident has occurred."], "answer": 1},
+    {"question": "How should nearby workers be protected from welding arc radiation?", "options": ["Use the assessed screens and exclusion controls so bystanders are not exposed.", "Ask them to look away only when the arc starts.", "Assume a welder's helmet protects everyone nearby."], "answer": 0},
+    {"question": "Smoke is detected during a break after hot work. What is the first response?", "options": ["Raise the alarm and follow the site's emergency plan; make safe only if safe.", "Wait until the next shift begins.", "Restart welding to see where the smoke comes from."], "answer": 0, "critical": true},
+    {"question": "An assigned weld has an applicable WPS, but the copy in the job pack is for a different joint. What should happen?", "options": ["Use the closest similar WPS.", "Hold the weld and obtain the current approved applicable WPS.", "Weld first and ask quality staff to update the record."], "answer": 1},
+    {"question": "Which equipment check belongs in the pre-start?", "options": ["Confirm the cylinder is secured and the leads, hoses and torch are serviceable.", "Check the paint colour of the welder only.", "Inspect the equipment after the shift."], "answer": 0},
+    {"question": "A worker passes the online theory assessment. May they now perform the task without practical verification?", "options": ["Yes, the online score is sufficient.", "No. Onsite practical verification and task authorisation are still required.", "Yes, if another worker is present."], "answer": 1, "critical": true},
+    {"question": "Before leaving a completed hot-work area, what should be checked?", "options": ["Hot metal is controlled and the area is checked for smouldering material under the site arrangements.", "Only that the time sheet has been signed.", "Nothing once the welder is switched off."], "answer": 0}
+  ]
+}

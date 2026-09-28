@@ -1,23 +1,27 @@
-# Panalo Pipes Online Training Pilot
+# Panalo Pipes online training pilot
 
-## Module
-PP-TRN-WLD-001 — Hot Work: MIG Welding and Grinding Safety
+## PP-TRN-WLD-001
 
-This folder is an interactive GitHub Pages pilot built from the Panalo Pipes training specification.
+The source deck is `ppt/pp-trn-wld-001/source.pptx`. Its 15 web slides and `manifest.json` are in the same folder. The manifest pairs every slide with a plain-language summary and a knowledge check. Slide 15 has the final assessment. The web page requests one slide image only when the learner opens that slide. The library and module landing page do not download the deck or slide images.
 
-### Learning design
-- Sequential topics with locked progression.
-- Embedded knowledge checkpoint after every topic.
-- Critical checkpoints must be answered correctly before progression.
-- Final assessment contains 6 standard and 4 critical questions.
-- Final theory rule: 80% overall + all critical questions correct.
-- Practical/onsite verification remains required before final authorisation.
+Browsers cannot display individual `.pptx` slides reliably. The source PowerPoint is retained in GitHub, while the web page uses rendered WebP slides. The current images are 1920 × 1080 and about 175–310 KB each. Slides 4 and 7 use the full original artwork so no hazard or PPE callout is cropped.
 
-### Current technical status
-This version stores learner identity, progress and results in browser localStorage only. It does **not** create a controlled IMS training record, secure user account, or authoritative exam record.
+### Updating the deck
 
-### Production upgrade
-For controlled deployment, connect the front end to an authenticated record system such as Google Workspace / Apps Script, an LMS, or another approved backend. Keep controlled SWMS, procedures, WPS/WPQ, ITP and training records outside public source code.
+1. Replace `ppt/pp-trn-wld-001/source.pptx` with the reviewed deck.
+2. Update `manifest.json` so every slide has its matching title, key points and question. Write the answer and feedback for each question. Review the final exam too.
+3. Change the manifest revision when the reviewed learning content changes, then commit both files. The `render-training-slides` workflow checks the slide count and questions, renders and commits the web images, and requests a Pages build. It fails rather than publishing a slide count that does not match the checks. A changed revision clears saved progress and theory results in the learner's browser.
+4. Check the live page on desktop and phone, including the full-size image link and the final result after a reload.
+5. Obtain technical, WHS, IMS and client approval before changing the module status from draft or assigning it as controlled training.
 
-### Release status
-DRAFT — verify against current approved Panalo Pipes / client / legal requirements before issue.
+To render locally, install LibreOffice, PyMuPDF and Pillow, then run:
+
+```bash
+python3 training/scripts/render_ppt.py training/ppt/pp-trn-wld-001
+```
+
+### Records and release status
+
+This remains **Draft Rev 0**. The learner's progress and theory result are stored in that browser. A provisional JSON result can be downloaded for IMS administration; the worker ID is entered only at download time and is not saved by the site. The result is editable and cannot serve as an authoritative controlled record. Practical verification and task authorisation must be recorded in an approved IMS system. The linked practical checklist is a draft handoff aid.
+
+Before formal issue, insert the approved procedure/JSA and applicable SWMS and permit references, required PPE, client emergency arrangements, WPS/WPQ/ITP and form IDs. Keep confidential employee and controlled client records out of this public repository. An authenticated training record service is still required for formal deployment.
