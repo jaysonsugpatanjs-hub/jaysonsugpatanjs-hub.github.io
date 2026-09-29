@@ -113,12 +113,15 @@ async function issueCertificate(admin: Client, context: any, attempt: any) {
     .eq("attempt_id", attempt.id)
     .maybeSingle();
   if (existing.error) throw httpError(500, "Certificate record lookup failed.");
-  if (existing.data?.status === "issued") return existing.data;
 
+  const issuedExisting = existing.data?.status === "issued" ? existing.data : null;
   const year = new Intl.DateTimeFormat("en-AU", { year: "numeric", timeZone: "Australia/Sydney" }).format(new Date(attempt.submitted_at));
   const uniquePart = String(attempt.id).replace(/-/g, "").slice(0, 16).toUpperCase();
-  const certificateNumber = `PP-${year}-${context.module.code.replace(/[^A-Z0-9]/gi, "")}-${uniquePart}`;
-  const storagePath = `${context.profile.id}/${context.module.code}/${certificateNumber}.pdf`;
+  const certificateNumber = issuedExisting?.certificate_number
+    || `PP-${year}-${context.module.code.replace(/[^A-Z0-9]/gi, "")}-${uniquePart}`;
+  const storagePath = issuedExisting?.storage_path
+    || `${context.profile.id}/${context.module.code}/${certificateNumber}.pdf`;
+
   const logoJpeg = await downloadBytes(admin, "training-content", "_brand/panalo-logo-certificate.jpg");
   const examKey = Array.isArray(context.version.answer_key?.exam) ? context.version.answer_key.exam : [];
   const criticalTotal = examKey.filter((question: any) => question.critical).length;
@@ -143,11 +146,13 @@ async function issueCertificate(admin: Client, context: any, attempt: any) {
   const upload = await admin.storage.from("training-certificates").upload(storagePath, pdf, {
     contentType: "application/pdf",
     cacheControl: "0",
-    upsert: false
+    upsert: Boolean(issuedExisting)
   });
   if (upload.error && !String(upload.error.message || "").toLowerCase().includes("already exists")) {
     throw httpError(500, "Certificate PDF could not be stored.");
   }
+
+  if (issuedExisting) return issuedExisting;
 
   const insert = await admin.from("training_certificates").insert({
     attempt_id: attempt.id,
