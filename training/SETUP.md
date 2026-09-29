@@ -44,6 +44,8 @@ where email = lower('ADMIN_EMAIL_HERE');
 
 The administrator can then sign in through the training page and open `/training/admin/` to invite learners, set expiries, assign modules, revoke access and manage private module releases.
 
+The follow-up migration `20260929000000_training_service_role_permissions.sql` must also be applied. It grants the server-only Edge Function role the minimum database operations used by the training APIs while keeping `anon` and `authenticated` browser roles blocked from the protected tables.
+
 ## 4. Upload the private module
 
 ### Administrator workflow
