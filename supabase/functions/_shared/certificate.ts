@@ -70,15 +70,13 @@ export async function createCertificatePdf(input: CertificateInput) {
   }
 
   centered(page, "PANALO PIPES & STRUCTURALS PTY LTD", 531, bold, 13, rgb(1, 1, 1));
-  centered(page, "CERTIFICATE OF ONLINE THEORY COMPLETION", 470, bold, 24, navy);
+  centered(page, "CERTIFICATE OF COMPLETION", 470, bold, 24, navy);
   centered(page, "This certifies that", 430, regular, 12, grey);
   centered(page, input.learnerName, 392, bold, 27, navy);
   page.drawLine({ start: { x: 190, y: 382 }, end: { x: 652, y: 382 }, color: yellow, thickness: 2 });
-  centered(page, "has successfully completed the online theory assessment for", 354, regular, 12, grey);
+  centered(page, "has successfully completed the training for", 354, regular, 12, grey);
   const afterTitle = wrappedCentered(page, input.moduleTitle, 322, 650, bold, 20, 24);
-  centered(page, `${input.moduleCode} | ${input.revision}`, afterTitle - 27, regular, 11, grey);
-
-  const cardY = afterTitle - 96;
+  const cardY = afterTitle - 72;
   const cardWidth = 154;
   const startX = 96;
   const gap = 18;
@@ -99,21 +97,21 @@ export async function createCertificatePdf(input: CertificateInput) {
 
   page.drawRectangle({ x: 96, y: cardY - 58, width: 670, height: 37, color: pale, borderColor: rgb(0.09, 0.53, 0.29), borderWidth: 1 });
   centered(page, input.practicalRequired
-    ? "THEORY PASSED - PRACTICAL VERIFICATION AND SITE AUTHORISATION PENDING"
-    : "ONLINE THEORY REQUIREMENT COMPLETED", cardY - 44, bold, 11, rgb(0.05, 0.38, 0.2));
+    ? "COMPLETION RECORDED - PRACTICAL VERIFICATION AND SITE AUTHORISATION PENDING"
+    : "TRAINING REQUIREMENT COMPLETED", cardY - 44, bold, 11, rgb(0.05, 0.38, 0.2));
 
   const idText = input.externalId ? `Learner record: ${input.externalId}` : "Learner record: verified email account";
   page.drawText(safeLatin(idText), { x: 55, y: 67, size: 8.5, font: regular, color: grey });
   page.drawText(`Certificate: ${safeLatin(input.certificateNumber)}`, { x: 55, y: 51, size: 8.5, font: bold, color: navy });
   const footer = input.practicalRequired
-    ? "This certificate records online theory only. It is not a licence or practical task authorisation."
-    : "This certificate records online theory completion. It is not a trade licence or site authorisation.";
+    ? "This certificate records completion of the assigned training. It is not a licence or practical task authorisation."
+    : "This certificate records completion of the assigned training. It is not a trade licence or site authorisation.";
   const footerWidth = regular.widthOfTextAtSize(footer, 8.5);
   page.drawText(footer, { x: 787 - footerWidth, y: 51, size: 8.5, font: regular, color: grey });
 
-  pdf.setTitle(`${input.moduleCode} theory certificate - ${input.learnerName}`);
+  pdf.setTitle(`Certificate of Completion - ${input.learnerName}`);
   pdf.setAuthor("Panalo Pipes & Structurals Pty Ltd");
-  pdf.setSubject(input.practicalRequired ? "Online theory completion - practical verification pending" : "Online theory completion");
+  pdf.setSubject(input.practicalRequired ? "Training completion - practical verification pending" : "Training completion");
   pdf.setCreationDate(new Date(input.submittedAt));
   return pdf.save();
 }
