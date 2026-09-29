@@ -29,6 +29,7 @@ let latestResult = null;
 let completedSlides = new Set();
 let currentIndex = 0;
 const slideUrls = new Map();
+const preloadedSlides = new Set();
 
 function safe(value) {
   return String(value ?? "").replace(/[&<>"']/g, character => ({
@@ -113,20 +114,38 @@ async function getSlideUrl(slideNumber) {
   return value.url;
 }
 
+async function preloadSlide(slideNumber) {
+  if (!course || slideNumber < 1 || slideNumber > course.slides.length || preloadedSlides.has(slideNumber)) return;
+  preloadedSlides.add(slideNumber);
+  try {
+    const url = await getSlideUrl(slideNumber);
+    const image = new Image();
+    image.decoding = "async";
+    image.fetchPriority = "low";
+    image.src = url;
+    if (typeof image.decode === "function") await image.decode().catch(() => {});
+  } catch (_) {
+    preloadedSlides.delete(slideNumber);
+  }
+}
+
 async function loadImage(container, slide) {
   const image = container.querySelector("[data-slide-image]");
   const status = container.querySelector("[data-image-status]");
   try {
+    image.loading = "eager";
+    image.decoding = "async";
+    image.fetchPriority = "high";
     const url = await getSlideUrl(slide.id);
     await new Promise((resolve, reject) => {
       image.addEventListener("load", resolve, { once: true });
       image.addEventListener("error", reject, { once: true });
       image.src = url;
     });
-    status.remove();
+    status?.remove();
     image.classList.add("ready");
   } catch (error) {
-    status.textContent = friendlyError(error);
+    if (status) status.textContent = friendlyError(error);
   }
 }
 
@@ -148,7 +167,9 @@ async function showSlide(index) {
       <button class="primary" id="check-answer" ${done ? "disabled" : ""}>${done ? "Checkpoint recorded" : "Check answer"}</button><div id="checkpoint-feedback" role="status" aria-live="polite">${done ? '<div class="feedback ok">Completed and recorded for this assignment.</div>' : ""}</div></section>
       <div class="actions"><button class="secondary" id="previous" ${index === 0 ? "disabled" : ""}>Previous slide</button><button class="primary" id="next" ${done ? "" : "disabled"}>${index === course.slides.length - 2 ? "Final assessment" : "Next slide"}</button></div>`;
   show("lesson");
-  loadImage(ui.lesson, slide);
+  loadImage(ui.lesson, slide).then(() => {
+    if (isComplete(slide.id)) preloadSlide(slide.id + 1);
+  });
   ui.lesson.querySelector("#previous").addEventListener("click", () => showSlide(index - 1));
   ui.lesson.querySelector("#next").addEventListener("click", () => index === course.slides.length - 2 ? showAssessment() : showSlide(index + 1));
   ui.lesson.querySelector("#check-answer").addEventListener("click", async event => {
@@ -174,6 +195,7 @@ async function showSlide(index) {
         return;
       }
       completedSlides.add(slide.id);
+      preloadSlide(slide.id + 1);
       feedback.innerHTML = `<div class="feedback ok">Correct. ${safe(result.feedback || "Your checkpoint has been recorded.")}</div>`;
       ui.lesson.querySelectorAll('input[name="checkpoint"]').forEach(input => { input.disabled = true; });
       ui.lesson.querySelector("#next").disabled = false;
@@ -274,13 +296,16 @@ async function loadCover() {
   const image = document.getElementById("cover-image");
   const status = document.getElementById("cover-status");
   try {
+    image.loading = "eager";
+    image.decoding = "async";
+    image.fetchPriority = "high";
     const url = await getSlideUrl(1);
     await new Promise((resolve, reject) => {
       image.addEventListener("load", resolve, { once: true });
       image.addEventListener("error", reject, { once: true });
       image.src = url;
     });
-    status.remove();
+    status?.remove();
     image.classList.add("ready");
   } catch (error) {
     status.textContent = friendlyError(error);
