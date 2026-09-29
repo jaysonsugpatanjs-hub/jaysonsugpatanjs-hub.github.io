@@ -16,7 +16,7 @@ async function walk(directory) {
       continue;
     }
     if (forbiddenExtensions.has(path.extname(entry.name).toLowerCase())) findings.push(`${relative} is a PowerPoint source file`);
-    if (/manifest\.json$/i.test(entry.name)) {
+    if (path.extname(entry.name).toLowerCase() === ".json") {
       const text = await readFile(absolute, "utf8");
       if (/"answer"\s*:/.test(text)) findings.push(`${relative} contains assessment answers`);
     }

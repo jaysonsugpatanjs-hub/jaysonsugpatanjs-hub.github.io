@@ -58,7 +58,7 @@ function renderAssignments(assignments) {
   assignments.forEach(assignment => {
     const card = document.createElement("a");
     card.className = "module-card available secure-module";
-    card.href = `./modules/${encodeURIComponent(assignment.module.slug)}/?assignment=${encodeURIComponent(assignment.id)}`;
+    card.href = `./modules/?assignment=${encodeURIComponent(assignment.id)}`;
     const progress = Number(assignment.progressPercent || 0);
     const status = assignment.theoryPassedAt ? "THEORY PASSED" : progress ? "IN PROGRESS" : "ASSIGNED";
     card.innerHTML = `<div class="module-visual secure-cover"><div><span>${safe(assignment.module.code)}</span><strong>${safe(assignment.module.title)}</strong></div><span class="status">${status}</span></div>

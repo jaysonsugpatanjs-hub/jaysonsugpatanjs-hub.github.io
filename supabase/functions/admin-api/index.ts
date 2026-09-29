@@ -1,7 +1,12 @@
 import { withSupabase } from "npm:@supabase/server@^1";
 import { corsHeaders, errorJson, httpError, json } from "../_shared/http.ts";
+import { expectedModuleAssets, moduleSlug, validateAuthoringManifest } from "../_shared/module-authoring.ts";
 
 type Client = any;
+
+const PPTX_MIME = "application/vnd.openxmlformats-officedocument.presentationml.presentation";
+const MAX_PPTX_BYTES = 25 * 1024 * 1024;
+const MAX_SLIDE_BYTES = 10 * 1024 * 1024;
 
 function cleanEmail(value: unknown) {
   const email = String(value || "").trim().toLowerCase();
@@ -14,6 +19,22 @@ function cleanText(value: unknown, label: string, maxLength = 100, required = tr
   if (required && !text) throw httpError(400, `${label} is required.`);
   if (text.length > maxLength) throw httpError(400, `${label} is too long.`);
   return text;
+}
+
+function cleanModuleCode(value: unknown) {
+  const code = cleanText(value, "Module code", 50).toUpperCase();
+  if (!/^[A-Z0-9][A-Z0-9-]{2,49}$/.test(code)) {
+    throw httpError(400, "Use 3-50 letters, numbers or hyphens for the module code.");
+  }
+  return code;
+}
+
+function cleanContentVersion(value: unknown) {
+  const version = cleanText(value, "Content version", 80);
+  if (!/^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$/.test(version)) {
+    throw httpError(400, "Use letters, numbers, dots, underscores or hyphens for the content version.");
+  }
+  return version;
 }
 
 async function requireAdmin(admin: Client, userId: string) {
@@ -30,6 +51,239 @@ async function requireAdmin(admin: Client, userId: string) {
 async function audit(admin: Client, values: Record<string, unknown>) {
   const { error } = await admin.from("training_audit_events").insert(values);
   if (error) console.error("Audit insert failed", error.message);
+}
+
+async function inspectVersionAssets(admin: Client, version: any) {
+  const expectedPaths = expectedModuleAssets(version.storage_prefix, Number(version.slide_count));
+  const expectedNames = expectedPaths.map(path => path.slice(version.storage_prefix.length + 1));
+  const listed = await admin.storage.from("training-content").list(version.storage_prefix, {
+    limit: Math.min(1000, expectedNames.length + 20),
+    offset: 0,
+    sortBy: { column: "name", order: "asc" }
+  });
+  if (listed.error) throw httpError(500, "Private module assets could not be inspected.");
+  const present = new Set((listed.data || [])
+    .filter((file: any) => file?.id && Number(file?.metadata?.size ?? 1) > 0)
+    .map((file: any) => String(file.name)));
+  const missing = expectedNames.filter(name => !present.has(name));
+  return {
+    expected: expectedNames.length,
+    present: expectedNames.length - missing.length,
+    missing,
+    ready: missing.length === 0
+  };
+}
+
+async function moduleCatalog(admin: Client) {
+  const [modulesResult, versionsResult] = await Promise.all([
+    admin.from("training_modules")
+      .select("id,code,slug,title,description,status,practical_required,current_version_id,created_at,updated_at")
+      .order("code"),
+    admin.from("training_module_versions")
+      .select("id,module_id,revision,content_version,slide_count,pass_mark,storage_prefix,published,created_at")
+      .order("created_at", { ascending: false })
+  ]);
+  if (modulesResult.error || versionsResult.error) throw httpError(500, "The module register could not be loaded.");
+  const moduleMap = new Map((modulesResult.data || []).map((module: any) => [module.id, module]));
+  const versions = await Promise.all((versionsResult.data || []).map(async (version: any) => ({
+    id: version.id,
+    moduleId: version.module_id,
+    code: moduleMap.get(version.module_id)?.code || "Unknown",
+    revision: version.revision,
+    contentVersion: version.content_version,
+    slideCount: version.slide_count,
+    passMark: version.pass_mark,
+    published: version.published,
+    current: moduleMap.get(version.module_id)?.current_version_id === version.id,
+    createdAt: version.created_at,
+    assets: await inspectVersionAssets(admin, version)
+  })));
+  return {
+    modules: (modulesResult.data || []).map((module: any) => ({
+      id: module.id,
+      code: module.code,
+      slug: module.slug,
+      title: module.title,
+      description: module.description,
+      status: module.status,
+      practicalRequired: module.practical_required,
+      currentVersionId: module.current_version_id,
+      createdAt: module.created_at,
+      updatedAt: module.updated_at
+    })),
+    versions
+  };
+}
+
+async function saveModuleDraft(admin: Client, administrator: any, body: any) {
+  const code = cleanModuleCode(body.code);
+  const slug = moduleSlug(code);
+  const title = cleanText(body.title, "Module title", 200);
+  const description = cleanText(body.description, "Module description", 1200, false);
+  const revision = cleanText(body.revision, "Revision", 80);
+  const contentVersion = cleanContentVersion(body.contentVersion);
+  const passMark = Number(body.passMark ?? 80);
+  if (!Number.isInteger(passMark) || passMark < 1 || passMark > 100) throw httpError(400, "Pass mark must be a whole number from 1 to 100.");
+  const content = validateAuthoringManifest(body.authoringManifest);
+
+  const existingModule = await admin.from("training_modules").select("id,status").eq("code", code).maybeSingle();
+  if (existingModule.error) throw httpError(500, "The module record could not be checked.");
+  if (existingModule.data?.status === "retired") throw httpError(409, "This module code is retired and cannot receive a new draft.");
+
+  let moduleRecord: any;
+  if (existingModule.data) {
+    const updated = await admin.from("training_modules").update({
+      slug,
+      title,
+      description,
+      practical_required: body.practicalRequired !== false
+    }).eq("id", existingModule.data.id).select("id,code,slug,title,status,current_version_id").single();
+    if (updated.error) throw httpError(409, "The module details could not be updated. Check whether the code is unique.");
+    moduleRecord = updated.data;
+  } else {
+    const inserted = await admin.from("training_modules").insert({
+      code,
+      slug,
+      title,
+      description,
+      status: "draft",
+      practical_required: body.practicalRequired !== false
+    }).select("id,code,slug,title,status,current_version_id").single();
+    if (inserted.error) throw httpError(409, "The module could not be created. Check whether the code is unique.");
+    moduleRecord = inserted.data;
+  }
+
+  const storagePrefix = `${slug}/${contentVersion}`;
+  const existingVersion = await admin.from("training_module_versions")
+    .select("id,published")
+    .eq("module_id", moduleRecord.id)
+    .eq("content_version", contentVersion)
+    .maybeSingle();
+  if (existingVersion.error) throw httpError(500, "The draft version could not be checked.");
+  if (existingVersion.data?.published) throw httpError(409, "Published versions are immutable. Use a new content version.");
+
+  const values = {
+    module_id: moduleRecord.id,
+    revision,
+    content_version: contentVersion,
+    slide_count: content.slideCount,
+    pass_mark: passMark,
+    storage_prefix: storagePrefix,
+    learner_manifest: content.learnerManifest,
+    answer_key: content.answerKey,
+    published: false
+  };
+  const versionResult = existingVersion.data
+    ? await admin.from("training_module_versions").update(values).eq("id", existingVersion.data.id)
+      .select("id,module_id,revision,content_version,slide_count,pass_mark,storage_prefix,published").single()
+    : await admin.from("training_module_versions").insert(values)
+      .select("id,module_id,revision,content_version,slide_count,pass_mark,storage_prefix,published").single();
+  if (versionResult.error) throw httpError(409, "The secure module draft could not be saved.");
+
+  await audit(admin, {
+    actor_user_id: administrator.id,
+    event_type: "module_draft_saved",
+    details: { moduleId: moduleRecord.id, versionId: versionResult.data.id, code, revision, contentVersion, slideCount: content.slideCount }
+  });
+  return {
+    module: moduleRecord,
+    version: versionResult.data,
+    answersStoredServerSide: true,
+    assets: await inspectVersionAssets(admin, versionResult.data)
+  };
+}
+
+async function getEditableVersion(admin: Client, versionId: unknown) {
+  const id = String(versionId || "");
+  if (!/^[0-9a-f-]{36}$/i.test(id)) throw httpError(400, "A valid module version is required.");
+  const result = await admin.from("training_module_versions")
+    .select("id,module_id,revision,content_version,slide_count,pass_mark,storage_prefix,published")
+    .eq("id", id)
+    .maybeSingle();
+  if (result.error || !result.data) throw httpError(404, "The module version was not found.");
+  if (result.data.published) throw httpError(409, "Published module assets are immutable. Create a new version instead.");
+  return result.data;
+}
+
+async function prepareModuleUploads(admin: Client, versionId: unknown, rawAssets: unknown) {
+  const version = await getEditableVersion(admin, versionId);
+  if (!Array.isArray(rawAssets) || !rawAssets.length || rawAssets.length > Number(version.slide_count) + 1) {
+    throw httpError(400, "Choose the PowerPoint and rendered slide files for this draft.");
+  }
+  const seen = new Set<string>();
+  const assets = rawAssets.map((raw: any) => {
+    const kind = String(raw?.kind || "");
+    const size = Number(raw?.size);
+    let filename: string;
+    let contentType: string;
+    if (kind === "source") {
+      filename = "source.pptx";
+      contentType = PPTX_MIME;
+      if (!Number.isFinite(size) || size < 1 || size > MAX_PPTX_BYTES) throw httpError(400, "The PowerPoint must be between 1 byte and 25 MB.");
+    } else if (kind === "slide") {
+      const slideNumber = Number(raw?.slideNumber);
+      if (!Number.isInteger(slideNumber) || slideNumber < 1 || slideNumber > Number(version.slide_count)) {
+        throw httpError(400, "A rendered slide number is invalid.");
+      }
+      filename = `slide-${String(slideNumber).padStart(2, "0")}.webp`;
+      contentType = "image/webp";
+      if (!Number.isFinite(size) || size < 1 || size > MAX_SLIDE_BYTES) throw httpError(400, `Rendered slide ${slideNumber} must be no larger than 10 MB.`);
+    } else {
+      throw httpError(400, "An upload asset type is invalid.");
+    }
+    if (seen.has(filename)) throw httpError(400, `Duplicate upload asset: ${filename}.`);
+    seen.add(filename);
+    return { filename, contentType, size };
+  });
+
+  const signedUploads = await Promise.all(assets.map(async asset => {
+    const path = `${version.storage_prefix}/${asset.filename}`;
+    const signed = await admin.storage.from("training-content").createSignedUploadUrl(path, { upsert: true });
+    if (signed.error || !signed.data?.signedUrl) throw httpError(500, `A secure upload link could not be created for ${asset.filename}.`);
+    return { ...asset, path, signedUrl: signed.data.signedUrl };
+  }));
+  return { versionId: version.id, uploads: signedUploads, expiresIn: 7200 };
+}
+
+async function validateModuleAssets(admin: Client, versionId: unknown) {
+  const id = String(versionId || "");
+  const result = await admin.from("training_module_versions")
+    .select("id,module_id,revision,content_version,slide_count,pass_mark,storage_prefix,published")
+    .eq("id", id)
+    .maybeSingle();
+  if (result.error || !result.data) throw httpError(404, "The module version was not found.");
+  return { versionId: id, published: result.data.published, assets: await inspectVersionAssets(admin, result.data) };
+}
+
+async function publishModule(admin: Client, administrator: any, versionId: unknown) {
+  const id = String(versionId || "");
+  const versionResult = await admin.from("training_module_versions")
+    .select("id,module_id,revision,content_version,slide_count,pass_mark,storage_prefix,published")
+    .eq("id", id)
+    .maybeSingle();
+  if (versionResult.error || !versionResult.data) throw httpError(404, "The module version was not found.");
+  const moduleResult = await admin.from("training_modules").select("id,code,title,status,current_version_id").eq("id", versionResult.data.module_id).maybeSingle();
+  if (moduleResult.error || !moduleResult.data) throw httpError(404, "The parent module was not found.");
+  const assets = await inspectVersionAssets(admin, versionResult.data);
+  if (!assets.ready) throw httpError(409, `The draft cannot be published. Missing: ${assets.missing.join(", ")}.`);
+
+  if (!versionResult.data.published) {
+    const versionUpdate = await admin.from("training_module_versions").update({ published: true }).eq("id", id);
+    if (versionUpdate.error) throw httpError(500, "The module version could not be published.");
+  }
+  const moduleUpdate = await admin.from("training_modules").update({ current_version_id: id, status: "active" }).eq("id", moduleResult.data.id);
+  if (moduleUpdate.error) throw httpError(500, "The module release could not be activated.");
+  await audit(admin, {
+    actor_user_id: administrator.id,
+    event_type: "module_published",
+    details: { moduleId: moduleResult.data.id, versionId: id, code: moduleResult.data.code, revision: versionResult.data.revision }
+  });
+  return {
+    published: true,
+    module: { code: moduleResult.data.code, title: moduleResult.data.title, status: "active", currentVersionId: id },
+    version: { id, revision: versionResult.data.revision, contentVersion: versionResult.data.content_version },
+    assets
+  };
 }
 
 async function dashboard(admin: Client, administrator: any) {
@@ -241,6 +495,11 @@ export default {
         case "dashboard": result = await dashboard(context.supabaseAdmin, administrator); break;
         case "invite": result = await invite(context.supabaseAdmin, administrator, body); break;
         case "revoke": result = await revoke(context.supabaseAdmin, administrator, body); break;
+        case "module_catalog": result = await moduleCatalog(context.supabaseAdmin); break;
+        case "module_save_draft": result = await saveModuleDraft(context.supabaseAdmin, administrator, body); break;
+        case "module_prepare_uploads": result = await prepareModuleUploads(context.supabaseAdmin, body.versionId, body.assets); break;
+        case "module_validate": result = await validateModuleAssets(context.supabaseAdmin, body.versionId); break;
+        case "module_publish": result = await publishModule(context.supabaseAdmin, administrator, body.versionId); break;
         default: throw httpError(400, "Unknown administration action.");
       }
       return json(request, result);

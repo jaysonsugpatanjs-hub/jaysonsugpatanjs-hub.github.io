@@ -42,9 +42,25 @@ set role = 'admin', active = true
 where email = lower('ADMIN_EMAIL_HERE');
 ```
 
-The administrator can then sign in through the training page and open `/training/admin/` to invite learners, set expiries, assign the module and revoke access.
+The administrator can then sign in through the training page and open `/training/admin/` to invite learners, set expiries, assign modules, revoke access and manage private module releases.
 
 ## 4. Upload the private module
+
+### Administrator workflow
+
+For normal module additions, open **Training Administration > Module management**:
+
+1. Download the authoring JSON template.
+2. Enter the module code, title, revision, content version and pass mark.
+3. Complete the authoring JSON with slide key points, one knowledge check for every learning slide and the final assessment. Correct answers use zero-based indices (`0` is the first option).
+4. Export every PowerPoint slide as PNG, JPEG or WebP and keep the filenames in slide order.
+5. Select the authoring JSON, the source PPTX and all rendered slide images.
+6. Create the draft. Files upload directly to private Supabase Storage; none are committed to GitHub.
+7. Review the module register. Publish only when the asset count is complete and technical/IMS approval has been obtained.
+
+The first PowerPoint slide becomes the module front page. A published version becomes available in the learner-assignment form without adding a new GitHub folder.
+
+### Trusted workstation fallback
 
 Apply the database migration before running this step. Keep the secret key only in the command environment and terminal history controls appropriate to the workstation.
 

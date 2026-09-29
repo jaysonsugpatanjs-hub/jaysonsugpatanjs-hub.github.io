@@ -14,6 +14,7 @@ type CertificateInput = {
   attemptNumber: number;
   submittedAt: string;
   certificateNumber: string;
+  practicalRequired: boolean;
   logoJpeg?: Uint8Array | null;
 };
 
@@ -97,18 +98,22 @@ export async function createCertificatePdf(input: CertificateInput) {
   });
 
   page.drawRectangle({ x: 96, y: cardY - 58, width: 670, height: 37, color: pale, borderColor: rgb(0.09, 0.53, 0.29), borderWidth: 1 });
-  centered(page, "THEORY PASSED - PRACTICAL VERIFICATION AND SITE AUTHORISATION PENDING", cardY - 44, bold, 11, rgb(0.05, 0.38, 0.2));
+  centered(page, input.practicalRequired
+    ? "THEORY PASSED - PRACTICAL VERIFICATION AND SITE AUTHORISATION PENDING"
+    : "ONLINE THEORY REQUIREMENT COMPLETED", cardY - 44, bold, 11, rgb(0.05, 0.38, 0.2));
 
   const idText = input.externalId ? `Learner record: ${input.externalId}` : "Learner record: verified email account";
   page.drawText(safeLatin(idText), { x: 55, y: 67, size: 8.5, font: regular, color: grey });
   page.drawText(`Certificate: ${safeLatin(input.certificateNumber)}`, { x: 55, y: 51, size: 8.5, font: bold, color: navy });
-  const footer = "This certificate records online theory only. It is not a licence or practical task authorisation.";
+  const footer = input.practicalRequired
+    ? "This certificate records online theory only. It is not a licence or practical task authorisation."
+    : "This certificate records online theory completion. It is not a trade licence or site authorisation.";
   const footerWidth = regular.widthOfTextAtSize(footer, 8.5);
   page.drawText(footer, { x: 787 - footerWidth, y: 51, size: 8.5, font: regular, color: grey });
 
   pdf.setTitle(`${input.moduleCode} theory certificate - ${input.learnerName}`);
   pdf.setAuthor("Panalo Pipes & Structurals Pty Ltd");
-  pdf.setSubject("Online theory completion - practical verification pending");
+  pdf.setSubject(input.practicalRequired ? "Online theory completion - practical verification pending" : "Online theory completion");
   pdf.setCreationDate(new Date(input.submittedAt));
   return pdf.save();
 }

@@ -13,10 +13,17 @@ The module remains **Draft Rev 1** pending technical, WHS and IMS approval. Theo
 ## Main components
 
 - `auth.js` - passwordless email session and authenticated Function requests.
-- `admin/` - administrator invitation, expiry and revocation register.
-- `modules/pp-trn-wld-001/` - protected learner flow.
+- `admin/` - administrator invitation, assignment, revocation and secure module publishing.
+- `modules/` - generic protected learner flow used by every published module.
+- `modules/pp-trn-wld-001/` - shared learner-view assets and backward-compatible module URL.
 - `scripts/provision-supabase-module.mjs` - private content/answer upload.
 - `scripts/check-public-training.mjs` - release guard against public PowerPoints or answer manifests.
 - `../supabase/` - database migration and server functions for access checks, marking, records and PDF certificates.
+
+## Secure module management
+
+Administrators can open **Module management** to create a draft from module metadata and an authoring JSON file, then upload one PPTX and the rendered slide images. PNG and JPEG slides are converted to WebP in the administrator browser and uploaded with short-lived signed upload URLs directly to the private `training-content` bucket.
+
+The server validates slide order, key points, knowledge checks, correct-answer indices, final assessment, file count and private asset presence. Correct answers are separated into the server-only answer key. A version cannot be assigned until an administrator explicitly publishes it; after publication, that version and its asset path are treated as immutable.
 
 Deployment instructions are in [SETUP.md](SETUP.md). The security boundary and acceptance checks are in [ACCESS-CONTROL.md](ACCESS-CONTROL.md).

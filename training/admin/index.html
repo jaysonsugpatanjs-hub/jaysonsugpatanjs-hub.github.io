@@ -18,9 +18,13 @@
 <main class="admin-page">
   <section id="admin-gate" class="portal-card"><p class="eyebrow">ADMINISTRATION</p><h1 id="gate-title">Checking administrator access…</h1><p id="gate-message"></p></section>
   <div id="admin-app" class="hidden">
-    <section class="admin-heading"><div><p class="eyebrow">CONTROLLED ACCESS REGISTER</p><h1>Invite and assign learners</h1><p id="admin-identity"></p></div><button id="refresh" class="secondary-action" type="button">Refresh register</button></section>
+    <section class="admin-heading"><div><p class="eyebrow">CONTROLLED TRAINING SYSTEM</p><h1>Training administration</h1><p id="admin-identity"></p></div><button id="refresh" class="secondary-action" type="button">Refresh registers</button></section>
     <section id="summary" class="summary-grid"></section>
-    <section class="admin-layout">
+    <nav class="admin-tabs" aria-label="Training administration areas">
+      <button class="admin-tab active" type="button" data-admin-view="access-management" aria-pressed="true">Learner access</button>
+      <button class="admin-tab" type="button" data-admin-view="module-management" aria-pressed="false">Module management</button>
+    </nav>
+    <section id="access-management" class="admin-view admin-layout">
       <form id="invite-form" class="portal-card admin-form">
         <p class="eyebrow">NEW ACCESS</p><h2>Invite a learner</h2>
         <div class="field"><label for="full-name">Full legal name</label><input id="full-name" name="fullName" required maxlength="100" autocomplete="name"></div>
@@ -36,6 +40,41 @@
         <p id="invite-message" class="form-message" role="status" aria-live="polite"></p>
       </form>
       <section class="portal-card register-card"><div class="register-head"><div><p class="eyebrow">ACCESS REGISTER</p><h2>Assignments</h2></div><input id="search" type="search" placeholder="Search name, email, ID or module" aria-label="Search assignments"></div><div class="table-wrap"><table><thead><tr><th>Learner</th><th>Module</th><th>Status</th><th>Result</th><th>Expiry</th><th>Access</th></tr></thead><tbody id="register-body"></tbody></table></div><p id="register-message" class="form-message"></p></section>
+    </section>
+    <section id="module-management" class="admin-view hidden">
+      <div class="module-intro portal-card">
+        <div><p class="eyebrow">PRIVATE CONTENT WORKFLOW</p><h2>Secure Module Management</h2><p>Create a server-controlled draft, upload the source PowerPoint and rendered slide images directly to private storage, then publish only after validation. Correct answers are separated from learner content and never placed in GitHub.</p></div>
+        <button id="download-module-template" class="secondary-action" type="button">Download authoring template</button>
+      </div>
+      <div class="module-layout">
+        <form id="module-form" class="portal-card module-form">
+          <p class="eyebrow">NEW MODULE OR REVISION</p><h2>Create a secure draft</h2>
+          <div class="field-row">
+            <div class="field"><label for="module-new-code">Module code</label><input id="module-new-code" name="code" required maxlength="50" placeholder="PP-TRN-WHS-002" autocomplete="off"></div>
+            <div class="field"><label for="module-new-revision">Revision</label><input id="module-new-revision" name="revision" required maxlength="80" value="Draft Rev 1" autocomplete="off"></div>
+          </div>
+          <div class="field"><label for="module-new-title">Module title</label><input id="module-new-title" name="title" required maxlength="200" autocomplete="off"></div>
+          <div class="field"><label for="module-new-description">Description</label><textarea id="module-new-description" name="description" maxlength="1200" rows="3"></textarea></div>
+          <div class="field-row">
+            <div class="field"><label for="module-content-version">Content version</label><input id="module-content-version" name="contentVersion" required maxlength="80" autocomplete="off"></div>
+            <div class="field"><label for="module-pass-mark">Theory pass mark (%)</label><input id="module-pass-mark" name="passMark" type="number" min="1" max="100" step="1" value="80" required></div>
+          </div>
+          <label class="check-field"><input id="module-practical" name="practicalRequired" type="checkbox" checked> Onsite practical verification is required</label>
+          <div class="upload-block">
+            <div class="field"><label for="module-authoring">Authoring JSON</label><input id="module-authoring" name="authoring" type="file" accept="application/json,.json" required><small>Contains slide key points, knowledge checks, final assessment and correct-answer indices. Use the downloadable template.</small></div>
+            <div class="field"><label for="module-powerpoint">Source PowerPoint</label><input id="module-powerpoint" name="powerpoint" type="file" accept=".pptx,application/vnd.openxmlformats-officedocument.presentationml.presentation" required><small>PPTX only, maximum 25 MB. Stored privately and never deployed by GitHub Pages.</small></div>
+            <div class="field"><label for="module-slides">Rendered slide images</label><input id="module-slides" name="slides" type="file" accept="image/png,image/jpeg,image/webp" multiple required><small>Select every slide in filename order. PNG and JPEG files are converted to WebP before private upload. Slide 1 becomes the module front page.</small></div>
+          </div>
+          <button class="primary" type="submit">Create draft and upload privately</button>
+          <progress id="module-upload-progress" class="upload-progress hidden" max="100" value="0"></progress>
+          <p id="module-message" class="form-message" role="status" aria-live="polite"></p>
+        </form>
+        <section class="portal-card module-register">
+          <div class="register-head"><div><p class="eyebrow">MODULE REGISTER</p><h2>Drafts and published versions</h2></div><button id="refresh-modules" class="secondary-action" type="button">Refresh modules</button></div>
+          <div class="table-wrap"><table class="module-table"><thead><tr><th>Module</th><th>Version</th><th>Private assets</th><th>Release</th><th>Action</th></tr></thead><tbody id="module-register-body"></tbody></table></div>
+          <p id="module-register-message" class="form-message"></p>
+        </section>
+      </div>
     </section>
   </div>
 </main>

@@ -136,6 +136,7 @@ async function issueCertificate(admin: Client, context: any, attempt: any) {
     attemptNumber: attempt.attempt_number,
     submittedAt: attempt.submitted_at,
     certificateNumber,
+    practicalRequired: Boolean(context.module.practical_required),
     logoJpeg
   });
 

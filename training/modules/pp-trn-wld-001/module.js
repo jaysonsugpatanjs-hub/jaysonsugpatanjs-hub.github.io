@@ -76,7 +76,7 @@ function renderProgress() {
   document.getElementById("pct").textContent = `${percent}%`;
   document.getElementById("bar").style.width = `${percent}%`;
   document.getElementById("progress-detail").textContent = latestResult?.pass
-    ? "Theory passed · practical verification pending"
+    ? course.practicalRequired ? "Theory passed · practical verification pending" : "Online theory completed"
     : `${completedSlides.size} of ${learningSlides} slide checks recorded`;
 }
 
@@ -190,7 +190,7 @@ async function showAssessment() {
   if (!canOpen(finalIndex)) return;
   const slide = course.slides[finalIndex];
   ui.assessment.innerHTML = slideMarkup(slide) +
-    `<section class="checkpoint" aria-labelledby="exam-title"><span class="slidepill critical">FINAL THEORY ASSESSMENT</span><h2 id="exam-title">Apply what you learned</h2><p>Pass rule: at least ${course.passMark}% overall and every critical question correct. An online pass leaves practical verification pending.</p>
+    `<section class="checkpoint" aria-labelledby="exam-title"><span class="slidepill critical">FINAL THEORY ASSESSMENT</span><h2 id="exam-title">Apply what you learned</h2><p>Pass rule: at least ${course.passMark}% overall and every critical question correct. ${course.practicalRequired ? "An online pass leaves practical verification pending." : "A passing result completes this online theory requirement."}</p>
       ${course.exam.map((question, index) => `<fieldset class="examq ${question.critical ? "critical" : ""}"><legend>Q${index + 1}. ${safe(question.question)} ${question.critical ? '<span class="badge">CRITICAL</span>' : ""}</legend>${question.options.map((option, optionIndex) => `<label class="option"><input type="radio" name="exam-${index}" value="${optionIndex}"> <span>${safe(option)}</span></label>`).join("")}</fieldset>`).join("")}
       <button class="primary large" id="submit-exam">Submit final assessment</button><div id="result" role="status" aria-live="polite"></div></section>
       <div class="actions"><button class="secondary" id="back-slide">Back to slide ${finalIndex}</button></div>`;
@@ -227,10 +227,14 @@ async function submitAssessment(event) {
 function renderResult(result) {
   const target = ui.assessment.querySelector("#result");
   if (!target) return;
-  target.innerHTML = `<div class="result ${result.pass ? "pass" : "fail"}"><h2>${result.pass ? "THEORY PASSED · PRACTICAL VERIFICATION PENDING" : "FURTHER TRAINING REQUIRED"}</h2>
+  const passedHeading = course.practicalRequired ? "THEORY PASSED · PRACTICAL VERIFICATION PENDING" : "ONLINE THEORY COMPLETED";
+  const passedMessage = course.practicalRequired
+    ? "Your theory result is recorded. A competent assessor must complete the required onsite practical verification before task authorisation."
+    : "Your online theory result is recorded as complete.";
+  target.innerHTML = `<div class="result ${result.pass ? "pass" : "fail"}"><h2>${result.pass ? passedHeading : "FURTHER TRAINING REQUIRED"}</h2>
     <p><strong>Verified learner:</strong> ${safe(learner.fullName)} · <strong>Score:</strong> ${result.correct}/${result.total} (${result.score}%) · <strong>Critical questions:</strong> ${result.criticalPassed ? "PASS" : "NOT PASSED"}</p>
     <p><strong>Attempt:</strong> ${result.attemptNumber} · <strong>Date taken:</strong> ${safe(formatDate(result.submittedAt, true))}</p>
-    <p>${result.pass ? "Your theory result is recorded. A competent assessor must complete the required onsite practical verification before task authorisation." : `Review the module and retake the assessment. Questions to revisit: ${(result.missedQuestionNumbers || []).join(", ")}.`}</p>
+    <p>${result.pass ? passedMessage : `Review the module and retake the assessment. Questions to revisit: ${(result.missedQuestionNumbers || []).join(", ")}.`}</p>
     ${result.pass ? `<p><strong>Certificate number:</strong> ${safe(result.certificateNumber || "Preparing certificate")}</p><button class="primary" id="certificate">Open certificate (PDF)</button><p id="certificate-message" class="certificate-message" role="status"></p>` : ""}</div>`;
   const submitButton = ui.assessment.querySelector("#submit-exam");
   if (submitButton) {
@@ -255,7 +259,7 @@ async function openCertificate(event) {
     link.target = "_blank";
     link.rel = "noopener";
     link.click();
-    message.textContent = "Certificate opened. Practical verification remains pending.";
+    message.textContent = course.practicalRequired ? "Certificate opened. Practical verification remains pending." : "Certificate opened.";
   } catch (error) {
     message.textContent = friendlyError(error);
   } finally {
@@ -309,6 +313,7 @@ async function init() {
     completedSlides = new Set(data.completedSlides || []);
     currentIndex = Math.max(0, Math.min(course.slides.length - 2, Number(window.localStorage.getItem(`panalo-current-${assignmentId}`)) || 0));
 
+    document.title = `${course.code} | ${course.title}`;
     document.getElementById("account-email").textContent = learner.email;
     document.getElementById("course-title").textContent = course.title;
     document.getElementById("course-revision").textContent = course.revision;
@@ -317,6 +322,10 @@ async function init() {
     document.getElementById("cover-caption").textContent = `PowerPoint cover · ${course.code} · ${course.slides.length} slides · ${course.revision}`;
     document.getElementById("learner-name").textContent = learner.fullName;
     document.getElementById("assignment-expiry").textContent = formatDate(assignment.expiresAt);
+    const theoryRule = document.getElementById("theory-pass-rule");
+    if (theoryRule) theoryRule.textContent = `${course.passMark}% overall + 100% critical questions`;
+    const practicalRule = document.getElementById("practical-rule");
+    if (practicalRule) practicalRule.textContent = course.practicalRequired ? "Required" : "Not required for this module";
     ui.start.addEventListener("click", () => showSlide(canOpen(currentIndex) ? currentIndex : 0));
     show("landing");
     loadCover();

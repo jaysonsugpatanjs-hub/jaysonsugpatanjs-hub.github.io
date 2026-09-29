@@ -12,6 +12,8 @@ The training application uses a public, non-sensitive GitHub Pages shell and a p
 6. A passing result requires at least 80% overall and every critical question correct. The server creates a Panalo-branded PDF with the verified name, record ID, score, critical result, attempt, Sydney date and unique certificate number.
 7. The certificate states **Theory Passed - Practical Verification and Site Authorisation Pending**. Practical competency and task authorisation remain separate IMS records.
 8. Administrators can revoke an assignment without deleting the audit history.
+9. Administrators create new module versions as private drafts. The server strips correct answers from learner content, issues time-limited upload URLs and refuses publication until the PPTX and every numbered slide image are present.
+10. Published versions are immutable. Revisions use a new content-version identifier so existing learner records and certificates continue to point to the version actually completed.
 
 ## Security boundary
 
@@ -23,6 +25,7 @@ The training application uses a public, non-sensitive GitHub Pages shell and a p
 - Open self-registration must be disabled. `signInWithOtp` is also called with user creation disabled.
 - Allowed browser origins are restricted to the GitHub Pages site and the planned `training.panalopipesandstructurals.com.au` address.
 - The existing public slide and answer files must be removed from the deployed repository. Because historic public commits cannot be made private by deletion, production questions should be rotated before formal assessment use.
+- The module manager accepts source and rendered files only after administrator verification. It never writes a PowerPoint or answer-bearing manifest into the GitHub Pages tree.
 
 ## Required deployment checks
 
@@ -33,5 +36,6 @@ The training application uses a public, non-sensitive GitHub Pages shell and a p
 - Changing a browser-side score, timestamp or pass flag cannot alter the server record.
 - The public repository passes `node training/scripts/check-public-training.mjs`.
 - Administrator invitation, magic-link login, slide flow, failed and passing assessments, retake history, certificate PDF and revocation are verified end to end.
+- Draft creation, private signed upload, missing-asset rejection, publication and generic module viewing are verified before enabling administrator self-service.
 
 See [SETUP.md](SETUP.md) for deployment and first-administrator steps.
