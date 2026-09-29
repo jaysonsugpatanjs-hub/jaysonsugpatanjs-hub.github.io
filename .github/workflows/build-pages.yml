@@ -7,6 +7,8 @@ on:
       - "src/**"
       - "public/**"
       - "scripts/**"
+      - "training/**"
+      - ".gitignore"
       - "package.json"
       - "package-lock.json"
       - "vite.config.js"
@@ -17,6 +19,8 @@ on:
       - "src/**"
       - "public/**"
       - "scripts/**"
+      - "training/**"
+      - ".gitignore"
       - "package.json"
       - "package-lock.json"
       - "vite.config.js"
@@ -50,6 +54,12 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Block public training sources and answer keys
+        run: npm run check:training-public
+
+      - name: Test controlled training runtime
+        run: npm run test:training
 
       - name: Build and sync GitHub Pages files
         run: npm run build:pages

@@ -9,3 +9,12 @@ dist/
 !.env.example
 *.secret
 *.secrets
+
+# Controlled training source/content must never be published by GitHub Pages.
+training/ppt/
+training/private/
+supabase/private-seed/
+supabase/.temp/
+tmp/
+__pycache__/
+*.pyc

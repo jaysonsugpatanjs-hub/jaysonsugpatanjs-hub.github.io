@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' https://*.supabase.co; font-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'">
+<title>Training Administration | Panalo Pipes</title>
+<link rel="stylesheet" href="../styles.css">
+<link rel="stylesheet" href="./admin.css">
+<script src="../config.js"></script>
+<script type="module" src="./admin.js"></script>
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="../"><span class="brandmark">P</span><span><strong>PANALO PIPES & STRUCTURALS</strong><small>Training Administration</small></span></a>
+  <div class="account-actions"><a class="header-link" href="../">Learner portal</a><button id="sign-out" class="header-button" type="button">Sign out</button></div>
+</header>
+<main class="admin-page">
+  <section id="admin-gate" class="portal-card"><p class="eyebrow">ADMINISTRATION</p><h1 id="gate-title">Checking administrator access…</h1><p id="gate-message"></p></section>
+  <div id="admin-app" class="hidden">
+    <section class="admin-heading"><div><p class="eyebrow">CONTROLLED ACCESS REGISTER</p><h1>Invite and assign learners</h1><p id="admin-identity"></p></div><button id="refresh" class="secondary-action" type="button">Refresh register</button></section>
+    <section id="summary" class="summary-grid"></section>
+    <section class="admin-layout">
+      <form id="invite-form" class="portal-card admin-form">
+        <p class="eyebrow">NEW ACCESS</p><h2>Invite a learner</h2>
+        <div class="field"><label for="full-name">Full legal name</label><input id="full-name" name="fullName" required maxlength="100" autocomplete="name"></div>
+        <div class="field"><label for="learner-email">Personal or company email</label><input id="learner-email" name="email" type="email" required maxlength="254" autocomplete="email"></div>
+        <div class="field-row">
+          <div class="field"><label for="learner-type">Learner type</label><select id="learner-type" name="learnerType"><option value="applicant">Applicant / new hire</option><option value="employee">Employee</option><option value="contractor">Contractor</option></select></div>
+          <div class="field"><label for="external-id">Employee / applicant ID</label><input id="external-id" name="externalId" maxlength="50"></div>
+        </div>
+        <div class="field"><label for="module-code">Assigned module</label><select id="module-code" name="moduleCode" required></select></div>
+        <div class="field"><label for="expires-on">Access expires after</label><input id="expires-on" name="expiresOn" type="date" required></div>
+        <button class="primary" type="submit">Send invitation and assign</button>
+        <p class="privacy-note">The invitation goes only to the email above. Access can be revoked from the register.</p>
+        <p id="invite-message" class="form-message" role="status" aria-live="polite"></p>
+      </form>
+      <section class="portal-card register-card"><div class="register-head"><div><p class="eyebrow">ACCESS REGISTER</p><h2>Assignments</h2></div><input id="search" type="search" placeholder="Search name, email, ID or module" aria-label="Search assignments"></div><div class="table-wrap"><table><thead><tr><th>Learner</th><th>Module</th><th>Status</th><th>Result</th><th>Expiry</th><th>Access</th></tr></thead><tbody id="register-body"></tbody></table></div><p id="register-message" class="form-message"></p></section>
+    </section>
+  </div>
+</main>
+</body>
+</html>

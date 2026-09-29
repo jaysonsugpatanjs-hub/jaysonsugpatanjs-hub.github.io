@@ -1,256 +1,332 @@
-const DECK = "../../ppt/pp-trn-wld-001/";
-const STORAGE_KEY = "panalo-pp-trn-wld-001-v4";
-const el = {
+import {
+  api,
+  completeAuthRedirect,
+  config,
+  friendlyError,
+  getSession,
+  isConfigured,
+  signOut
+} from "../../auth.js";
+
+const assignmentId = new URLSearchParams(window.location.search).get("assignment");
+const ui = {
+  shell: document.getElementById("module-shell"),
+  gate: document.getElementById("gate"),
+  gateTitle: document.getElementById("gate-title"),
+  gateMessage: document.getElementById("gate-message"),
+  gateAction: document.getElementById("gate-action"),
   landing: document.getElementById("landing"),
   lesson: document.getElementById("lesson"),
   assessment: document.getElementById("assessment"),
   nav: document.getElementById("nav"),
-  start: document.getElementById("start"),
-  reset: document.getElementById("reset")
+  start: document.getElementById("start")
 };
-let course;
-let state = readState();
 
-function readState() {
-  try {
-    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    if (saved && Array.isArray(saved.passed)) return saved;
-  } catch (_) { /* Storage may be disabled. The module still works for this visit. */ }
-  return { passed: [], current: 0, final: null, attempts: 0, revision: null };
-}
-function persist() {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (_) { /* See note above. */ }
-  renderNav();
-  renderProgress();
-}
+let assignment;
+let course;
+let learner;
+let latestResult = null;
+let completedSlides = new Set();
+let currentIndex = 0;
+const slideUrls = new Map();
+
 function safe(value) {
   return String(value ?? "").replace(/[&<>"']/g, character => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
   })[character]);
 }
-function slideURL(number) { return `${DECK}slide-${String(number).padStart(2, "0")}.webp?v=${encodeURIComponent(course.slideAssetVersion || course.contentVersion || course.revision)}`; }
-function isComplete(index) { return state.passed.includes(index); }
-function canOpen(index) { return index === 0 || isComplete(index - 1); }
+
+function formatDate(value, withTime = false) {
+  if (!value) return "No expiry set";
+  return new Intl.DateTimeFormat("en-AU", {
+    dateStyle: "medium",
+    ...(withTime ? { timeStyle: "short" } : {}),
+    timeZone: "Australia/Sydney"
+  }).format(new Date(value));
+}
+
+function showGate(title, message) {
+  ui.shell.classList.add("hidden");
+  ui.gate.classList.remove("hidden");
+  ui.gateTitle.textContent = title;
+  ui.gateMessage.textContent = message;
+  ui.gateAction.classList.remove("hidden");
+}
+
 function show(view) {
-  for (const name of ["landing", "lesson", "assessment"]) el[name].classList.toggle("hidden", view !== name);
+  ui.gate.classList.add("hidden");
+  ui.shell.classList.remove("hidden");
+  for (const name of ["landing", "lesson", "assessment"]) ui[name].classList.toggle("hidden", view !== name);
   renderNav();
   window.scrollTo({ top: 0, behavior: "instant" });
 }
 
+function isComplete(slideNumber) {
+  return completedSlides.has(slideNumber);
+}
+
+function canOpen(index) {
+  return index === 0 || isComplete(index);
+}
+
 function renderProgress() {
-  const complete = state.passed.length + (state.final?.pass ? 1 : 0);
-  const total = course.slides.length;
-  const percent = Math.round(complete / total * 100);
+  const learningSlides = course.slides.length - 1;
+  const complete = completedSlides.size + (latestResult?.pass ? 1 : 0);
+  const percent = Math.round(complete / course.slides.length * 100);
   document.getElementById("pct").textContent = `${percent}%`;
   document.getElementById("bar").style.width = `${percent}%`;
-  document.getElementById("progress-detail").textContent = state.final?.pass
-    ? "Theory passed · practical pending"
-    : `${state.passed.length} of ${total - 1} slide checks complete`;
+  document.getElementById("progress-detail").textContent = latestResult?.pass
+    ? "Theory passed · practical verification pending"
+    : `${completedSlides.size} of ${learningSlides} slide checks recorded`;
 }
+
 function renderNav() {
   if (!course) return;
-  el.nav.replaceChildren();
+  ui.nav.replaceChildren();
   const finalIndex = course.slides.length - 1;
   course.slides.forEach((slide, index) => {
-    const button = document.createElement("button");
     const available = canOpen(index);
+    const button = document.createElement("button");
     button.disabled = !available;
-    button.classList.toggle("active", index === finalIndex ? !el.assessment.classList.contains("hidden") :
-      !el.lesson.classList.contains("hidden") && state.current === index);
+    button.classList.toggle("active", index === finalIndex
+      ? !ui.assessment.classList.contains("hidden")
+      : !ui.lesson.classList.contains("hidden") && currentIndex === index);
     button.setAttribute("aria-label", `Slide ${slide.id}: ${slide.title}${available ? "" : ", locked"}`);
-    button.innerHTML = `<span class="navnum">${slide.id}</span><span>${safe(slide.title)}</span><span class="navstatus" aria-hidden="true">${index === finalIndex ? (state.final?.pass ? "✓" : available ? "" : "🔒") : isComplete(index) ? "✓" : available ? "" : "🔒"}</span>`;
+    const complete = index === finalIndex ? latestResult?.pass : isComplete(slide.id);
+    button.innerHTML = `<span class="navnum">${slide.id}</span><span>${safe(slide.title)}</span><span class="navstatus" aria-hidden="true">${complete ? "✓" : available ? "" : "🔒"}</span>`;
     button.addEventListener("click", () => index === finalIndex ? showAssessment() : showSlide(index));
-    el.nav.appendChild(button);
+    ui.nav.appendChild(button);
   });
+  renderProgress();
 }
+
+async function getSlideUrl(slideNumber) {
+  const cached = slideUrls.get(slideNumber);
+  if (cached && cached.expiresAt > Date.now() + 15000) return cached.url;
+  const data = await api(config.trainingFunction, {
+    action: "slide",
+    assignmentId,
+    slideNumber
+  });
+  const value = { url: data.url, expiresAt: Date.now() + Number(data.expiresIn || 120) * 1000 };
+  slideUrls.set(slideNumber, value);
+  return value.url;
+}
+
+async function loadImage(container, slide) {
+  const image = container.querySelector("[data-slide-image]");
+  const status = container.querySelector("[data-image-status]");
+  try {
+    const url = await getSlideUrl(slide.id);
+    await new Promise((resolve, reject) => {
+      image.addEventListener("load", resolve, { once: true });
+      image.addEventListener("error", reject, { once: true });
+      image.src = url;
+    });
+    status.remove();
+    image.classList.add("ready");
+  } catch (error) {
+    status.textContent = friendlyError(error);
+  }
+}
+
 function slideMarkup(slide) {
-  const filename = slideURL(slide.id);
   return `<div class="slidehead"><div><p class="eyebrow">POWERPOINT SLIDE ${slide.id} OF ${course.slides.length}</p><h1>${safe(slide.title)}</h1></div><span class="slidepill">${slide.check?.critical ? "CRITICAL CHECK" : "TRAINING"}</span></div>
-    <div class="slidevisual"><div class="image-status" id="image-status" role="status">Loading slide ${slide.id}…</div><img id="slide-image" alt="PowerPoint slide ${slide.id}: ${safe(slide.title)}" width="1921" height="1080"><a href="${filename}" target="_blank" rel="noopener" class="fullsize">Open this slide at full size ↗</a></div>
+    <div class="slidevisual"><div class="image-status" data-image-status role="status">Loading slide ${slide.id}…</div><img data-slide-image alt="PowerPoint slide ${slide.id}: ${safe(slide.title)}" width="1921" height="1080"></div>
     <section class="contentcard transcript"><h2>Key points</h2><ul>${slide.bullets.map(point => `<li>${safe(point)}</li>`).join("")}</ul></section>`;
 }
-function loadSlideImage(container, number) {
-  const image = container.querySelector("#slide-image");
-  const status = container.querySelector("#image-status");
-  image.addEventListener("load", () => { status.remove(); image.classList.add("ready"); }, { once: true });
-  image.addEventListener("error", () => { status.textContent = "The slide image could not load. Use the source PowerPoint link below and report the problem."; }, { once: true });
-  // Only the selected slide receives an src. The library and other slides load no deck images.
-  image.src = slideURL(number);
-}
-function markPassed(index) {
-  if (!isComplete(index)) state.passed.push(index);
-  state.passed.sort((a, b) => a - b);
-  persist();
-}
 
-function showSlide(index) {
+async function showSlide(index) {
   if (!canOpen(index) || index >= course.slides.length - 1) return;
-  state.current = index;
+  currentIndex = index;
   const slide = course.slides[index];
-  const done = isComplete(index);
-  const q = slide.check;
-  el.lesson.innerHTML = slideMarkup(slide) +
-    `<section class="checkpoint" aria-labelledby="check-title"><span class="slidepill ${q.critical ? "critical" : ""}">${q.critical ? "CRITICAL CHECKPOINT" : "KNOWLEDGE CHECK"}</span><h2 id="check-title">Check your decision</h2><p class="q">${safe(q.question)}</p>
-      <fieldset><legend class="sr-only">Choose one answer</legend>${q.options.map((option, optionIndex) => `<label class="option"><input type="radio" name="checkpoint" value="${optionIndex}" ${done && q.answer === optionIndex ? "checked" : ""}> <span>${safe(option)}</span></label>`).join("")}</fieldset>
-      <button class="primary" id="check-answer">Check answer</button><div id="checkpoint-feedback" role="status" aria-live="polite">${done ? `<div class="feedback ok">Completed. ${safe(q.feedback)}</div>` : ""}</div></section>
+  const done = isComplete(slide.id);
+  const check = slide.check;
+  ui.lesson.innerHTML = slideMarkup(slide) +
+    `<section class="checkpoint" aria-labelledby="check-title"><span class="slidepill ${check.critical ? "critical" : ""}">${check.critical ? "CRITICAL CHECKPOINT" : "KNOWLEDGE CHECK"}</span><h2 id="check-title">Check your decision</h2><p class="q">${safe(check.question)}</p>
+      <fieldset ${done ? "disabled" : ""}><legend class="sr-only">Choose one answer</legend>${check.options.map((option, optionIndex) => `<label class="option"><input type="radio" name="checkpoint" value="${optionIndex}"> <span>${safe(option)}</span></label>`).join("")}</fieldset>
+      <button class="primary" id="check-answer" ${done ? "disabled" : ""}>${done ? "Checkpoint recorded" : "Check answer"}</button><div id="checkpoint-feedback" role="status" aria-live="polite">${done ? '<div class="feedback ok">Completed and recorded for this assignment.</div>' : ""}</div></section>
       <div class="actions"><button class="secondary" id="previous" ${index === 0 ? "disabled" : ""}>Previous slide</button><button class="primary" id="next" ${done ? "" : "disabled"}>${index === course.slides.length - 2 ? "Final assessment" : "Next slide"}</button></div>`;
   show("lesson");
-  loadSlideImage(el.lesson, slide.id);
-  el.lesson.querySelector("#previous").addEventListener("click", () => showSlide(index - 1));
-  el.lesson.querySelector("#next").addEventListener("click", () => index === course.slides.length - 2 ? showAssessment() : showSlide(index + 1));
-  el.lesson.querySelector("#check-answer").addEventListener("click", () => {
-    const selected = el.lesson.querySelector('input[name="checkpoint"]:checked');
-    const feedback = el.lesson.querySelector("#checkpoint-feedback");
-    if (!selected) { feedback.innerHTML = '<div class="feedback no">Choose an answer first.</div>'; return; }
-    if (Number(selected.value) !== q.answer) {
-      feedback.innerHTML = '<div class="feedback no">Review the slide and the key points, then try again.</div>';
+  loadImage(ui.lesson, slide);
+  ui.lesson.querySelector("#previous").addEventListener("click", () => showSlide(index - 1));
+  ui.lesson.querySelector("#next").addEventListener("click", () => index === course.slides.length - 2 ? showAssessment() : showSlide(index + 1));
+  ui.lesson.querySelector("#check-answer").addEventListener("click", async event => {
+    const selected = ui.lesson.querySelector('input[name="checkpoint"]:checked');
+    const feedback = ui.lesson.querySelector("#checkpoint-feedback");
+    if (!selected) {
+      feedback.innerHTML = '<div class="feedback no">Choose an answer first.</div>';
       return;
     }
-    feedback.innerHTML = `<div class="feedback ok">Correct. ${safe(q.feedback)}</div>`;
-    markPassed(index);
-    el.lesson.querySelector("#next").disabled = false;
+    event.currentTarget.disabled = true;
+    feedback.innerHTML = '<div class="feedback pending">Checking and recording your answer…</div>';
+    try {
+      const result = await api(config.trainingFunction, {
+        action: "check",
+        assignmentId,
+        slideNumber: slide.id,
+        selectedAnswer: Number(selected.value)
+      });
+      if (!result.correct) {
+        feedback.innerHTML = '<div class="feedback no">Review the slide and key points, then try again.</div>';
+        event.currentTarget.disabled = false;
+        return;
+      }
+      completedSlides.add(slide.id);
+      feedback.innerHTML = `<div class="feedback ok">Correct. ${safe(result.feedback || "Your checkpoint has been recorded.")}</div>`;
+      ui.lesson.querySelectorAll('input[name="checkpoint"]').forEach(input => { input.disabled = true; });
+      ui.lesson.querySelector("#next").disabled = false;
+      event.currentTarget.textContent = "Checkpoint recorded";
+      renderNav();
+    } catch (error) {
+      feedback.innerHTML = `<div class="feedback no">${safe(friendlyError(error))}</div>`;
+      event.currentTarget.disabled = false;
+    }
   });
-  persist();
 }
 
-function showAssessment() {
+async function showAssessment() {
   const finalIndex = course.slides.length - 1;
   if (!canOpen(finalIndex)) return;
   const slide = course.slides[finalIndex];
-  const prior = state.final;
-  el.assessment.innerHTML = slideMarkup(slide) +
-    `<section class="checkpoint" aria-labelledby="exam-title"><span class="slidepill critical">FINAL THEORY ASSESSMENT</span><h2 id="exam-title">Apply what you learned</h2><p>Pass rule: at least 80% overall and every critical question correct. An online pass leaves practical verification pending.</p>
-      ${course.exam.map((q, index) => `<fieldset class="examq ${q.critical ? "critical" : ""}"><legend>Q${index + 1}. ${safe(q.question)} ${q.critical ? '<span class="badge">CRITICAL</span>' : ""}</legend>${q.options.map((option, optionIndex) => `<label class="option"><input type="radio" name="exam-${index}" value="${optionIndex}" ${prior?.answers?.[index] === optionIndex ? "checked" : ""}> <span>${safe(option)}</span></label>`).join("")}</fieldset>`).join("")}
-      <button class="primary large" id="submit-exam">${prior ? "Submit another attempt" : "Submit final assessment"}</button><div id="result" role="status" aria-live="polite"></div></section>
+  ui.assessment.innerHTML = slideMarkup(slide) +
+    `<section class="checkpoint" aria-labelledby="exam-title"><span class="slidepill critical">FINAL THEORY ASSESSMENT</span><h2 id="exam-title">Apply what you learned</h2><p>Pass rule: at least ${course.passMark}% overall and every critical question correct. An online pass leaves practical verification pending.</p>
+      ${course.exam.map((question, index) => `<fieldset class="examq ${question.critical ? "critical" : ""}"><legend>Q${index + 1}. ${safe(question.question)} ${question.critical ? '<span class="badge">CRITICAL</span>' : ""}</legend>${question.options.map((option, optionIndex) => `<label class="option"><input type="radio" name="exam-${index}" value="${optionIndex}"> <span>${safe(option)}</span></label>`).join("")}</fieldset>`).join("")}
+      <button class="primary large" id="submit-exam">Submit final assessment</button><div id="result" role="status" aria-live="polite"></div></section>
       <div class="actions"><button class="secondary" id="back-slide">Back to slide ${finalIndex}</button></div>`;
   show("assessment");
-  loadSlideImage(el.assessment, slide.id);
-  el.assessment.querySelector("#back-slide").addEventListener("click", () => showSlide(finalIndex - 1));
-  el.assessment.querySelector("#submit-exam").addEventListener("click", grade);
-  if (prior) renderResult(prior);
+  loadImage(ui.assessment, slide);
+  ui.assessment.querySelector("#back-slide").addEventListener("click", () => showSlide(finalIndex - 1));
+  ui.assessment.querySelector("#submit-exam").addEventListener("click", submitAssessment);
+  if (latestResult) renderResult(latestResult);
 }
-function grade() {
+
+async function submitAssessment(event) {
   const answers = course.exam.map((_, index) => {
-    const selected = el.assessment.querySelector(`input[name="exam-${index}"]:checked`);
+    const selected = ui.assessment.querySelector(`input[name="exam-${index}"]:checked`);
     return selected ? Number(selected.value) : null;
   });
   const firstMissing = answers.indexOf(null);
   if (firstMissing >= 0) {
-    el.assessment.querySelector("#result").innerHTML = `<div class="feedback no">Answer all questions before submitting. Question ${firstMissing + 1} is incomplete.</div>`;
-    el.assessment.querySelectorAll(".examq")[firstMissing].scrollIntoView({ behavior: "smooth", block: "center" });
+    ui.assessment.querySelector("#result").innerHTML = `<div class="feedback no">Answer all questions before submitting. Question ${firstMissing + 1} is incomplete.</div>`;
+    ui.assessment.querySelectorAll(".examq")[firstMissing].scrollIntoView({ behavior: "smooth", block: "center" });
     return;
   }
-  const missed = course.exam.flatMap((q, index) => answers[index] === q.answer ? [] : [index + 1]);
-  const correct = course.exam.length - missed.length;
-  const critical = course.exam.every((q, index) => !q.critical || answers[index] === q.answer);
-  const pass = correct / course.exam.length >= 0.8 && critical;
-  state.attempts = (state.attempts || 0) + 1;
-  state.final = { answers, correct, score: Math.round(correct / course.exam.length * 100), critical, pass, missed, attempt: state.attempts, date: new Date().toISOString(), revision: course.revision };
-  persist();
-  renderResult(state.final);
-}
-function renderResult(result) {
-  const target = el.assessment.querySelector("#result");
-  const date = new Date(result.date).toLocaleString("en-AU", { dateStyle: "medium", timeStyle: "short", timeZone: "Australia/Melbourne" });
-  target.innerHTML = `<div class="result ${result.pass ? "pass" : "fail"}"><h2>${result.pass ? "THEORY PASSED · PRACTICAL PENDING" : "FURTHER TRAINING REQUIRED"}</h2>
-    <p><strong>Score:</strong> ${result.correct}/${course.exam.length} (${result.score}%) · <strong>Critical questions:</strong> ${result.critical ? "PASS" : "NOT PASSED"} · <strong>Attempt:</strong> ${result.attempt} · ${safe(date)}</p>
-    <p>${result.pass ? "A competent assessor must observe the task and confirm site requirements before authorisation." : `Review the lesson and retake the assessment. Questions to revisit: ${result.missed.join(", ")}.`}</p>
-    <p class="record-note">Pilot result saved on this browser. Download a copy for IMS administration. The download is provisional and does not replace a controlled training record.</p>
-    ${result.pass ? '<label for="learner-name">Full name for theory certificate</label><input type="text" id="learner-name" maxlength="70" autocomplete="name" placeholder="Learner full name" required>' : ""}
-    <label for="worker-id">Employee ID (optional; not saved on this site)</label><input type="text" id="worker-id" maxlength="40" autocomplete="off" placeholder="Employee ID">
-    <div class="result-actions"><button class="secondary" id="download-result">Download provisional result</button>${result.pass ? '<button class="primary" id="download-certificate">Download theory certificate (PDF)</button><a class="secondary link-button" href="./practical-checklist.html" target="_blank" rel="noopener">Open practical checklist</a>' : ""}</div><p class="certificate-message" id="certificate-message" role="alert"></p></div>`;
-  target.querySelector("#download-result").addEventListener("click", () => downloadResult(result));
-  target.querySelector("#download-certificate")?.addEventListener("click", () => downloadCertificate(result));
-}
-async function downloadCertificate(result) {
-  const nameInput = el.assessment.querySelector("#learner-name");
-  const message = el.assessment.querySelector("#certificate-message");
-  const button = el.assessment.querySelector("#download-certificate");
-  if (!nameInput.value.trim()) {
-    message.textContent = "Enter the learner's full name before downloading the certificate.";
-    nameInput.focus();
-    return;
-  }
-  button.disabled = true;
-  message.textContent = "Preparing the certificate…";
+  event.currentTarget.disabled = true;
+  ui.assessment.querySelector("#result").innerHTML = '<div class="feedback pending">Submitting for secure marking…</div>';
   try {
-    const { createTheoryCertificatePdf } = await import("./certificate-pdf.mjs");
-    const paths = ["../../assets/panalo-logo-certificate.jpg", "../../assets/certificate-regular.ttf", "../../assets/certificate-bold.ttf"];
-    const responses = await Promise.all(paths.map(path => fetch(path)));
-    if (responses.some(response => !response.ok)) throw new Error("A certificate asset could not be loaded.");
-    const [logoJpeg, regularFont, boldFont] = await Promise.all(responses.map(async response => new Uint8Array(await response.arrayBuffer())));
-    const criticalTotal = course.exam.filter(question => question.critical).length;
-    const criticalCorrect = course.exam.filter((question, index) => question.critical && result.answers[index] === question.answer).length;
-    const pdf = createTheoryCertificatePdf({
-      learnerName: nameInput.value, employeeId: el.assessment.querySelector("#worker-id").value,
-      moduleCode: course.code, moduleTitle: course.title, score: result.score,
-      correct: result.correct, total: course.exam.length, criticalCorrect, criticalTotal,
-      attempt: result.attempt, submittedAt: result.date, logoJpeg, regularFont, boldFont
-    });
-    const url = URL.createObjectURL(new Blob([pdf], { type: "application/pdf" }));
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `${course.code}-theory-certificate-${result.date.slice(0, 10)}.pdf`;
-    link.click();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-    message.textContent = "Certificate downloaded. Practical verification remains pending.";
+    latestResult = await api(config.trainingFunction, { action: "submit_exam", assignmentId, answers });
+    renderResult(latestResult);
+    renderNav();
   } catch (error) {
-    message.textContent = error.message || "The certificate could not be created. Please try again.";
-  } finally {
-    button.disabled = false;
+    ui.assessment.querySelector("#result").innerHTML = `<div class="feedback no">${safe(friendlyError(error))}</div>`;
+    event.currentTarget.disabled = false;
   }
-}
-function downloadResult(result) {
-  const employeeId = el.assessment.querySelector("#worker-id").value.trim();
-  const record = {
-    status: "PROVISIONAL THEORY RESULT — NOT PRACTICAL AUTHORISATION",
-    module: course.code, revision: course.revision, contentVersion: course.contentVersion, employeeId,
-    score: result.score, correct: result.correct, total: course.exam.length,
-    criticalPassed: result.critical, theoryPassed: result.pass,
-    practicalStatus: "PENDING", attempt: result.attempt, submittedAt: result.date,
-    missedQuestionNumbers: result.missed
-  };
-  const blob = new Blob([JSON.stringify(record, null, 2)], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = `${course.code}-theory-result-${result.date.slice(0, 10)}.json`;
-  link.click();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-async function init() {
-  el.start.disabled = true;
-  el.start.textContent = "Loading module…";
+function renderResult(result) {
+  const target = ui.assessment.querySelector("#result");
+  if (!target) return;
+  target.innerHTML = `<div class="result ${result.pass ? "pass" : "fail"}"><h2>${result.pass ? "THEORY PASSED · PRACTICAL VERIFICATION PENDING" : "FURTHER TRAINING REQUIRED"}</h2>
+    <p><strong>Verified learner:</strong> ${safe(learner.fullName)} · <strong>Score:</strong> ${result.correct}/${result.total} (${result.score}%) · <strong>Critical questions:</strong> ${result.criticalPassed ? "PASS" : "NOT PASSED"}</p>
+    <p><strong>Attempt:</strong> ${result.attemptNumber} · <strong>Date taken:</strong> ${safe(formatDate(result.submittedAt, true))}</p>
+    <p>${result.pass ? "Your theory result is recorded. A competent assessor must complete the required onsite practical verification before task authorisation." : `Review the module and retake the assessment. Questions to revisit: ${(result.missedQuestionNumbers || []).join(", ")}.`}</p>
+    ${result.pass ? `<p><strong>Certificate number:</strong> ${safe(result.certificateNumber || "Preparing certificate")}</p><button class="primary" id="certificate">Open certificate (PDF)</button><p id="certificate-message" class="certificate-message" role="status"></p>` : ""}</div>`;
+  const submitButton = ui.assessment.querySelector("#submit-exam");
+  if (submitButton) {
+    submitButton.disabled = false;
+    submitButton.textContent = "Submit another attempt";
+  }
+  target.querySelector("#certificate")?.addEventListener("click", openCertificate);
+}
+
+async function openCertificate(event) {
+  const message = ui.assessment.querySelector("#certificate-message");
+  event.currentTarget.disabled = true;
+  message.textContent = "Preparing a secure certificate link…";
   try {
-    const response = await fetch(`${DECK}manifest.json`, { cache: "no-cache" });
-    if (!response.ok) throw new Error(`Module manifest returned ${response.status}`);
-    course = await response.json();
-    const finalIndex = course.slides?.length - 1;
-    if (finalIndex < 1 || course.slides.some((slide, index) => slide.id !== index + 1 || (index < finalIndex && (!slide.check || !Array.isArray(slide.check.options)))) || course.slides[finalIndex].check !== "final" || !Array.isArray(course.exam) || !course.exam.length) {
-      throw new Error("The module is missing a slide or knowledge check");
-    }
-    const version = course.contentVersion || course.revision;
-    if (state.revision !== version) {
-      state = { passed: [], current: 0, final: null, attempts: 0, revision: version };
-    }
-    state.revision = version;
-    state.passed = [...new Set(state.passed.filter(index => Number.isInteger(index) && index >= 0 && index < finalIndex))];
-    state.current = Math.max(0, Math.min(finalIndex - 1, Number(state.current) || 0));
-    el.start.disabled = false;
-    el.start.textContent = "Start / Continue Training";
-    el.start.addEventListener("click", () => showSlide(canOpen(state.current) ? state.current : 0));
-    el.reset.addEventListener("click", () => {
-      if (window.confirm("Reset this module's progress and theory result on this browser?")) {
-        localStorage.removeItem(STORAGE_KEY);
-        state = { passed: [], current: 0, final: null, attempts: 0, revision: version };
-        show("landing"); persist();
-      }
+    const data = await api(config.trainingFunction, {
+      action: "certificate",
+      assignmentId,
+      attemptId: latestResult.id
     });
-    persist();
+    const link = document.createElement("a");
+    link.href = data.url;
+    link.target = "_blank";
+    link.rel = "noopener";
+    link.click();
+    message.textContent = "Certificate opened. Practical verification remains pending.";
   } catch (error) {
-    el.start.textContent = "Module unavailable";
-    document.getElementById("load-error").textContent = `The training content could not load: ${error.message}. Contact the module administrator.`;
+    message.textContent = friendlyError(error);
+  } finally {
+    event.currentTarget.disabled = false;
   }
 }
+
+async function loadCover() {
+  const image = document.getElementById("cover-image");
+  const status = document.getElementById("cover-status");
+  try {
+    const url = await getSlideUrl(1);
+    await new Promise((resolve, reject) => {
+      image.addEventListener("load", resolve, { once: true });
+      image.addEventListener("error", reject, { once: true });
+      image.src = url;
+    });
+    status.remove();
+    image.classList.add("ready");
+  } catch (error) {
+    status.textContent = friendlyError(error);
+  }
+}
+
+document.getElementById("sign-out").addEventListener("click", async () => {
+  await signOut();
+  window.location.href = "../../";
+});
+
+async function init() {
+  completeAuthRedirect();
+  if (!isConfigured()) {
+    showGate("Secure service connection pending", "The protected training backend has not been connected yet.");
+    return;
+  }
+  if (!assignmentId) {
+    showGate("No assignment selected", "Open this module from your assigned training list.");
+    return;
+  }
+  if (!await getSession()) {
+    showGate("Email verification required", "Sign in through the training portal with the email address used for this assignment.");
+    return;
+  }
+
+  try {
+    const data = await api(config.trainingFunction, { action: "module", assignmentId });
+    assignment = data.assignment;
+    course = data.module;
+    learner = data.learner;
+    latestResult = data.latestResult;
+    completedSlides = new Set(data.completedSlides || []);
+    currentIndex = Math.max(0, Math.min(course.slides.length - 2, Number(window.localStorage.getItem(`panalo-current-${assignmentId}`)) || 0));
+
+    document.getElementById("account-email").textContent = learner.email;
+    document.getElementById("course-title").textContent = course.title;
+    document.getElementById("course-revision").textContent = course.revision;
+    document.getElementById("module-status").textContent = course.status === "draft" ? "DRAFT · ASSIGNED PILOT" : "CONTROLLED TRAINING";
+    document.getElementById("landing-title").textContent = course.title;
+    document.getElementById("cover-caption").textContent = `PowerPoint cover · ${course.code} · ${course.slides.length} slides · ${course.revision}`;
+    document.getElementById("learner-name").textContent = learner.fullName;
+    document.getElementById("assignment-expiry").textContent = formatDate(assignment.expiresAt);
+    ui.start.addEventListener("click", () => showSlide(canOpen(currentIndex) ? currentIndex : 0));
+    show("landing");
+    loadCover();
+  } catch (error) {
+    showGate("Assignment unavailable", friendlyError(error));
+  }
+}
+
+window.addEventListener("beforeunload", () => {
+  if (assignmentId) window.localStorage.setItem(`panalo-current-${assignmentId}`, String(currentIndex));
+});
+
 init();

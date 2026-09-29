@@ -3,68 +3,58 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob: https://*.supabase.co; connect-src 'self' https://*.supabase.co; font-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'">
 <title>PP-TRN-WLD-001 | Hot Work – MIG Welding and Grinding Safety</title>
-<meta name="description" content="Interactive Panalo Pipes training module">
+<meta name="description" content="Controlled Panalo Pipes training module">
 <link rel="stylesheet" href="./module.css">
+<script src="../../config.js"></script>
+<script type="module" src="./module.js"></script>
 </head>
 <body>
 <header class="topbar">
-  <a class="back" href="../../">← Training Library</a>
-  <div class="brand"><span class="brandmark">P</span><span><strong>PANALO PIPES & STRUCTURALS</strong><small>Interactive Training</small></span></div>
-  <span class="modulecode">PP-TRN-WLD-001</span>
+  <a class="back" href="../../">← Training Portal</a>
+  <div class="brand"><span class="brandmark">P</span><span><strong>PANALO PIPES & STRUCTURALS</strong><small>Controlled Training</small></span></div>
+  <div class="account"><span id="account-email"></span><button id="sign-out" type="button">Sign out</button></div>
 </header>
 
-<div class="shell">
+<div id="module-shell" class="shell hidden">
   <aside class="sidebar">
     <div class="course-mini">
-      <span class="tag">HYBRID</span>
-      <h2>Hot Work – MIG Welding and Grinding Safety</h2>
-      <p>Draft Rev 1</p>
+      <span class="tag">ASSIGNED</span>
+      <h2 id="course-title">Training module</h2>
+      <p id="course-revision"></p>
     </div>
     <div class="progressbox">
-      <div><span>Progress</span><strong id="pct">0%</strong></div>
+      <div><span>Recorded progress</span><strong id="pct">0%</strong></div>
       <div class="track"><i id="bar"></i></div>
-      <p id="progress-detail">Loading module…</p>
+      <p id="progress-detail"></p>
     </div>
-    <nav id="nav"></nav>
-    <button class="reset" id="reset">Reset progress</button>
+    <nav id="nav" aria-label="Module slides"></nav>
+    <a class="portal-return" href="../../">Return to assignments</a>
   </aside>
 
   <main class="main">
-    <section id="landing" class="landing">
-      <div class="draftnote"><strong>DRAFT TRAINING MODULE</strong></div>
+    <section id="landing" class="landing hidden">
+      <div class="draftnote"><strong id="module-status">CONTROLLED TRAINING</strong></div>
       <figure class="landing-cover">
-        <img src="../../ppt/pp-trn-wld-001/slide-01.webp?v=2026-09-28-v5" alt="PowerPoint cover slide: Hot Work – MIG Welding and Grinding Safety" width="1921" height="1080" decoding="async">
-        <figcaption>PowerPoint cover · PP-TRN-WLD-001 · 20 slides · Draft Rev 1</figcaption>
+        <div id="cover-status" class="image-status" role="status">Loading the PowerPoint cover…</div>
+        <img id="cover-image" alt="PowerPoint cover slide" width="1921" height="1080" decoding="async">
+        <figcaption id="cover-caption"></figcaption>
       </figure>
       <div class="landing-intro">
-        <h1>Hot Work – MIG Welding and Grinding Safety</h1>
-        <p class="lead">Work through the source PowerPoint one slide at a time. Each slide has a knowledge check directly below it. Slide images load when opened.</p>
-        <button class="primary large" id="start">Start / Continue Training</button>
-        <p class="load-error" id="load-error" role="alert"></p>
+        <h1 id="landing-title"></h1>
+        <p class="lead">Work through the PowerPoint one slide at a time. Each slide has its corresponding knowledge check directly below it.</p>
+        <button class="primary large" id="start" type="button">Start / Continue Training</button>
       </div>
 
       <div class="facts">
-        <div><span>Target roles</span><strong>Boilermakers / Welders / Trade Assistants as applicable</strong></div>
-        <div><span>Delivery</span><strong>Online learning + online theory check + onsite verification</strong></div>
-        <div><span>Duration</span><strong>45–60 min online + onsite demonstration</strong></div>
-        <div><span>Practical</span><strong>Required</strong></div>
+        <div><span>Learner</span><strong id="learner-name"></strong></div>
+        <div><span>Assignment expires</span><strong id="assignment-expiry"></strong></div>
+        <div><span>Delivery</span><strong>Online theory + onsite practical verification</strong></div>
         <div><span>Theory pass</span><strong>80% overall + 100% critical questions</strong></div>
-        <div><span>Final status</span><strong>Theory pass does not equal practical authorisation</strong></div>
+        <div><span>Practical</span><strong>Required</strong></div>
+        <div><span>Final status</span><strong>Theory completion does not authorise practical work</strong></div>
       </div>
-
-      <section class="objectives">
-        <p class="eyebrow">LEARNING OBJECTIVES</p>
-        <h2>At the end of this training, the employee should be able to…</h2>
-        <ul>
-          <li>Identify MIG welding and grinding hazards.</li>
-          <li>Select and inspect PPE and equipment.</li>
-          <li>Confirm the applicable permit, SWMS/JSA and fire-watch arrangements.</li>
-          <li>Apply ventilation, exclusion, stop-work and emergency controls.</li>
-          <li>Recognise quality and material traceability controls.</li>
-        </ul>
-      </section>
-      <p class="source-note">This is a draft pilot. The PowerPoint and controls require technical, IMS and client review before formal assignment. Completion on this browser is provisional.</p>
     </section>
 
     <section id="lesson" class="lesson hidden" aria-live="polite"></section>
@@ -72,6 +62,14 @@
   </main>
 </div>
 
-<script src="./module.js?v=2026-09-28-certificate"></script>
+<main id="gate" class="gate" aria-live="polite">
+  <div class="gate-card">
+    <span class="brandmark">P</span>
+    <p class="eyebrow">CONTROLLED ACCESS</p>
+    <h1 id="gate-title">Loading your assignment…</h1>
+    <p id="gate-message">Checking your verified email and active module assignment.</p>
+    <a id="gate-action" class="primary link-button hidden" href="../../">Return to the training portal</a>
+  </div>
+</main>
 </body>
 </html>

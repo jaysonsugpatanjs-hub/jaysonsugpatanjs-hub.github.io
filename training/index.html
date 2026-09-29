@@ -3,77 +3,81 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob: https://*.supabase.co; connect-src 'self' https://*.supabase.co; font-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'">
 <title>Panalo Pipes Training Portal</title>
-<meta name="description" content="Panalo Pipes & Structurals online training library">
+<meta name="description" content="Controlled Panalo Pipes & Structurals online training portal">
 <link rel="stylesheet" href="./styles.css">
+<script src="./config.js"></script>
+<script type="module" src="./app.js"></script>
 </head>
 <body>
 <header class="topbar">
   <a class="brand" href="./" aria-label="Panalo Pipes Training home">
     <span class="brandmark">P</span>
-    <span><strong>PANALO PIPES & STRUCTURALS</strong><small>Online Training Portal</small></span>
+    <span><strong>PANALO PIPES & STRUCTURALS</strong><small>Controlled Training Portal</small></span>
   </a>
-  <span class="draft">TRAINING PILOT</span>
+  <div class="account-actions">
+    <a id="admin-link" class="header-link hidden" href="./admin/">Administration</a>
+    <button id="sign-out" class="header-button hidden" type="button">Sign out</button>
+    <span class="draft">CONTROLLED ACCESS</span>
+  </div>
 </header>
 
 <main class="page">
   <section class="hero">
-    <p class="eyebrow">EMPLOYEE LEARNING & COMPETENCY</p>
-    <h1>Training Module Library</h1>
-    <p>Select a training module to begin. Each PowerPoint slide opens with a knowledge check below it. A theory pass must be followed by practical verification where required.</p>
+    <p class="eyebrow">EMPLOYEE & APPLICANT LEARNING</p>
+    <h1>Your assigned training</h1>
+    <p>Use the personal email address invited by Panalo Pipes. Only active assignments appear after the email link is verified.</p>
   </section>
 
-  <section class="notice">
-    <strong>Controlled-release note</strong>
-    <span>Training content must be verified against the current approved Panalo Pipes / client / legal requirement before formal issue.</span>
+  <section id="setup-panel" class="portal-card setup-card hidden" aria-live="polite">
+    <p class="eyebrow">PORTAL SETUP</p>
+    <h2>Secure service connection pending</h2>
+    <p>The protected training backend has not been connected to this page. No learner records or course files are available publicly.</p>
   </section>
 
-  <section class="library-head">
-    <div><p class="eyebrow">TRAINING PILOT</p><h2>Modules</h2></div>
-    <div class="filter">1 draft module</div>
+  <section id="sign-in-panel" class="portal-card auth-card hidden" aria-labelledby="sign-in-title">
+    <div>
+      <p class="eyebrow">EMAIL VERIFICATION</p>
+      <h2 id="sign-in-title">Sign in with your invited email</h2>
+      <p>No password is required. We will send a one-time, time-limited sign-in link.</p>
+    </div>
+    <form id="sign-in-form">
+      <label for="email">Email address</label>
+      <div class="email-row">
+        <input id="email" name="email" type="email" autocomplete="email" inputmode="email" required placeholder="name@example.com">
+        <button class="primary" type="submit">Email my sign-in link</button>
+      </div>
+      <p id="auth-message" class="form-message" role="status" aria-live="polite"></p>
+    </form>
+    <p class="privacy-note">Access is limited to invited accounts. Your email, completion activity, scores and certificate record are retained for training administration.</p>
   </section>
 
-  <section class="module-grid">
-    <a class="module-card available" href="./modules/pp-trn-wld-001/">
-      <div class="module-visual">
-        <img src="./ppt/pp-trn-wld-001/slide-01.webp?v=2026-09-28-v4" alt="PowerPoint cover slide: Hot Work – MIG Welding and Grinding Safety" width="1921" height="1080" decoding="async">
-        <span class="status">DRAFT PREVIEW</span>
-      </div>
-      <div class="module-body">
-        <div class="code">PP-TRN-WLD-001</div>
-        <h3>Hot Work – MIG Welding and Grinding Safety</h3>
-        <p>MIG welding, grinding, permits, fire prevention, cylinders and quality controls.</p>
-        <div class="meta">
-          <span>45–60 min online</span>
-          <span>Hybrid delivery</span>
-          <span>Practical required</span>
-        </div>
-        <div class="open">Open training module <span>→</span></div>
-      </div>
-    </a>
+  <section id="dashboard" class="hidden" aria-live="polite">
+    <section class="learner-summary">
+      <div><span>Signed in as</span><strong id="learner-name"></strong><small id="learner-email"></small></div>
+      <div><span>Record ID</span><strong id="learner-id">—</strong></div>
+    </section>
 
-    <article class="module-card locked">
-      <div class="placeholder">NEXT MODULE</div>
-      <div class="module-body">
-        <div class="code">PLANNED</div>
-        <h3>Additional Panalo Training Modules</h3>
-        <p>Future modules will use the same controlled interactive format.</p>
-        <div class="meta"><span>Coming later</span></div>
-      </div>
-    </article>
+    <section class="library-head">
+      <div><p class="eyebrow">ACTIVE ASSIGNMENTS</p><h2>Training modules</h2></div>
+      <div id="assignment-count" class="filter"></div>
+    </section>
+    <section id="module-grid" class="module-grid secure-grid"></section>
+    <p id="dashboard-message" class="form-message" role="status"></p>
   </section>
 
   <section class="how">
-    <p class="eyebrow">HOW IT WORKS</p>
-    <h2>Training pathway</h2>
+    <p class="eyebrow">TRAINING PATHWAY</p>
+    <h2>How completion is recorded</h2>
     <div class="steps">
-      <div><b>1</b><strong>Select module</strong><span>Open your assigned training.</span></div>
-      <div><b>2</b><strong>Learn</strong><span>Open each PowerPoint slide as you progress.</span></div>
-      <div><b>3</b><strong>Pass checkpoints</strong><span>Answer the question below every slide before progressing.</span></div>
-      <div><b>4</b><strong>Final assessment</strong><span>Pass theory, then complete practical verification where required.</span></div>
+      <div><b>1</b><strong>Verify email</strong><span>Use the personal address invited for this assignment.</span></div>
+      <div><b>2</b><strong>Complete slides</strong><span>Each slide has a corresponding knowledge check.</span></div>
+      <div><b>3</b><strong>Pass theory</strong><span>Achieve 80% overall and answer every critical question correctly.</span></div>
+      <div><b>4</b><strong>Verify practical</strong><span>Theory completion does not authorise practical work.</span></div>
     </div>
   </section>
 </main>
-<footer>Panalo Pipes & Structurals Pty Ltd · Online Training Pilot</footer>
+<footer>Panalo Pipes & Structurals Pty Ltd · Controlled Training Portal</footer>
 </body>
 </html>
