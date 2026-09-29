@@ -152,13 +152,14 @@ async function showSlide(index) {
   ui.lesson.querySelector("#previous").addEventListener("click", () => showSlide(index - 1));
   ui.lesson.querySelector("#next").addEventListener("click", () => index === course.slides.length - 2 ? showAssessment() : showSlide(index + 1));
   ui.lesson.querySelector("#check-answer").addEventListener("click", async event => {
+    const button = event.currentTarget;
     const selected = ui.lesson.querySelector('input[name="checkpoint"]:checked');
     const feedback = ui.lesson.querySelector("#checkpoint-feedback");
     if (!selected) {
       feedback.innerHTML = '<div class="feedback no">Choose an answer first.</div>';
       return;
     }
-    event.currentTarget.disabled = true;
+    button.disabled = true;
     feedback.innerHTML = '<div class="feedback pending">Checking and recording your answer…</div>';
     try {
       const result = await api(config.trainingFunction, {
@@ -169,18 +170,18 @@ async function showSlide(index) {
       });
       if (!result.correct) {
         feedback.innerHTML = '<div class="feedback no">Review the slide and key points, then try again.</div>';
-        event.currentTarget.disabled = false;
+        button.disabled = false;
         return;
       }
       completedSlides.add(slide.id);
       feedback.innerHTML = `<div class="feedback ok">Correct. ${safe(result.feedback || "Your checkpoint has been recorded.")}</div>`;
       ui.lesson.querySelectorAll('input[name="checkpoint"]').forEach(input => { input.disabled = true; });
       ui.lesson.querySelector("#next").disabled = false;
-      event.currentTarget.textContent = "Checkpoint recorded";
+      button.textContent = "Checkpoint recorded";
       renderNav();
     } catch (error) {
       feedback.innerHTML = `<div class="feedback no">${safe(friendlyError(error))}</div>`;
-      event.currentTarget.disabled = false;
+      button.disabled = false;
     }
   });
 }
@@ -202,6 +203,7 @@ async function showAssessment() {
 }
 
 async function submitAssessment(event) {
+  const button = event.currentTarget;
   const answers = course.exam.map((_, index) => {
     const selected = ui.assessment.querySelector(`input[name="exam-${index}"]:checked`);
     return selected ? Number(selected.value) : null;
@@ -212,7 +214,7 @@ async function submitAssessment(event) {
     ui.assessment.querySelectorAll(".examq")[firstMissing].scrollIntoView({ behavior: "smooth", block: "center" });
     return;
   }
-  event.currentTarget.disabled = true;
+  button.disabled = true;
   ui.assessment.querySelector("#result").innerHTML = '<div class="feedback pending">Submitting for secure marking…</div>';
   try {
     latestResult = await api(config.trainingFunction, { action: "submit_exam", assignmentId, answers });
@@ -220,7 +222,7 @@ async function submitAssessment(event) {
     renderNav();
   } catch (error) {
     ui.assessment.querySelector("#result").innerHTML = `<div class="feedback no">${safe(friendlyError(error))}</div>`;
-    event.currentTarget.disabled = false;
+    button.disabled = false;
   }
 }
 
@@ -245,8 +247,9 @@ function renderResult(result) {
 }
 
 async function openCertificate(event) {
+  const button = event.currentTarget;
   const message = ui.assessment.querySelector("#certificate-message");
-  event.currentTarget.disabled = true;
+  button.disabled = true;
   message.textContent = "Preparing a secure certificate link…";
   try {
     const data = await api(config.trainingFunction, {
@@ -263,7 +266,7 @@ async function openCertificate(event) {
   } catch (error) {
     message.textContent = friendlyError(error);
   } finally {
-    event.currentTarget.disabled = false;
+    button.disabled = false;
   }
 }
 
