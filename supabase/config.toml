@@ -1,0 +1,7 @@
+project_id = "panalo-training"
+
+[functions.training-api]
+verify_jwt = true
+
+[functions.admin-api]
+verify_jwt = true
