@@ -145,16 +145,28 @@ async function publishModule(event) {
   }
 }
 
+const MAX_SLIDE_WIDTH = 1600;
+const MAX_SLIDE_HEIGHT = 900;
+const SLIDE_WEBP_QUALITY = 0.8;
+
 async function convertImageToWebp(file) {
-  if (file.type === "image/webp") return file;
   const bitmap = await createImageBitmap(file);
+  const scale = Math.min(1, MAX_SLIDE_WIDTH / bitmap.width, MAX_SLIDE_HEIGHT / bitmap.height);
+  const width = Math.max(1, Math.round(bitmap.width * scale));
+  const height = Math.max(1, Math.round(bitmap.height * scale));
   const canvas = document.createElement("canvas");
-  canvas.width = bitmap.width;
-  canvas.height = bitmap.height;
+  canvas.width = width;
+  canvas.height = height;
   const context = canvas.getContext("2d", { alpha: false });
-  context.drawImage(bitmap, 0, 0);
+  context.imageSmoothingEnabled = true;
+  context.imageSmoothingQuality = "high";
+  context.drawImage(bitmap, 0, 0, width, height);
   bitmap.close?.();
-  const blob = await new Promise((resolve, reject) => canvas.toBlob(value => value ? resolve(value) : reject(new Error(`Could not convert ${file.name} to WebP.`)), "image/webp", 0.9));
+  const blob = await new Promise((resolve, reject) => canvas.toBlob(
+    value => value ? resolve(value) : reject(new Error(`Could not convert ${file.name} to WebP.`)),
+    "image/webp",
+    SLIDE_WEBP_QUALITY
+  ));
   return blob;
 }
 
