@@ -34,7 +34,13 @@ jobs:
         with:
           deno-version: v2.x
       - name: Type-check Edge Functions
-        run: deno check supabase/functions/training-api/index.ts supabase/functions/admin-api/index.ts supabase/functions/ims-api/index.ts
+        shell: bash
+        run: |
+          set -o pipefail
+          if ! deno check --node-modules-dir=auto supabase/functions/training-api/index.ts supabase/functions/admin-api/index.ts supabase/functions/ims-api/index.ts 2>&1 | tee check.log; then
+            sed 's/\x1b\[[0-9;]*m//g' check.log | grep -v '^\s*$' | tail -20 | sed 's/^/::error title=deno check::/'
+            exit 1
+          fi
 
   deploy:
     name: Deploy Edge Functions
