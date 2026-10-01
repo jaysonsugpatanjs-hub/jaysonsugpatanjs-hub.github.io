@@ -244,7 +244,7 @@ function safeFileName(value: unknown) {
 
 async function prepareUpload(admin: Client, me: any, body: any) {
   const revisionId = id(body.revisionId, "Revision");
-  const rev = await admin.from("ims_document_revisions").select("id,document_id,status,ims_documents(folder_id)").eq("id", revisionId).maybeSingle();
+  const rev = await admin.from("ims_document_revisions").select("id,document_id,status,ims_documents!ims_document_revisions_document_id_fkey(folder_id)").eq("id", revisionId).maybeSingle();
   if (rev.error || !rev.data) throw httpError(404, "Revision not found.");
   if (await levelOf(admin, rev.data.ims_documents.folder_id, me.id) < 2) throw httpError(403, "You need editor access to upload files.");
   if (rev.data.status !== "in_approval") throw httpError(409, "Only a revision awaiting approval can take a file.");
@@ -277,7 +277,7 @@ async function attachFile(admin: Client, me: any, body: any) {
 
 async function download(admin: Client, me: any, body: any) {
   const revisionId = id(body.revisionId, "Revision");
-  const rev = await admin.from("ims_document_revisions").select("id,status,file_path,ims_documents(folder_id,doc_number)").eq("id", revisionId).maybeSingle();
+  const rev = await admin.from("ims_document_revisions").select("id,status,file_path,ims_documents!ims_document_revisions_document_id_fkey(folder_id,doc_number)").eq("id", revisionId).maybeSingle();
   if (rev.error || !rev.data) throw httpError(404, "Revision not found.");
   if (!rev.data.file_path) throw httpError(404, "This revision has no file.");
   const level = await levelOf(admin, rev.data.ims_documents.folder_id, me.id);
