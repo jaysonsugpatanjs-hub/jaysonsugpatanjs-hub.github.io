@@ -72,3 +72,55 @@ th small { display: block; margin-top: 3px; text-transform: none; letter-spacing
   .admin-tabs { width: 100%; overflow-x: auto; scrollbar-width: thin; }
   .admin-tab { flex: 0 0 auto; white-space: nowrap; }
 }
+
+/* Sign-in and passwords */
+.stacked-form { display: flex; flex-direction: column; gap: 8px; }
+.stacked-form label { font-size: 12px; font-weight: 800; margin-top: 6px; }
+.stacked-form input { padding: 12px 13px; border-radius: 9px; border: 1px solid #3a3a3e; font: inherit; }
+.stacked-form .primary { margin-top: 10px; }
+.text-button { border: 0; background: none; color: var(--gold); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; padding: 8px 0; text-align: left; min-height: 36px; }
+.text-button:hover { text-decoration: underline; }
+.password-rules { margin: 12px 0 0; padding-left: 18px; color: var(--muted); font-size: 13px; line-height: 1.6; }
+
+/* Applicant document checklist */
+.onboarding-card { margin: 0 0 28px; }
+.onboarding-list { display: flex; flex-direction: column; margin-top: 10px; }
+.onboarding-item { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; padding: 14px 0; border-top: 1px solid var(--rule); }
+.onboarding-text { min-width: 0; flex: 1; }
+.onboarding-text p { margin: 4px 0 0; }
+.onboarding-title { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.onboarding-actions { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; flex-shrink: 0; }
+.upload-button { position: relative; display: inline-flex; align-items: center; justify-content: center; min-height: 40px; padding: 0 14px; border-radius: 8px; background: var(--gold); color: #0d0d0e; font-weight: 800; font-size: 13px; cursor: pointer; }
+.upload-button input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.upload-button:focus-within { outline: 3px solid var(--gold); outline-offset: 3px; }
+.reject-note { color: var(--red) !important; font-weight: 600; font-size: 13px; }
+small.reject-note { display: block; margin-top: 4px; }
+
+/* HR review */
+.onboarding-detail { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border); }
+.review-row { align-items: flex-start; }
+.doc-picks { border: 0; padding: 0; margin: 12px 0; display: flex; flex-direction: column; gap: 6px; }
+.doc-picks legend { font-size: 12px; font-weight: 800; margin-bottom: 6px; }
+.doc-picks .check-field span small { display: block; color: var(--muted); font-weight: 400; margin-top: 2px; }
+.perm-table select { padding: 6px 8px; border-radius: 6px; border: 1px solid #3a3a3e; }
+.check-field span small { display: block; color: var(--muted); font-weight: 400; margin-top: 2px; }
+
+/* One-time temporary password */
+.secret-dialog { max-width: 520px; width: calc(100% - 32px); border: 1px solid var(--gold); border-radius: 16px; background: var(--surface); color: var(--text); padding: 24px; }
+.secret-dialog::backdrop { background: rgba(0, 0, 0, .7); }
+.secret-dialog h2 { margin: 4px 0 8px; }
+.secret-facts { display: grid; grid-template-columns: auto 1fr; gap: 8px 14px; margin: 16px 0; font-size: 13px; }
+.secret-facts dt { color: var(--muted); }
+.secret-facts dd { margin: 0; word-break: break-all; }
+code.secret { font-size: 20px; letter-spacing: .06em; color: var(--gold); background: var(--surface-2); padding: 6px 10px; border-radius: 8px; display: inline-block; }
+
+@media (max-width: 650px) {
+  .onboarding-item { flex-direction: column; }
+  .onboarding-actions { align-items: flex-start; flex-direction: row; flex-wrap: wrap; }
+}
+
+/* Fixes: older admin styles made form inputs stretch and the editor sticky. */
+.admin-form .check-field input, .doc-picks input[type=checkbox], .group-grid input[type=checkbox] { flex: none; width: auto; margin-top: 3px; }
+.check-field { justify-content: flex-start; text-align: left; }
+.people-side .admin-form, .people-layout .admin-form { position: static; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }

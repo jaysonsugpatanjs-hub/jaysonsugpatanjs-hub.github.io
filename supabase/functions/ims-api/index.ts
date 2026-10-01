@@ -36,9 +36,10 @@ function text(value: unknown, label: string, max = 200, required = true): string
 }
 
 async function requireProfile(admin: Client, userId: string) {
-  const { data, error } = await admin.from("training_profiles").select("id,email,full_name,role,active").eq("id", userId).maybeSingle();
+  const { data, error } = await admin.from("training_profiles").select("id,email,full_name,role,active,must_change_password").eq("id", userId).maybeSingle();
   if (error) throw httpError(500, "Profile lookup failed.");
   if (!data?.active) throw httpError(403, "This account is not active.");
+  if (data.must_change_password) throw httpError(403, "Change your temporary password before continuing.", "password_change_required");
   return data;
 }
 

@@ -1,7 +1,8 @@
 import { withSupabase } from "npm:@supabase/server@^1";
 import { createCertificatePdf } from "../_shared/certificate.ts";
 import { allLearningSlidesComplete, gradeAssessment, isSlideUnlocked } from "../_shared/grading.ts";
-import { corsHeaders, errorJson, httpError, json } from "../_shared/http.ts";
+import { corsHeaders, errorJson, httpError, json, rpc } from "../_shared/http.ts";
+import { passwordProblem } from "../_shared/accounts.ts";
 
 type Client = any;
 
@@ -14,7 +15,7 @@ function assertData<T>(data: T | null, error: any, message = "Secure record look
 async function getProfile(admin: Client, userId: string) {
   const { data, error } = await admin
     .from("training_profiles")
-    .select("id,email,full_name,external_id,learner_type,role,active")
+    .select("id,email,full_name,external_id,learner_type,role,active,must_change_password")
     .eq("id", userId)
     .maybeSingle();
   const profile = assertData(data, error, "Learner profile lookup failed.");
@@ -211,6 +212,10 @@ async function handleBootstrap(admin: Client, userId: string) {
     });
   }
 
+  const permissions = await rpc<string[]>(admin, "app_permissions_for", { p_profile: userId });
+  const onboarding = await admin.from("onboarding_requests").select("id,status,onboarding_items(status,required)")
+    .eq("profile_id", userId).eq("status", "open").maybeSingle();
+  const items = onboarding.data?.onboarding_items || [];
   return {
     learner: {
       id: profile.id,
@@ -218,8 +223,15 @@ async function handleBootstrap(admin: Client, userId: string) {
       fullName: profile.full_name,
       externalId: profile.external_id,
       learnerType: profile.learner_type,
-      role: profile.role
+      role: profile.role,
+      mustChangePassword: Boolean(profile.must_change_password),
+      hasAdminAccess: (permissions || []).length > 0
     },
+    onboarding: onboarding.data ? {
+      requestId: onboarding.data.id,
+      outstanding: items.filter((i: any) => i.required && i.status !== "accepted").length,
+      toFix: items.filter((i: any) => i.status === "rejected").length
+    } : null,
     assignments
   };
 }
@@ -389,6 +401,81 @@ async function handleCertificate(admin: Client, userId: string, body: any) {
   return { url: signed.data.signedUrl, expiresIn: 300, certificateNumber: certificate.certificate_number };
 }
 
+async function handleChangePassword(admin: Client, userId: string, body: any) {
+  const profile = await getProfile(admin, userId);
+  const password = String(body.password ?? "");
+  const problem = passwordProblem(password, profile.email);
+  if (problem) throw httpError(400, problem, "weak_password");
+  const updated = await admin.auth.admin.updateUserById(userId, { password });
+  if (updated.error) throw httpError(400, "That password could not be set. Try a different one.");
+  await rpc(admin, "account_password_changed", { p_actor: userId });
+  return { changed: true };
+}
+
+const HR_BUCKET = "hr-documents";
+const HR_MAX_BYTES = 20 * 1024 * 1024;
+const HR_TYPES: Record<string, string> = { pdf: "application/pdf", jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png", webp: "image/webp", heic: "image/heic" };
+
+async function myOnboardingItem(admin: Client, userId: string, itemId: unknown) {
+  const id = String(itemId || "");
+  if (!/^[0-9a-f-]{36}$/i.test(id)) throw httpError(400, "That document is not valid.");
+  const { data, error } = await admin.from("onboarding_items")
+    .select("id,request_id,status,doc_type,onboarding_requests(profile_id,status)").eq("id", id).maybeSingle();
+  if (error) throw httpError(500, "The document request could not be loaded.");
+  if (!data || data.onboarding_requests?.profile_id !== userId) throw httpError(404, "Document request not found.");
+  if (data.onboarding_requests.status !== "open") throw httpError(409, "This onboarding request is closed.");
+  if (data.status === "accepted") throw httpError(409, "This document has already been accepted.");
+  return data;
+}
+
+async function handleOnboardingView(admin: Client, userId: string) {
+  const { data, error } = await admin.from("onboarding_requests")
+    .select("id,status,due_on,message,created_at,onboarding_items(id,doc_type,required,status,file_name,uploaded_at,reject_reason)")
+    .eq("profile_id", userId).in("status", ["open", "complete"]).order("created_at", { ascending: false }).limit(1).maybeSingle();
+  if (error) throw httpError(500, "Your onboarding documents could not be loaded.");
+  if (!data) return { request: null };
+  const types = await admin.from("hr_document_types").select("key,name,guidance,sensitive,sort");
+  if (types.error) throw httpError(500, "Document types could not be loaded.");
+  const typeMap = new Map(types.data.map((t: any) => [t.key, t]));
+  return {
+    request: { id: data.id, status: data.status, dueOn: data.due_on, message: data.message, createdAt: data.created_at },
+    items: (data.onboarding_items || []).map((i: any) => {
+      const t: any = typeMap.get(i.doc_type) || {};
+      return {
+        id: i.id, name: t.name || i.doc_type, guidance: t.guidance || "", sensitive: Boolean(t.sensitive), sort: t.sort ?? 999,
+        required: i.required, status: i.status, fileName: i.file_name, uploadedAt: i.uploaded_at, rejectReason: i.reject_reason
+      };
+    }).sort((a: any, b: any) => a.sort - b.sort)
+  };
+}
+
+async function handleOnboardingPrepare(admin: Client, userId: string, body: any) {
+  const item = await myOnboardingItem(admin, userId, body.itemId);
+  const size = Number(body.size);
+  if (!Number.isFinite(size) || size < 1 || size > HR_MAX_BYTES) throw httpError(400, "Files must be under 20 MB.");
+  const raw = String(body.fileName || "").trim();
+  const ext = raw.includes(".") ? raw.split(".").pop()!.toLowerCase() : "";
+  if (!HR_TYPES[ext]) throw httpError(400, "Upload a PDF or a photo (JPG, PNG, WebP or HEIC).");
+  const stem = raw.slice(0, raw.length - ext.length - 1).replace(/[^A-Za-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 100) || "document";
+  const path = `${item.request_id}/${item.id}/${stem}-${Date.now().toString(36)}.${ext}`;
+  const signed = await admin.storage.from(HR_BUCKET).createSignedUploadUrl(path, { upsert: false });
+  if (signed.error || !signed.data?.signedUrl) throw httpError(500, "A secure upload link could not be created.");
+  return { path, signedUrl: signed.data.signedUrl, contentType: HR_TYPES[ext] };
+}
+
+async function handleOnboardingAttach(admin: Client, userId: string, body: any) {
+  const item = await myOnboardingItem(admin, userId, body.itemId);
+  const path = String(body.path || "");
+  const folder = `${item.request_id}/${item.id}`;
+  if (!path.startsWith(`${folder}/`)) throw httpError(400, "Invalid upload path.");
+  const listed = await admin.storage.from(HR_BUCKET).list(folder, { limit: 100 });
+  if (listed.error || !(listed.data || []).some((f: any) => f.name === path.split("/").pop() && Number(f?.metadata?.size ?? 1) > 0)) {
+    throw httpError(409, "The upload didn't arrive. Please try again.");
+  }
+  await rpc(admin, "onboarding_record_upload", { p_actor: userId, p_item: item.id, p_path: path, p_file_name: String(body.fileName || "").slice(0, 200) });
+  return { uploaded: true };
+}
+
 export default {
   fetch: withSupabase({ auth: "user" }, async (request: Request, context: any) => {
     const cors = corsHeaders(request);
@@ -398,11 +485,20 @@ export default {
 
     try {
       const userId = String(context.userClaims?.id || context.userClaims?.sub || "");
-      if (!userId) throw httpError(401, "A verified email session is required.");
+      if (!userId) throw httpError(401, "A verified session is required.");
       const body = await request.json().catch(() => ({}));
+      // A temporary password must be changed before anything else.
+      if (!["bootstrap", "change_password"].includes(String(body.action))) {
+        const profile = await getProfile(context.supabaseAdmin, userId);
+        if (profile.must_change_password) throw httpError(403, "Change your temporary password before continuing.", "password_change_required");
+      }
       let result: unknown;
       switch (body.action) {
         case "bootstrap": result = await handleBootstrap(context.supabaseAdmin, userId); break;
+        case "change_password": result = await handleChangePassword(context.supabaseAdmin, userId, body); break;
+        case "onboarding_view": result = await handleOnboardingView(context.supabaseAdmin, userId); break;
+        case "onboarding_prepare_upload": result = await handleOnboardingPrepare(context.supabaseAdmin, userId, body); break;
+        case "onboarding_attach": result = await handleOnboardingAttach(context.supabaseAdmin, userId, body); break;
         case "module": result = await handleModule(context.supabaseAdmin, userId, body); break;
         case "slide": result = await handleSlide(context.supabaseAdmin, userId, body); break;
         case "check": result = await handleCheck(context.supabaseAdmin, userId, body); break;

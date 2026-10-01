@@ -23,11 +23,12 @@
     <section class="admin-heading"><div><p class="eyebrow">INTEGRATED MANAGEMENT SYSTEM</p><h1>People, documents and training</h1><p id="admin-identity"></p></div><button id="refresh" class="secondary-action" type="button">Refresh registers</button></section>
     <section id="summary" class="summary-grid"></section>
     <nav class="admin-tabs" aria-label="Training administration areas">
-      <button class="admin-tab active" type="button" data-admin-view="access-management" aria-pressed="true">Learner access</button>
-      <button class="admin-tab" type="button" data-admin-view="module-management" aria-pressed="false">Module management</button>
-      <button class="admin-tab" type="button" data-admin-view="people-management" aria-pressed="false">People</button>
-      <button class="admin-tab" type="button" data-admin-view="competency-matrix" aria-pressed="false">Competency matrix</button>
-      <button class="admin-tab" type="button" data-admin-view="ims-documents" aria-pressed="false">IMS documents</button>
+      <button class="admin-tab active" type="button" data-admin-view="access-management" data-perm="training.manage" aria-pressed="true">Learner access</button>
+      <button class="admin-tab" type="button" data-admin-view="module-management" data-perm="training.manage" aria-pressed="false">Module management</button>
+      <button class="admin-tab" type="button" data-admin-view="people-management" data-perm="people.view people.manage access.manage hr.manage" aria-pressed="false">People</button>
+      <button class="admin-tab" type="button" data-admin-view="onboarding-management" data-perm="hr.manage" aria-pressed="false">Onboarding</button>
+      <button class="admin-tab" type="button" data-admin-view="competency-matrix" data-perm="competency.all competency.team" aria-pressed="false">Competency matrix</button>
+      <button class="admin-tab" type="button" data-admin-view="ims-documents" data-perm="*" aria-pressed="false">IMS documents</button>
     </nav>
     <section id="access-management" class="admin-view admin-layout">
       <form id="invite-form" class="portal-card admin-form">
@@ -40,8 +41,12 @@
         </div>
         <div class="field"><label for="module-code">Assigned module</label><select id="module-code" name="moduleCode" required></select></div>
         <div class="field"><label for="expires-on">Access expires after</label><input id="expires-on" name="expiresOn" type="date" required></div>
+        <div class="field"><label for="sign-in-mode">How they'll sign in (new learners)</label><select id="sign-in-mode" name="signIn">
+          <option value="invite">Email them a link to set a password</option>
+          <option value="password">Create a temporary password (shown once)</option></select>
+          <small>Existing sign-ins are kept; they just get the new assignment.</small></div>
         <button class="primary" type="submit">Send invitation and assign</button>
-        <p class="privacy-note">The invitation goes only to the email above. Access can be revoked from the register.</p>
+        <p class="privacy-note">Invitations go only to the email above; temporary passwords are shown to you once. Access can be revoked from the register.</p>
         <p id="invite-message" class="form-message" role="status" aria-live="polite"></p>
       </form>
       <section class="portal-card register-card"><div class="register-head"><div><p class="eyebrow">ACCESS REGISTER</p><h2>Assignments</h2></div><input id="search" type="search" placeholder="Search name, email, ID or module" aria-label="Search assignments"></div><div class="table-wrap"><table><thead><tr><th>Learner</th><th>Module</th><th>Status</th><th>Result</th><th>Expiry</th><th>Access</th></tr></thead><tbody id="register-body"></tbody></table></div><p id="register-message" class="form-message"></p><button id="load-more" class="secondary-action hidden" type="button">Load more assignments</button></section>
@@ -93,6 +98,21 @@
         <div class="people-side">
           <section class="portal-card"><form data-employee-form class="admin-form"></form><div data-employee-extra></div></section>
           <section class="portal-card" data-positions></section>
+        </div>
+      </div>
+    </section>
+
+    <section id="onboarding-management" class="admin-view hidden">
+      <div class="people-layout">
+        <section class="portal-card register-card">
+          <div class="register-head"><div><p class="eyebrow">HR ONBOARDING</p><h2>Onboarding requests</h2>
+            <p class="muted">Applicants upload their documents on the portal; review each one here.</p></div></div>
+          <div class="table-wrap"><table><thead><tr><th>Person</th><th>Progress</th><th>Status</th><th>Due</th></tr></thead><tbody data-onb-body></tbody></table></div>
+          <p class="form-message" data-onb-msg></p>
+          <section class="onboarding-detail hidden" data-onb-detail></section>
+        </section>
+        <div class="people-side">
+          <section class="portal-card"><form data-onb-form class="admin-form"></form></section>
         </div>
       </div>
     </section>

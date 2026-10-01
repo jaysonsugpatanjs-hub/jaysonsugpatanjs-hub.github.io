@@ -173,12 +173,21 @@ async function groupMemberSet(admin: Client, administrator: any, body: any) {
   return { saved: true };
 }
 
-async function competencyMatrix(admin: Client) {
+async function competencyMatrix(admin: Client, actor: any) {
   const today = sydneyDate(new Date());
   const ref = await reference(admin);
-  const employees = await admin.from("employees")
+  let query = admin.from("employees")
     .select("id,employee_number,full_name,employment_type,status,position_id,site_id,supervisor_id,start_date,profile_id")
-    .neq("status", "terminated").order("full_name").limit(2000);
+    .neq("status", "terminated");
+  // Supervisors without the "everyone" permission see their direct reports only.
+  const teamOnly = !(actor?.permissions || []).includes("competency.all");
+  if (teamOnly) {
+    const me = await admin.from("employees").select("id").eq("profile_id", actor.id).maybeSingle();
+    if (me.error) throw httpError(500, "Your register entry could not be loaded.");
+    if (!me.data) return { today, columns: [], rows: [], summary: { required: 0, competent: 0 }, positions: ref.positions, sites: ref.sites, teamOnly };
+    query = query.eq("supervisor_id", me.data.id);
+  }
+  const employees = await query.order("full_name").limit(2000);
   if (employees.error) throw httpError(500, "The employee register could not be loaded.");
   const profileIds = employees.data.map((e: any) => e.profile_id).filter(Boolean);
   const assignments = profileIds.length
@@ -235,7 +244,7 @@ async function competencyMatrix(admin: Client) {
       startDate: e.start_date, linked: Boolean(e.profile_id), cells
     };
   });
-  return { today, columns, rows, summary: { required, competent }, positions: ref.positions, sites: ref.sites };
+  return { today, columns, rows, summary: { required, competent }, positions: ref.positions, sites: ref.sites, teamOnly };
 }
 
 async function practicalRecord(admin: Client, administrator: any, body: any) {
@@ -262,6 +271,6 @@ export const peopleActions: Record<string, Handler> = {
   site_save: siteSave,
   requirement_set: requirementSet,
   group_member_set: groupMemberSet,
-  competency_matrix: admin => competencyMatrix(admin),
+  competency_matrix: (admin, actor) => competencyMatrix(admin, actor),
   practical_record: practicalRecord
 };

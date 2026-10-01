@@ -7,7 +7,8 @@ on:
   pull_request:
     paths:
       - "supabase/migrations/**"
-      - "supabase/tests/db/**"
+      - "supabase/functions/**"
+      - "supabase/tests/**"
       - ".github/workflows/supabase-migrations.yml"
   push:
     branches: [main]
@@ -46,6 +47,18 @@ jobs:
       - uses: actions/checkout@v4
       - run: sudo apt-get install -y --no-install-recommends postgresql-client >/dev/null
       - run: bash supabase/tests/db/run.sh
+
+      # The real Edge Function handlers against PostgREST (the API layer
+      # Supabase runs) over the migrated schema.
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Install PostgREST
+        run: |
+          curl -sSL -o postgrest.tar.xz https://github.com/PostgREST/postgrest/releases/download/v12.2.3/postgrest-v12.2.3-linux-static-x64.tar.xz
+          tar xf postgrest.tar.xz && sudo mv postgrest /usr/local/bin/
+      - name: API tests
+        run: bash supabase/tests/api/run.sh
 
   apply:
     name: Apply migrations to live project

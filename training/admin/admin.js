@@ -1,6 +1,7 @@
 import { api, completeAuthRedirect, config, friendlyError, getSession, isConfigured, signOut } from "../auth.js";
 import { defaultContentVersion, endOfSydneyDayIso, moduleAuthoringTemplate, sortSlideFiles } from "./module-manager-core.js";
-import { bindMatrix, bindPeople, loadMatrix, loadPeople } from "./people.js";
+import { bindMatrix, bindPeople, loadMatrix, loadPeople, setPermissions } from "./people.js";
+import { bindOnboarding, loadOnboarding, showTemporaryPassword } from "./onboarding.js";
 import { mountIms } from "../ims/ims.js";
 
 const ui = {
@@ -23,6 +24,8 @@ let imsRevisions = null;
 let page = 0;
 const loaded = new Set();
 let ims = null;
+let me = { permissions: [] };
+const can = key => me.permissions.includes(key);
 
 function safe(value) {
   return String(value ?? "").replace(/[&<>"']/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character]);
@@ -325,6 +328,7 @@ async function loadView(selected) {
   loaded.add(selected);
   try {
     if (selected === "people-management") await loadPeople(document.getElementById(selected));
+    if (selected === "onboarding-management") await loadOnboarding(document.getElementById(selected), { canIssuePasswords: can("access.manage") });
     if (selected === "competency-matrix") await loadMatrix(document.getElementById(selected));
     if (selected === "ims-documents") { ims = ims || mountIms(document.getElementById(selected)); await ims.open(); }
   } catch (error) {
@@ -359,11 +363,14 @@ ui.inviteForm.addEventListener("submit", async event => {
       learnerType: form.get("learnerType"),
       externalId: form.get("externalId"),
       moduleCode: form.get("moduleCode"),
-      expiresAt: endOfSydneyDayIso(String(form.get("expiresOn")))
+      expiresAt: endOfSydneyDayIso(String(form.get("expiresOn"))),
+      signIn: form.get("signIn")
     });
     ui.inviteMessage.textContent = result.invitationSent
-      ? "Invitation sent and module assigned."
-      : "Existing verified account updated and module assigned.";
+      ? "Invitation emailed and module assigned. They'll set their own password from the link."
+      : result.tempPassword ? "Sign-in created and module assigned. Pass on the temporary password shown."
+      : "They already had a sign-in; the module is assigned.";
+    if (result.tempPassword) showTemporaryPassword({ name: String(form.get("fullName")), email: String(form.get("email")), password: result.tempPassword });
     ui.inviteForm.reset();
     document.getElementById("expires-on").value = defaultExpiry();
     await loadDashboard();
@@ -381,11 +388,12 @@ document.getElementById("refresh").addEventListener("click", () => {
   loaded.clear();
   loaded.add("access-management");
   loaded.add("module-management");
-  return Promise.all([loadDashboard(), loadModules(), visible ? loadView(visible) : null]).catch(error => { ui.registerMessage.textContent = friendlyError(error); });
+  return Promise.all([can("training.manage") ? loadDashboard() : null, can("training.manage") ? loadModules() : null, visible ? loadView(visible) : null]).catch(error => { ui.registerMessage.textContent = friendlyError(error); });
 });
 document.getElementById("load-more").addEventListener("click", () => loadDashboard(true).catch(error => { ui.registerMessage.textContent = friendlyError(error); }));
 bindPeople(document.getElementById("people-management"));
 bindMatrix(document.getElementById("competency-matrix"));
+bindOnboarding(document.getElementById("onboarding-management"));
 document.getElementById("refresh-modules").addEventListener("click", () => loadModules().catch(error => { ui.moduleRegisterMessage.textContent = friendlyError(error); }));
 document.getElementById("download-module-template").addEventListener("click", downloadAuthoringTemplate);
 document.querySelectorAll(".admin-tab").forEach(tab => tab.addEventListener("click", switchAdminView));
@@ -404,19 +412,43 @@ async function init() {
     return;
   }
   if (!await getSession()) {
-    document.getElementById("gate-title").textContent = "Administrator sign-in required";
-    document.getElementById("gate-message").textContent = "Sign in through the learner portal using an administrator email.";
+    document.getElementById("gate-title").textContent = "Sign-in required";
+    document.getElementById("gate-message").textContent = "Sign in on the Panalo portal first, then open Administration.";
     return;
   }
   try {
-    document.getElementById("expires-on").value = defaultExpiry();
-    document.getElementById("module-content-version").value = defaultContentVersion();
-    await Promise.all([loadDashboard(), loadModules()]);
+    me = await api(config.adminFunction, { action: "whoami" });
+    setPermissions(me.permissions);
+    document.getElementById("admin-identity").textContent = `Signed in as ${me.name}`;
+    // Show only the areas this person's position and settings allow.
+    const tabs = [...document.querySelectorAll(".admin-tab")];
+    tabs.forEach(tab => {
+      const needed = (tab.dataset.perm || "").split(" ");
+      tab.classList.toggle("hidden", !(needed.includes("*") || needed.some(can)));
+    });
+    const training = can("training.manage");
+    document.getElementById("summary").classList.toggle("hidden", !training);
+    if (training) {
+      document.getElementById("expires-on").value = defaultExpiry();
+      document.getElementById("module-content-version").value = defaultContentVersion();
+      if (!can("access.manage")) {
+        // Training admins can create temporary passwords for new learners only.
+        document.querySelector('#sign-in-mode option[value="password"]').textContent = "Create a temporary password (new learners only, shown once)";
+      }
+      await Promise.all([loadDashboard(), loadModules()]);
+    } else {
+      loaded.add("access-management");
+      loaded.add("module-management");
+    }
     ui.gate.classList.add("hidden");
     ui.app.classList.remove("hidden");
+    const first = tabs.find(tab => !tab.classList.contains("hidden"));
+    if (first && !training) first.click();
   } catch (error) {
-    document.getElementById("gate-title").textContent = error?.status === 403 ? "Administrator access required" : "Administration unavailable";
-    document.getElementById("gate-message").textContent = friendlyError(error);
+    document.getElementById("gate-title").textContent = error?.status === 403 ? "No administration access" : "Administration unavailable";
+    document.getElementById("gate-message").textContent = error?.code === "password_change_required"
+      ? "Change your temporary password on the portal first."
+      : friendlyError(error);
   }
 }
 
