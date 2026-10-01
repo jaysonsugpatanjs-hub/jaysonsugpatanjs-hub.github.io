@@ -1,0 +1,92 @@
+name: Supabase database migrations
+
+# Database tests run on every change to migrations. Applying migrations to the
+# live project is manual: run this workflow from the Actions tab and type
+# APPLY to confirm, after a backup has been taken.
+on:
+  pull_request:
+    paths:
+      - "supabase/migrations/**"
+      - "supabase/tests/db/**"
+      - ".github/workflows/supabase-migrations.yml"
+  push:
+    branches: [main]
+    paths:
+      - "supabase/migrations/**"
+      - "supabase/tests/db/**"
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: "Type APPLY to push pending migrations to the live Supabase project"
+        required: true
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  db-tests:
+    name: Database tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      PGHOST: localhost
+      PGUSER: postgres
+      PGPASSWORD: postgres
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get install -y --no-install-recommends postgresql-client >/dev/null
+      - run: bash supabase/tests/db/run.sh
+
+  apply:
+    name: Apply migrations to live project
+    needs: db-tests
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.confirm == 'APPLY' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: production
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      SUPABASE_PROJECT_REF: dorydpbqwymkeyyxuicu
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.119.0
+      - name: Link project
+        run: supabase link --project-ref "$SUPABASE_PROJECT_REF" --password "$SUPABASE_DB_PASSWORD"
+
+      # The first two migrations were applied by hand in the SQL editor, so the
+      # project has no migration history. Record them as applied, but only
+      # after confirming their tables really exist; otherwise push creates them.
+      - name: Record hand-applied migrations
+        shell: bash
+        run: |
+          set -euo pipefail
+          supabase migration list --password "$SUPABASE_DB_PASSWORD" | tee migration-list.txt
+          if grep -Eq '20260928000000[[:space:]]*\|[[:space:]]*20260928000000' migration-list.txt; then
+            echo "Migration history already recorded."
+            exit 0
+          fi
+          (supabase inspect db table-stats --linked 2>/dev/null || supabase inspect db table-sizes --linked) | tee tables.txt
+          if grep -q 'training_profiles' tables.txt && grep -q 'training_audit_events' tables.txt; then
+            supabase migration repair --status applied 20260928000000 20260929000000 --password "$SUPABASE_DB_PASSWORD"
+          else
+            echo "Training tables not found; push will create them."
+          fi
+
+      - name: Show pending migrations
+        run: supabase db push --dry-run --password "$SUPABASE_DB_PASSWORD"
+
+      - name: Apply migrations
+        run: supabase db push --password "$SUPABASE_DB_PASSWORD"
