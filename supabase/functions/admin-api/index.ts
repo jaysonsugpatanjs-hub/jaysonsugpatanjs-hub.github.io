@@ -91,7 +91,7 @@ async function moduleCatalog(admin: Client) {
   const moduleMap = new Map<string, any>((modulesResult.data || []).map((module: any) => [module.id, module]));
   const revisionIds = [...new Set((versionsResult.data || []).map((version: any) => version.ims_revision_id).filter(Boolean))];
   const revisionsResult = revisionIds.length
-    ? await admin.from("ims_document_revisions").select("id,revision,status,document_id,ims_documents(doc_number)").in("id", revisionIds)
+    ? await admin.from("ims_document_revisions").select("id,revision,status,document_id,ims_documents!ims_document_revisions_document_id_fkey(doc_number)").in("id", revisionIds)
     : { data: [], error: null };
   if (revisionsResult.error) throw httpError(500, "Linked IMS revisions could not be loaded.");
   const revisionMap = new Map<string, any>((revisionsResult.data || []).map((revision: any) => [revision.id, revision]));
@@ -293,7 +293,7 @@ async function publishModule(admin: Client, administrator: any, versionId: unkno
 
 async function imsTrainingRevisions(admin: Client) {
   const { data, error } = await admin.from("ims_documents")
-    .select("id,doc_number,title,training_module_id,ims_document_revisions(id,revision,status,created_at)")
+    .select("id,doc_number,title,training_module_id,ims_document_revisions!ims_document_revisions_document_id_fkey(id,revision,status,created_at)")
     .eq("doc_type", "Training module")
     .neq("status", "archived")
     .order("doc_number");
