@@ -52,19 +52,39 @@ jobs:
     needs: db-tests
     if: github.event_name == 'workflow_dispatch' && github.event.inputs.confirm == 'APPLY' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     environment: production
     env:
-      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
       SUPABASE_PROJECT_REF: dorydpbqwymkeyyxuicu
+      SUPABASE_REGION: ap-southeast-2
     steps:
       - uses: actions/checkout@v4
       - uses: supabase/setup-cli@v1
         with:
           version: 2.119.0
-      - name: Link project
-        run: supabase link --project-ref "$SUPABASE_PROJECT_REF" --password "$SUPABASE_DB_PASSWORD"
+      - run: sudo apt-get install -y --no-install-recommends postgresql-client >/dev/null
+
+      # Connect through the Supabase session pooler (IPv4) with the database
+      # password, instead of "supabase link", so the access token never needs
+      # permission to read the project's API keys.
+      - name: Find database connection
+        shell: bash
+        run: |
+          set -euo pipefail
+          enc=$(python3 -c 'import os,urllib.parse;print(urllib.parse.quote(os.environ["SUPABASE_DB_PASSWORD"],safe=""))')
+          for cluster in aws-0 aws-1; do
+            url="postgresql://postgres.${SUPABASE_PROJECT_REF}:${enc}@${cluster}-${SUPABASE_REGION}.pooler.supabase.com:5432/postgres?sslmode=require"
+            if out=$(psql "$url" -XtAc "select 'connected'" 2>&1) && [[ "$out" == *connected* ]]; then
+              echo "::add-mask::$enc"
+              echo "DB_URL=$url" >> "$GITHUB_ENV"
+              echo "::notice title=database::Connected through ${cluster}-${SUPABASE_REGION} session pooler."
+              exit 0
+            fi
+            echo "::warning title=database::${cluster}: $(echo "$out" | tail -1 | sed "s/$enc/***/g")"
+          done
+          echo "::error title=database::Could not connect through the session pooler. Check SUPABASE_DB_PASSWORD."
+          exit 1
 
       # The first two migrations were applied by hand in the SQL editor, so the
       # project has no migration history. Record them as applied, but only
@@ -73,20 +93,42 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          supabase migration list --password "$SUPABASE_DB_PASSWORD" | tee migration-list.txt
-          if grep -Eq '20260928000000[[:space:]]*\|[[:space:]]*20260928000000' migration-list.txt; then
-            echo "Migration history already recorded."
+          has_history=$(psql "$DB_URL" -XtAc "select to_regclass('supabase_migrations.schema_migrations') is not null and exists (select 1 from supabase_migrations.schema_migrations where version = '20260928000000')" 2>/dev/null || echo f)
+          if [ "$has_history" = "t" ]; then
+            echo "::notice title=history::Migration history already recorded."
             exit 0
           fi
-          (supabase inspect db table-stats --linked 2>/dev/null || supabase inspect db table-sizes --linked) | tee tables.txt
-          if grep -q 'training_profiles' tables.txt && grep -q 'training_audit_events' tables.txt; then
-            supabase migration repair --status applied 20260928000000 20260929000000 --password "$SUPABASE_DB_PASSWORD"
+          tables=$(psql "$DB_URL" -XtAc "select count(*) from information_schema.tables where table_schema='public' and table_name in ('training_profiles','training_assignments','training_audit_events','training_module_versions')")
+          granted=$(psql "$DB_URL" -XtAc "select has_table_privilege('service_role','public.training_assignments','insert')")
+          echo "::notice title=history::Existing training tables found: $tables of 4; service role grants applied: $granted"
+          if [ "$tables" = "4" ] && [ "$granted" = "t" ]; then
+            supabase migration repair --status applied 20260928000000 20260929000000 --db-url "$DB_URL" 2>&1 | tail -5 | sed 's/^/::notice title=repair::/'
+          elif [ "$tables" = "0" ]; then
+            echo "::notice title=history::No training tables yet; push will create them."
           else
-            echo "Training tables not found; push will create them."
+            echo "::error title=history::Training tables are only partly present. Stopping so nothing is applied on top of an unknown state."
+            exit 1
           fi
 
       - name: Show pending migrations
-        run: supabase db push --dry-run --password "$SUPABASE_DB_PASSWORD"
+        shell: bash
+        run: |
+          set -o pipefail
+          if ! supabase db push --dry-run --db-url "$DB_URL" 2>&1 | tee step.log; then
+            grep -v '^\s*$' step.log | tail -15 | sed 's/^/::error title=dry run::/'
+            exit 1
+          fi
+          grep -v '^\s*$' step.log | tail -15 | sed 's/^/::notice title=dry run::/'
 
       - name: Apply migrations
-        run: supabase db push --password "$SUPABASE_DB_PASSWORD"
+        shell: bash
+        run: |
+          set -o pipefail
+          if ! supabase db push --db-url "$DB_URL" 2>&1 | tee step.log; then
+            grep -v '^\s*$' step.log | tail -15 | sed 's/^/::error title=apply::/'
+            exit 1
+          fi
+          grep -v '^\s*$' step.log | tail -15 | sed 's/^/::notice title=apply::/'
+          n=$(psql "$DB_URL" -XtAc "select count(*) from information_schema.tables where table_schema='public' and table_name in ('employees','ims_folders','ims_documents','practical_verifications')")
+          echo "::notice title=verify::New tables present: $n of 4"
+          [ "$n" = "4" ]
