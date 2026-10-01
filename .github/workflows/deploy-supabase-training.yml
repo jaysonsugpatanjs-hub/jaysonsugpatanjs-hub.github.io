@@ -6,6 +6,7 @@ on:
     paths:
       - "supabase/functions/**"
       - "supabase/config.toml"
+      - "training/tests/**"
       - ".github/workflows/deploy-supabase-training.yml"
   workflow_dispatch:
 
@@ -14,20 +15,37 @@ permissions:
 
 concurrency:
   group: supabase-training-api-deploy
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
+  test:
+    name: Test training runtime
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22.13.0"
+          cache: npm
+      - run: npm ci
+      - run: npm run test:training
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Type-check Edge Functions
+        run: deno check supabase/functions/training-api/index.ts supabase/functions/admin-api/index.ts supabase/functions/ims-api/index.ts
+
   deploy:
-    name: Deploy training-api Edge Function
+    name: Deploy Edge Functions
+    needs: test
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       SUPABASE_PROJECT_REF: dorydpbqwymkeyyxuicu
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Confirm deployment credential
         shell: bash
@@ -37,10 +55,13 @@ jobs:
             exit 1
           fi
 
-      - name: Set up Supabase CLI
-        uses: supabase/setup-cli@v1
+      - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 2.119.0
 
-      - name: Deploy training-api
-        run: supabase functions deploy training-api --project-ref "$SUPABASE_PROJECT_REF"
+      # All functions ship together so the browser and server never drift.
+      - name: Deploy training-api, admin-api and ims-api
+        run: |
+          for fn in training-api admin-api ims-api; do
+            supabase functions deploy "$fn" --project-ref "$SUPABASE_PROJECT_REF"
+          done

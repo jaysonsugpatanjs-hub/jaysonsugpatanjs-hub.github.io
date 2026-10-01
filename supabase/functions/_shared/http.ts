@@ -48,3 +48,31 @@ export function errorJson(request: Request, error: unknown, fallbackStatus = 500
 export function httpError(status: number, message: string, code?: string) {
   return Object.assign(new Error(message), { status, code });
 }
+
+// Calls an atomic SQL function. Database errors carry a SQLSTATE that maps to
+// the HTTP status the caller should see; the message is written for people.
+const SQLSTATE_STATUS: Record<string, number> = {
+  "42501": 403, // insufficient privilege (access rules)
+  "P0002": 404, // not found
+  "22023": 409, // invalid parameter / state
+  "23505": 409, // unique violation
+  "23514": 400, // check constraint
+  "23503": 409, // foreign key
+  "22P02": 400, // invalid text representation (bad uuid/date)
+  "22007": 400, // invalid date
+  "22008": 400 // date out of range
+};
+
+export async function rpc<T = unknown>(client: any, fn: string, args: Record<string, unknown>): Promise<T> {
+  const { data, error } = await client.rpc(fn, args);
+  if (error) {
+    const status = SQLSTATE_STATUS[String(error.code)] || 500;
+    let message = String(error.message || "The request could not be completed.");
+    if (error.code === "23505") message = "That record already exists.";
+    if (error.code === "23514") message = "One of the values is outside what is allowed.";
+    if (error.code === "22P02" || error.code === "22007" || error.code === "22008") message = "One of the values is not in a valid format.";
+    if (status >= 500) console.error(`${fn} failed`, error);
+    throw httpError(status, message, error.code);
+  }
+  return data as T;
+}

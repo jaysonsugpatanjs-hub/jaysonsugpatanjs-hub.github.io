@@ -27,6 +27,14 @@ The training application uses a public, non-sensitive GitHub Pages shell and a p
 - The existing public slide and answer files must be removed from the deployed repository. Because historic public commits cannot be made private by deletion, production questions should be rotated before formal assessment use.
 - The module manager accepts source and rendered files only after administrator verification. It never writes a PowerPoint or answer-bearing manifest into the GitHub Pages tree.
 
+## Document control
+
+- Folder access is resolved in the database (`ims_folder_level`) on every request, from grants on the folder and its ancestors while each folder inherits. Browsers never read folder, document or grant tables directly.
+- Viewers see approved revisions only; drafts and revisions in approval need Editor or above. Downloads use five-minute signed links from the private `ims-documents` bucket and are audited.
+- Approvals need Approver access on the folder, cannot be recorded by the revision author, and require the controlled file to be attached first. The file cannot change after the first approval.
+- A folder cannot be left without an owner. Stopping inheritance copies the current access first so nobody is locked out by surprise.
+- "All employees" means active employees on the register, not every login.
+
 ## Required deployment checks
 
 - A direct slide, PowerPoint, certificate or API URL without a session is denied.
@@ -37,5 +45,7 @@ The training application uses a public, non-sensitive GitHub Pages shell and a p
 - The public repository passes `node training/scripts/check-public-training.mjs`.
 - Administrator invitation, magic-link login, slide flow, failed and passing assessments, retake history, certificate PDF and revocation are verified end to end.
 - Draft creation, private signed upload, missing-asset rejection, publication and generic module viewing are verified before enabling administrator self-service.
+- `npm run test:db` passes: inheritance, locked folders, last-owner protection, approval gates, publish blocked until approved, and no audit row for a failed action.
+- A signed-in applicant cannot open any IMS folder; a supervisor sees approved revisions but not drafts.
 
 See [SETUP.md](SETUP.md) for deployment and first-administrator steps.
