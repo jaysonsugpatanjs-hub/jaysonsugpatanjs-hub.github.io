@@ -63,8 +63,16 @@ jobs:
       - uses: supabase/setup-cli@v1
         with:
           version: 2.119.0
+      # Each CLI step reports its output as annotations, so a failure can be
+      # read from the run summary without downloading logs.
       - name: Link project
-        run: supabase link --project-ref "$SUPABASE_PROJECT_REF" --password "$SUPABASE_DB_PASSWORD"
+        shell: bash
+        run: |
+          set -o pipefail
+          if ! supabase link --project-ref "$SUPABASE_PROJECT_REF" --password "$SUPABASE_DB_PASSWORD" 2>&1 | tee link.log; then
+            grep -v '^\s*$' link.log | tail -15 | sed 's/^/::error title=supabase link::/'
+            exit 1
+          fi
 
       # The first two migrations were applied by hand in the SQL editor, so the
       # project has no migration history. Record them as applied, but only
@@ -73,7 +81,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          supabase migration list --password "$SUPABASE_DB_PASSWORD" | tee migration-list.txt
+          supabase migration list --password "$SUPABASE_DB_PASSWORD" 2>&1 | tee migration-list.txt || { tail -15 migration-list.txt | sed 's/^/::error title=migration list::/'; exit 1; }
           if grep -Eq '20260928000000[[:space:]]*\|[[:space:]]*20260928000000' migration-list.txt; then
             echo "Migration history already recorded."
             exit 0
@@ -86,7 +94,21 @@ jobs:
           fi
 
       - name: Show pending migrations
-        run: supabase db push --dry-run --password "$SUPABASE_DB_PASSWORD"
+        shell: bash
+        run: |
+          set -o pipefail
+          if ! supabase db push --dry-run --password "$SUPABASE_DB_PASSWORD" 2>&1 | tee step.log; then
+            grep -v '^\s*$' step.log | tail -15 | sed 's/^/::error title=Show pending migrations::/'
+            exit 1
+          fi
+          grep -v '^\s*$' step.log | tail -15 | sed 's/^/::notice title=Show pending migrations::/'
 
       - name: Apply migrations
-        run: supabase db push --password "$SUPABASE_DB_PASSWORD"
+        shell: bash
+        run: |
+          set -o pipefail
+          if ! supabase db push --password "$SUPABASE_DB_PASSWORD" 2>&1 | tee step.log; then
+            grep -v '^\s*$' step.log | tail -15 | sed 's/^/::error title=Apply migrations::/'
+            exit 1
+          fi
+          grep -v '^\s*$' step.log | tail -15 | sed 's/^/::notice title=Apply migrations::/'
