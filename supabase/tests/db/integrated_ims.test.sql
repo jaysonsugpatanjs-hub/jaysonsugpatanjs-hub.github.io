@@ -32,7 +32,7 @@ insert into auth.users (email, raw_user_meta_data) values
   ('weld@panalo.test', '{"full_name":"Welding Super"}'),
   ('whs@panalo.test', '{"full_name":"WHS Adviser"}'),
   ('learner@panalo.test', '{"full_name":"Marco Reyes"}');
-insert into ids select split_part(email, '@', 1), id from public.training_profiles;
+insert into ids select split_part(email, '@', 1), id from public.training_profiles where email like '%@panalo.test';
 update public.training_profiles set role = 'admin' where id in (pg_temp.id('admin'), pg_temp.id('doc'));
 insert into public.ims_group_members (group_key, profile_id) values
   ('document_controllers', pg_temp.id('doc')),
@@ -184,10 +184,10 @@ begin
   v_emp := public.employee_save(pg_temp.id('admin'), jsonb_build_object(
     'employeeNumber', 'E-1001', 'fullName', 'Marco Reyes', 'email', 'Learner@Panalo.test', 'positionId', v_position));
   perform pg_temp.eq((select profile_id from public.employees where id = v_emp), pg_temp.id('learner'), 'employee linked to existing profile by email');
-  perform pg_temp.expect_error(format('select public.employee_save(%L, %L)', pg_temp.id('sup'), '{"employeeNumber":"E-9","fullName":"x"}'), 'administrator access');
+  perform pg_temp.expect_error(format('select public.employee_save(%L, %L)', pg_temp.id('sup'), '{"employeeNumber":"E-9","fullName":"x"}'), 'permission');
 
   perform pg_temp.expect_error(format('select public.training_assign(%L, %L, %L, %L, null, %L, %L, now() + interval %L, false)',
-    pg_temp.id('sup'), pg_temp.id('learner'), 'learner@panalo.test', 'Marco Reyes', 'employee', pg_temp.id('version'), '14 days'), 'administrator access');
+    pg_temp.id('sup'), pg_temp.id('learner'), 'learner@panalo.test', 'Marco Reyes', 'employee', pg_temp.id('version'), '14 days'), 'permission');
   v_result := public.training_assign(pg_temp.id('admin'), pg_temp.id('learner'), 'learner@panalo.test', 'Marco Reyes', 'E-1001',
     'employee', pg_temp.id('version'), now() + interval '14 days', true);
   v_assignment := (v_result ->> 'id')::uuid;
@@ -249,7 +249,7 @@ begin
   perform pg_temp.expect_error(format('select public.admin_save_licence(%L, %L)', pg_temp.id('admin'),
     jsonb_build_object('employeeId', v_emp, 'licenceType', 'Bad', 'issuedOn', '2026-05-01', 'expiresOn', '2026-01-01')), 'check constraint');
   perform public.admin_delete_licence(pg_temp.id('admin'), v_lic);
-  perform pg_temp.expect_error(format('select public.admin_save_site(%L, %L)', pg_temp.id('sup'), '{"code":"X1","name":"x"}'), 'administrator access');
+  perform pg_temp.expect_error(format('select public.admin_save_site(%L, %L)', pg_temp.id('sup'), '{"code":"X1","name":"x"}'), 'permission');
 end $$;
 
 -- Browser roles stay locked out ---------------------------------------------
