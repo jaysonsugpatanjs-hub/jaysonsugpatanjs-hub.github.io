@@ -38,17 +38,31 @@ test("magic-link callback stores and removes the URL session fragment", async ()
   assert.equal((await auth.getSession()).access_token, "access-1");
 });
 
-test("magic-link request disables account creation and uses the configured redirect", async () => {
+test("password sign-in stores the session and hides whether the email exists", async () => {
+  let captured;
+  globalThis.fetch = async (url, options) => {
+    captured = { url: String(url), options };
+    return new Response(JSON.stringify({ access_token: "pw-access", refresh_token: "pw-refresh", expires_in: 3600, token_type: "bearer" }), { status: 200, headers: { "content-type": "application/json" } });
+  };
+  await auth.signInWithPassword(" Learner@Example.com ", "Grinder-Torch-47");
+  assert.match(captured.url, /\/auth\/v1\/token\?grant_type=password$/);
+  assert.deepEqual(JSON.parse(captured.options.body), { email: "learner@example.com", password: "Grinder-Torch-47" });
+  assert.equal((await auth.getSession()).access_token, "pw-access");
+
+  globalThis.fetch = async () => new Response(JSON.stringify({ error: "invalid_grant", error_description: "Invalid login credentials" }), { status: 400 });
+  await assert.rejects(auth.signInWithPassword("nobody@example.com", "wrong"), /don't match/);
+});
+
+test("password reset uses the configured redirect", async () => {
   let captured;
   globalThis.fetch = async (url, options) => {
     captured = { url: String(url), options };
     return new Response("{}", { status: 200, headers: { "content-type": "application/json" } });
   };
-  await auth.sendMagicLink(" Learner@Example.com ");
-  assert.match(captured.url, /\/auth\/v1\/otp\?redirect_to=/);
+  await auth.requestPasswordReset("Learner@Example.com");
+  assert.match(captured.url, /\/auth\/v1\/recover\?redirect_to=/);
   assert.equal(new URL(captured.url).searchParams.get("redirect_to"), "https://example.com/training/");
-  assert.deepEqual(JSON.parse(captured.options.body), { email: "learner@example.com", create_user: false, data: {} });
-  assert.equal(captured.options.headers.apikey, "sb_publishable_test_key");
+  assert.deepEqual(JSON.parse(captured.options.body), { email: "learner@example.com" });
 });
 
 test("function request sends the verified access token", async () => {
@@ -59,7 +73,7 @@ test("function request sends the verified access token", async () => {
   };
   const result = await auth.api("training-api", { action: "bootstrap" });
   assert.deepEqual(result, { assignments: [] });
-  assert.equal(captured.options.headers.Authorization, "Bearer access-1");
+  assert.equal(captured.options.headers.Authorization, "Bearer pw-access");
   assert.equal(JSON.parse(captured.options.body).action, "bootstrap");
 });
 

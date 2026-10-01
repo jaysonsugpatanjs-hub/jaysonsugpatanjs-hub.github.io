@@ -1,6 +1,7 @@
 // People register, positions and requirements, and the competency matrix.
 // Rendered with escaped template strings, like the rest of the admin page.
 import { api, config, friendlyError } from "../auth.js";
+import { showTemporaryPassword } from "./onboarding.js";
 
 const STATUS_LABEL = {
   competent: "Competent",
@@ -19,7 +20,10 @@ const STATUS_CLASS = {
 const LICENCE_CLASS = { current: "good", expiring: "warn", expired: "bad", no_expiry: "" };
 const LICENCE_LABEL = { current: "Current", expiring: "Expiring", expired: "Expired", no_expiry: "No expiry" };
 
-const state = { ref: null, people: null, selected: null, positionId: null, matrix: null, filters: { q: "", site: "", position: "" }, practical: null };
+const state = { ref: null, people: null, selected: null, positionId: null, matrix: null, filters: { q: "", site: "", position: "" }, practical: null, perms: [], catalogue: null, access: null };
+const can = key => state.perms.includes(key);
+
+export function setPermissions(perms) { state.perms = perms || []; }
 
 function safe(value) {
   return String(value ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
@@ -39,9 +43,10 @@ function message(el, text) { if (el) el.textContent = text || ""; }
 
 export async function loadPeople(root) {
   root.querySelector("[data-people-msg]").textContent = "Loading the employee register…";
-  const [ref, people] = await Promise.all([call("people_reference"), call("people_list")]);
+  const [ref, people, catalogue] = await Promise.all([call("people_reference"), call("people_list"), call("access_catalogue")]);
   state.ref = ref;
   state.people = people;
+  state.catalogue = catalogue;
   if (!state.positionId && ref.positions[0]) state.positionId = ref.positions[0].id;
   renderPeople(root);
 }
@@ -96,16 +101,17 @@ function renderEditor(root) {
       <div class="field"><label for="emp-start">Start date</label><input id="emp-start" name="startDate" type="date" value="${safe(e.startDate || "")}"></div>
       <div class="field"><label for="emp-end">End date</label><input id="emp-end" name="endDate" type="date" value="${safe(e.endDate || "")}"></div>
     </div>
-    <div class="form-actions"><button class="primary" type="submit">${e.id ? "Save changes" : "Add person"}</button>${e.id ? '<button class="secondary-action" type="button" data-new-person>New person</button>' : ""}</div>
+    ${can("people.manage") ? `<div class="form-actions"><button class="primary" type="submit">${e.id ? "Save changes" : "Add person"}</button>${e.id ? '<button class="secondary-action" type="button" data-new-person>New person</button>' : ""}</div>` : '<p class="muted small">View only. Editing the register needs the "Manage the people register" permission.</p>'}
     <p class="form-message" data-employee-msg role="status" aria-live="polite"></p>`;
 
+  form.querySelectorAll("input,select").forEach(el => { el.disabled = !can("people.manage"); });
   const extra = root.querySelector("[data-employee-extra]");
   if (!e.id) { extra.innerHTML = ""; return; }
   extra.innerHTML = `
     <h3>Licences and tickets</h3>
     <div class="list">${e.licences.map(l => `<div class="list-row"><div><strong>${safe(l.type)}</strong><small>${safe([l.number, l.issuer, l.expiresOn ? `expires ${fmt(l.expiresOn)}` : "", l.verified ? "sighted" : "not sighted"].filter(Boolean).join(" · "))}</small></div>
-      <div class="row-actions"><span class="chip ${LICENCE_CLASS[l.status]}">${LICENCE_LABEL[l.status]}</span><button type="button" class="revoke" data-delete-licence="${safe(l.id)}" aria-label="Delete ${safe(l.type)}">Delete</button></div></div>`).join("") || '<p class="muted">None recorded.</p>'}</div>
-    <form data-licence-form class="inline-form">
+      <div class="row-actions"><span class="chip ${LICENCE_CLASS[l.status]}">${LICENCE_LABEL[l.status]}</span>${can("people.manage") ? `<button type="button" class="revoke" data-delete-licence="${safe(l.id)}" aria-label="Delete ${safe(l.type)}">Delete</button>` : ""}</div></div>`).join("") || '<p class="muted">None recorded.</p>'}</div>
+    ${can("people.manage") ? `<form data-licence-form class="inline-form">
       <div class="field-row">
         <div class="field"><label for="lic-type">Licence or ticket</label><input id="lic-type" name="licenceType" required maxlength="120" placeholder="White card, forklift (LF), first aid…"></div>
         <div class="field"><label for="lic-number">Number</label><input id="lic-number" name="licenceNumber" maxlength="60"></div>
@@ -117,11 +123,52 @@ function renderEditor(root) {
       <label class="check-field"><input type="checkbox" name="verified"> I have sighted the original or a certified copy</label>
       <button class="secondary-action" type="submit">Add licence</button>
       <p class="form-message" data-licence-msg role="status" aria-live="polite"></p>
-    </form>
-    <h3>Document access groups</h3>
-    ${e.profileId ? `<div class="group-grid">${state.ref.groups.filter(g => !g.implicit).map(g => `<label class="check-field"><input type="checkbox" data-group="${safe(g.key)}" ${e.groups.includes(g.key) ? "checked" : ""}> ${safe(g.name)}</label>`).join("")}</div>
-      <p class="muted small">"All employees" applies automatically to current staff on the register.</p>`
-      : '<p class="muted">Groups can be set once this person has a training login with the same email.</p>'}`;
+    </form>` : ""}
+    <div data-signin></div>`;
+  renderSignIn(root, e);
+}
+
+async function renderSignIn(root, e) {
+  const box = root.querySelector("[data-signin]");
+  if (!box) return;
+  const head = '<h3>Sign-in and access</h3>';
+  if (!can("access.manage") && !can("hr.manage")) { box.innerHTML = ""; return; }
+  if (!e.email) { box.innerHTML = `${head}<p class="muted">Add an email address above to give this person a sign-in.</p>`; return; }
+  if (!e.profileId) {
+    box.innerHTML = `${head}<p class="muted">No sign-in yet. Their username will be ${safe(e.email)}.</p>
+      <div class="form-actions"><button type="button" class="secondary-action" data-login="invite">Email an invitation link</button>
+      ${can("access.manage") ? '<button type="button" class="secondary-action" data-login="password">Create temporary password</button>' : ""}</div>
+      <p class="form-message" data-signin-msg role="status"></p>`;
+    return;
+  }
+  if (!can("access.manage")) { box.innerHTML = `${head}<p class="muted">Signs in as ${safe(e.email)}.</p>`; return; }
+  box.innerHTML = `${head}<p class="muted">Loading…</p>`;
+  try {
+    state.access = await call("access_detail", { profileId: e.profileId });
+  } catch (error) {
+    box.innerHTML = `${head}<p class="form-message">${safe(friendlyError(error))}</p>`;
+    return;
+  }
+  const a = state.access.account;
+  const status = !a.active ? '<span class="chip bad">Sign-in disabled</span>' : a.mustChangePassword ? '<span class="chip pending">Must change temporary password</span>' : '<span class="chip good">Active</span>';
+  box.innerHTML = `${head}
+    <div class="list-row"><div><strong>${safe(a.email)}</strong><small>${a.systemAdmin ? "System administrator: holds every permission" : a.passwordSetAt ? `Password set ${new Intl.DateTimeFormat("en-AU", { dateStyle: "medium" }).format(new Date(a.passwordSetAt))}` : "Has not set their own password yet"}</small></div>${status}</div>
+    <div class="form-actions"><button type="button" class="secondary-action small" data-reset-password>Issue new temporary password</button>
+      <button type="button" class="${a.active ? "revoke" : "secondary-action small"}" data-set-active="${a.active ? "false" : "true"}">${a.active ? "Disable sign-in" : "Enable sign-in"}</button></div>
+    <h3>What they can access</h3>
+    <p class="muted small">"Position default" follows their position's settings below. Allow or deny overrides it for this person only.</p>
+    <div class="table-wrap"><table class="compact perm-table"><thead><tr><th>Area</th><th>Now</th><th>Setting</th></tr></thead><tbody>
+      ${state.access.permissions.map(p => `<tr><td><strong>${safe(p.name)}</strong><small>${safe(p.description)}</small></td>
+        <td><span class="chip ${p.effective ? "good" : ""}">${p.effective ? "Yes" : "No"}</span></td>
+        <td><label class="sr-only" for="perm-${safe(p.key)}">${safe(p.name)}</label><select id="perm-${safe(p.key)}" data-perm="${safe(p.key)}" ${a.systemAdmin ? "disabled" : ""}>
+          <option value="default" ${p.override === "default" ? "selected" : ""}>Position default</option>
+          <option value="allow" ${p.override === "allow" ? "selected" : ""}>Allow</option>
+          <option value="deny" ${p.override === "deny" ? "selected" : ""}>Deny</option></select></td></tr>`).join("")}
+    </tbody></table></div>
+    <h3>Document folder groups</h3>
+    <div class="group-grid">${state.ref.groups.filter(g => !g.implicit).map(g => `<label class="check-field"><input type="checkbox" data-group="${safe(g.key)}" ${e.groups.includes(g.key) ? "checked" : ""}> ${safe(g.name)}</label>`).join("")}</div>
+    <p class="muted small">"All employees" applies automatically to current staff on the register.</p>
+    <p class="form-message" data-signin-msg role="status"></p>`;
 }
 
 function renderPositions(root) {
@@ -135,12 +182,16 @@ function renderPositions(root) {
     ${pos ? `<div class="table-wrap"><table class="compact"><thead><tr><th>Module</th><th>Required</th><th>Refresher (months)</th><th>Before start</th></tr></thead><tbody>
       ${ref.modules.map(m => { const r = req.get(m.id); return `<tr data-req-row="${safe(m.id)}">
         <td><span class="mono">${safe(m.code)}</span><small>${safe(m.title)}${m.released ? "" : " · not yet released"}</small></td>
-        <td><input type="checkbox" data-req-required aria-label="Required for ${safe(pos.title)}" ${r ? "checked" : ""}></td>
+        <td><input type="checkbox" data-req-required aria-label="Required for ${safe(pos.title)}" ${r ? "checked" : ""} ${can("people.manage") ? "" : "disabled"}></td>
         <td><input type="number" min="1" max="120" data-req-months aria-label="Refresher months" value="${safe(r?.refresherMonths ?? "")}" ${r ? "" : "disabled"}></td>
         <td><input type="checkbox" data-req-before aria-label="Required before start" ${r?.requiredBeforeStart ? "checked" : ""} ${r ? "" : "disabled"}></td></tr>`; }).join("")}
       </tbody></table></div>` : ""}
     <p class="form-message" data-req-msg role="status" aria-live="polite"></p>
-    <details class="add-ref"><summary>Add a position or site</summary>
+    ${pos && can("access.manage") && state.catalogue ? `<h3>Default access for ${safe(pos.title)}</h3>
+      <p class="muted small">Everyone in this position gets these unless their own settings say otherwise.</p>
+      <div class="group-grid">${state.catalogue.permissions.map(p => `<label class="check-field"><input type="checkbox" data-pos-perm="${safe(p.key)}" ${state.catalogue.positionPermissions.some(x => x.positionId === pos.id && x.key === p.key) ? "checked" : ""}> <span>${safe(p.name)}<small>${safe(p.description)}</small></span></label>`).join("")}</div>` : ""}
+    ${can("people.manage") ? "" : '<p class="muted small">View only.</p>'}
+    <details class="add-ref ${can("people.manage") ? "" : "hidden"}"><summary>Add a position or site</summary>
       <form data-position-form class="inline-form"><div class="field-row">
         <div class="field"><label for="pos-code">Position code</label><input id="pos-code" name="code" required maxlength="30" placeholder="WELDER"></div>
         <div class="field"><label for="pos-title">Title</label><input id="pos-title" name="title" required maxlength="100" placeholder="Welder / Fabricator"></div></div>
@@ -160,6 +211,36 @@ export function bindPeople(root) {
     if (!target) return;
     if (target.dataset.pick) { state.selected = target.dataset.pick; renderPeople(root); root.querySelector("[data-employee-form]").scrollIntoView({ block: "start", behavior: "smooth" }); }
     if ("newPerson" in target.dataset) { state.selected = null; renderEditor(root); }
+    const person = () => state.people.employees.find(x => x.id === state.selected);
+    const signinMsg = text => { const m = root.querySelector("[data-signin-msg]"); if (m) m.textContent = text; };
+    if (target.dataset.login) {
+      target.disabled = true;
+      try {
+        const e = person();
+        const r = await call("account_create", { employeeId: e.id, mode: target.dataset.login });
+        await loadPeople(root);
+        if (r.tempPassword) showTemporaryPassword({ name: e.fullName, email: e.email, password: r.tempPassword });
+        signinMsg(r.invited ? `Invitation emailed to ${e.email}.` : r.tempPassword ? "Sign-in created." : "Linked to their existing sign-in.");
+      } catch (error) { target.disabled = false; signinMsg(friendlyError(error)); }
+    }
+    if ("resetPassword" in target.dataset) {
+      const e = person();
+      if (!window.confirm(`Issue a new temporary password for ${e.fullName}? Their current password stops working.`)) return;
+      target.disabled = true;
+      try {
+        const r = await call("account_reset_password", { profileId: e.profileId });
+        await loadPeople(root);
+        showTemporaryPassword({ name: e.fullName, email: e.email, password: r.tempPassword });
+      } catch (error) { target.disabled = false; signinMsg(friendlyError(error)); }
+    }
+    if (target.dataset.setActive) {
+      const e = person();
+      const active = target.dataset.setActive === "true";
+      if (!active && !window.confirm(`Disable ${e.fullName}'s sign-in? They are signed out of everything and their records are kept.`)) return;
+      target.disabled = true;
+      try { await call("account_set_active", { profileId: e.profileId, active }); await loadPeople(root); }
+      catch (error) { target.disabled = false; signinMsg(friendlyError(error)); }
+    }
     if (target.dataset.deleteLicence) {
       if (!window.confirm("Delete this licence record? The deletion is kept in the audit log.")) return;
       target.disabled = true;
@@ -173,6 +254,24 @@ export function bindPeople(root) {
   root.addEventListener("change", async event => {
     const el = event.target;
     if (el.matches("[data-position-select]")) { state.positionId = el.value; renderPositions(root); return; }
+    if (el.dataset.perm) {
+      const e = state.people.employees.find(x => x.id === state.selected);
+      el.disabled = true;
+      try { await call("permission_set", { profileId: e.profileId, key: el.dataset.perm, state: el.value }); renderSignIn(root, e); }
+      catch (error) { el.disabled = false; const m = root.querySelector("[data-signin-msg]"); if (m) m.textContent = friendlyError(error); }
+      return;
+    }
+    if (el.dataset.posPerm) {
+      el.disabled = true;
+      try {
+        await call("position_permission_set", { positionId: state.positionId, key: el.dataset.posPerm, on: el.checked });
+        state.catalogue = await call("access_catalogue");
+        el.disabled = false;
+        const e = state.people.employees.find(x => x.id === state.selected);
+        if (e) renderSignIn(root, e);
+      } catch (error) { el.checked = !el.checked; el.disabled = false; message(root.querySelector("[data-req-msg]"), friendlyError(error)); }
+      return;
+    }
     if (el.dataset.group) {
       const e = state.people.employees.find(x => x.id === state.selected);
       el.disabled = true;

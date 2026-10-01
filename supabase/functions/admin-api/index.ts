@@ -1,6 +1,8 @@
 import { withSupabase } from "npm:@supabase/server@^1";
 import { corsHeaders, errorJson, httpError, json, rpc } from "../_shared/http.ts";
 import { peopleActions } from "./people.ts";
+import { accountActions, type Actor } from "./accounts.ts";
+import { generateTemporaryPassword } from "../_shared/accounts.ts";
 import { expectedModuleAssets, moduleSlug, validateAuthoringManifest } from "../_shared/module-authoring.ts";
 
 type Client = any;
@@ -38,16 +40,51 @@ function cleanContentVersion(value: unknown) {
   return version;
 }
 
-async function requireAdmin(admin: Client, userId: string) {
+// Loads the signed-in person with their effective permissions. System
+// administrators hold every permission; others get them from their position
+// plus per-person overrides.
+async function loadActor(admin: Client, userId: string): Promise<Actor & { mustChangePassword: boolean }> {
   const { data, error } = await admin
     .from("training_profiles")
-    .select("id,email,full_name,role,active")
+    .select("id,email,full_name,role,active,must_change_password")
     .eq("id", userId)
     .maybeSingle();
-  if (error) throw httpError(500, "Administrator profile lookup failed.");
-  if (!data?.active || data.role !== "admin") throw httpError(403, "Training administrator access is required.");
-  return data;
+  if (error) throw httpError(500, "Profile lookup failed.");
+  if (!data?.active) throw httpError(403, "This account is not active.");
+  const permissions = await rpc<string[]>(admin, "app_permissions_for", { p_profile: userId });
+  return { ...data, permissions: permissions || [], mustChangePassword: Boolean(data.must_change_password) };
 }
+
+function requirePermission(actor: Actor, needed: string | string[]) {
+  const list = Array.isArray(needed) ? needed : [needed];
+  if (!list.some(key => actor.permissions.includes(key))) {
+    throw httpError(403, "Your access doesn't include this area. Ask an administrator if you need it.");
+  }
+}
+
+const ACTION_PERMISSIONS: Record<string, string | string[]> = {
+  dashboard: "training.manage",
+  invite: "training.manage",
+  revoke: "training.manage",
+  module_catalog: "training.manage",
+  module_save_draft: "training.manage",
+  module_prepare_uploads: "training.manage",
+  module_validate: "training.manage",
+  module_publish: "training.manage",
+  module_ims_revisions: "training.manage",
+  module_link_ims: "training.manage",
+  people_reference: ["people.view", "people.manage", "access.manage", "hr.manage", "competency.all", "competency.team"],
+  people_list: ["people.view", "people.manage", "access.manage", "hr.manage"],
+  employee_save: "people.manage",
+  licence_save: "people.manage",
+  licence_delete: "people.manage",
+  position_save: "people.manage",
+  site_save: "people.manage",
+  requirement_set: "people.manage",
+  group_member_set: "access.manage",
+  competency_matrix: ["competency.all", "competency.team"],
+  practical_record: ["competency.all", "competency.team"]
+};
 
 async function audit(admin: Client, values: Record<string, unknown>) {
   const { error } = await admin.from("training_audit_events").insert(values);
@@ -449,13 +486,26 @@ async function invite(admin: Client, administrator: any, body: any) {
     .maybeSingle();
   if (versionResult.error || !versionResult.data?.published) throw httpError(400, "The selected module version has not been published to the secure service.");
 
+  const mode = body.signIn === "password" ? "password" : "invite";
+  let tempPassword: string | null = null;
   let profileResult = await admin.from("training_profiles").select("id,email,active").eq("email", email).maybeSingle();
   if (profileResult.error) throw httpError(500, "Learner lookup failed.");
   let userId = profileResult.data?.id;
   let invitationSent = false;
 
+  if (!userId && mode === "password") {
+    // Shown once to the administrator; the learner must change it at first sign-in.
+    tempPassword = generateTemporaryPassword();
+    const made = await admin.auth.admin.createUser({
+      email, password: tempPassword, email_confirm: true,
+      user_metadata: { full_name: fullName, external_id: externalId, learner_type: learnerType }
+    });
+    if (made.error || !made.data?.user?.id) throw httpError(409, "The sign-in could not be created. Check the email address and try again.");
+    userId = made.data.user.id;
+  }
+
   if (!userId) {
-    const redirectTo = Deno.env.get("TRAINING_APP_URL") || "https://jaysonsugpatanjs-hub.github.io/training/";
+    const redirectTo = `${Deno.env.get("TRAINING_APP_URL") || "https://jaysonsugpatanjs-hub.github.io/training/"}?welcome=1`;
     const invited = await admin.auth.admin.inviteUserByEmail(email, {
       redirectTo,
       data: { full_name: fullName, external_id: externalId, learner_type: learnerType }
@@ -479,8 +529,11 @@ async function invite(admin: Client, administrator: any, body: any) {
     p_expires_at: expiresAt.toISOString(),
     p_invited: invitationSent
   });
+  if (tempPassword) await rpc(admin, "account_temp_password_issued", { p_actor: administrator.id, p_profile: userId, p_new_account: true });
   return {
     invitationSent,
+    tempPassword,
+    existingAccount: !invitationSent && !tempPassword,
     learner: { id: userId, email, full_name: fullName, external_id: externalId, learner_type: learnerType, active: true },
     assignment
   };
@@ -500,25 +553,35 @@ export default {
     if (request.method !== "POST") return json(request, { message: "Method not allowed." }, 405);
     try {
       const userId = String(context.userClaims?.id || context.userClaims?.sub || "");
-      if (!userId) throw httpError(401, "A verified administrator session is required.");
-      const administrator = await requireAdmin(context.supabaseAdmin, userId);
+      if (!userId) throw httpError(401, "A verified session is required.");
+      const administrator = await loadActor(context.supabaseAdmin, userId);
+      if (administrator.mustChangePassword) throw httpError(403, "Change your temporary password before continuing.", "password_change_required");
       const body = await request.json().catch(() => ({}));
+      const action = String(body.action || "");
+      const admin = context.supabaseAdmin;
       let result: unknown;
-      switch (body.action) {
-        case "dashboard": result = await dashboard(context.supabaseAdmin, administrator, body); break;
-        case "invite": result = await invite(context.supabaseAdmin, administrator, body); break;
-        case "revoke": result = await revoke(context.supabaseAdmin, administrator, body); break;
-        case "module_catalog": result = await moduleCatalog(context.supabaseAdmin); break;
-        case "module_save_draft": result = await saveModuleDraft(context.supabaseAdmin, administrator, body); break;
-        case "module_prepare_uploads": result = await prepareModuleUploads(context.supabaseAdmin, body.versionId, body.assets); break;
-        case "module_validate": result = await validateModuleAssets(context.supabaseAdmin, body.versionId); break;
-        case "module_publish": result = await publishModule(context.supabaseAdmin, administrator, body.versionId); break;
-        case "module_ims_revisions": result = await imsTrainingRevisions(context.supabaseAdmin); break;
-        case "module_link_ims": result = await linkImsRevision(context.supabaseAdmin, administrator, body); break;
-        default: {
-          const handler = peopleActions[String(body.action)];
-          if (!handler) throw httpError(400, "Unknown administration action.");
-          result = await handler(context.supabaseAdmin, administrator, body);
+      if (action === "whoami") {
+        if (!administrator.permissions.length) throw httpError(403, "Your account doesn't include any administration areas.");
+        result = { name: administrator.full_name || administrator.email, email: administrator.email, systemAdmin: administrator.role === "admin", permissions: administrator.permissions };
+      } else if (accountActions[action]) {
+        requirePermission(administrator, accountActions[action].perm);
+        result = await accountActions[action].run(admin, administrator, body);
+      } else {
+        const needed = ACTION_PERMISSIONS[action];
+        if (!needed) throw httpError(400, "Unknown administration action.");
+        requirePermission(administrator, needed);
+        switch (action) {
+          case "dashboard": result = await dashboard(admin, administrator, body); break;
+          case "invite": result = await invite(admin, administrator, body); break;
+          case "revoke": result = await revoke(admin, administrator, body); break;
+          case "module_catalog": result = await moduleCatalog(admin); break;
+          case "module_save_draft": result = await saveModuleDraft(admin, administrator, body); break;
+          case "module_prepare_uploads": result = await prepareModuleUploads(admin, body.versionId, body.assets); break;
+          case "module_validate": result = await validateModuleAssets(admin, body.versionId); break;
+          case "module_publish": result = await publishModule(admin, administrator, body.versionId); break;
+          case "module_ims_revisions": result = await imsTrainingRevisions(admin); break;
+          case "module_link_ims": result = await linkImsRevision(admin, administrator, body); break;
+          default: result = await peopleActions[action](admin, administrator, body);
         }
       }
       return json(request, result);

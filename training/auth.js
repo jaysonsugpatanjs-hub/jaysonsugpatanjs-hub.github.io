@@ -77,21 +77,58 @@ export function completeAuthRedirect() {
     window.history.replaceState({}, document.title, `${window.location.pathname}${window.location.search}`);
   }
 
-  return { authenticated: Boolean(accessToken && refreshToken), error };
+  // "invite" and "recovery" links arrive signed in and must set a password next.
+  return { authenticated: Boolean(accessToken && refreshToken), error, type: hash.get("type") || null };
 }
 
-export async function sendMagicLink(email) {
-  if (!isConfigured()) throw new Error("The secure training service has not been connected yet.");
+function cleanEmail(email) {
   const address = String(email || "").trim().toLowerCase();
   if (!/^\S+@\S+\.\S+$/.test(address)) throw new Error("Enter a valid email address.");
+  return address;
+}
 
-  const redirectTo = new URL(config.appUrl, window.location.href).href;
-  const response = await fetch(`${config.supabaseUrl}/auth/v1/otp?redirect_to=${encodeURIComponent(redirectTo)}`, {
+export async function signInWithPassword(email, password) {
+  if (!isConfigured()) throw new Error("The secure training service has not been connected yet.");
+  const address = cleanEmail(email);
+  if (!password) throw new Error("Enter your password.");
+  const response = await fetch(`${config.supabaseUrl}/auth/v1/token?grant_type=password`, {
     method: "POST",
     headers: authHeaders(),
-    body: JSON.stringify({ email: address, create_user: false, data: {} })
+    body: JSON.stringify({ email: address, password: String(password) })
   });
-  await parseResponse(response);
+  let data;
+  try {
+    data = await parseResponse(response);
+  } catch (error) {
+    // Never reveal whether the email exists.
+    if (error.status === 400 || error.status === 401 || error.status === 422) {
+      const wrapped = new Error("That email and password don't match. Check them, or use Forgot password.");
+      wrapped.status = 400;
+      throw wrapped;
+    }
+    throw error;
+  }
+  saveSession({
+    access_token: data.access_token,
+    refresh_token: data.refresh_token,
+    expires_at: Math.floor(Date.now() / 1000) + Number(data.expires_in || 3600),
+    token_type: data.token_type || "bearer"
+  });
+  return data;
+}
+
+export async function requestPasswordReset(email) {
+  if (!isConfigured()) throw new Error("The secure training service has not been connected yet.");
+  const address = cleanEmail(email);
+  const redirectTo = new URL(config.appUrl, window.location.href).href;
+  const response = await fetch(`${config.supabaseUrl}/auth/v1/recover?redirect_to=${encodeURIComponent(redirectTo)}`, {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify({ email: address })
+  });
+  // The response is the same whether or not the account exists.
+  if (!response.ok && response.status !== 429) await parseResponse(response).catch(() => null);
+  if (response.status === 429) throw new Error("Too many requests. Wait a minute and try again.");
 }
 
 async function refreshSession() {
@@ -142,7 +179,7 @@ export async function api(functionName, body, retry = true) {
   if (!isConfigured()) throw new Error("The secure training service has not been connected yet.");
   const session = await getSession();
   if (!session?.access_token) {
-    const error = new Error("Your sign-in has expired. Request a new email link.");
+    const error = new Error("Your sign-in has expired. Please sign in again.");
     error.status = 401;
     throw error;
   }
@@ -160,7 +197,7 @@ export async function api(functionName, body, retry = true) {
 }
 
 export function friendlyError(error) {
-  if (error?.status === 401) return "Your sign-in has expired. Request a new email link.";
+  if (error?.status === 401) return "Your sign-in has expired. Please sign in again.";
   if (error?.status === 403) return error.message || "This account does not have access to that training.";
   return error?.message || "Something went wrong. Please try again.";
 }

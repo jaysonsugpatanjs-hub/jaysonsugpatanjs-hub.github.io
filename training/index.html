@@ -8,6 +8,7 @@
 <meta name="description" content="Controlled Panalo Pipes & Structurals online training portal">
 <link rel="stylesheet" href="./styles.css">
 <link rel="stylesheet" href="./theme.css">
+<link rel="stylesheet" href="./components.css">
 <script src="./config.js"></script>
 <script type="module" src="./app.js"></script>
 </head>
@@ -27,9 +28,9 @@
 
 <main class="page">
   <section class="hero">
-    <p class="eyebrow">EMPLOYEE & APPLICANT LEARNING</p>
-    <h1>Your assigned training</h1>
-    <p>Use the personal email address invited by Panalo Pipes. Only active assignments appear after the email link is verified.</p>
+    <p class="eyebrow">EMPLOYEES & APPLICANTS</p>
+    <h1>Your Panalo portal</h1>
+    <p>Sign in with the email address Panalo invited. Your assigned training, and any documents HR has asked you for, appear here.</p>
   </section>
 
   <section id="setup-panel" class="portal-card setup-card hidden" aria-live="polite">
@@ -40,25 +41,63 @@
 
   <section id="sign-in-panel" class="portal-card auth-card hidden" aria-labelledby="sign-in-title">
     <div>
-      <p class="eyebrow">EMAIL VERIFICATION</p>
-      <h2 id="sign-in-title">Sign in with your invited email</h2>
-      <p>No password is required. We will send a one-time, time-limited sign-in link.</p>
+      <p class="eyebrow">SIGN IN</p>
+      <h2 id="sign-in-title">Sign in to the Panalo portal</h2>
+      <p>Use the email address Panalo invited and your password. If you were given a temporary password, you'll choose your own straight after signing in.</p>
     </div>
-    <form id="sign-in-form">
+    <form id="sign-in-form" class="stacked-form">
       <label for="email">Email address</label>
-      <div class="email-row">
-        <input id="email" name="email" type="email" autocomplete="email" inputmode="email" required placeholder="name@example.com">
-        <button class="primary" type="submit">Email my sign-in link</button>
-      </div>
+      <input id="email" name="email" type="email" autocomplete="username" inputmode="email" required placeholder="name@example.com">
+      <label for="password">Password</label>
+      <input id="password" name="password" type="password" autocomplete="current-password" required>
+      <button class="primary" type="submit">Sign in</button>
+      <button id="forgot-link" class="text-button" type="button">Forgot password?</button>
       <p id="auth-message" class="form-message" role="status" aria-live="polite"></p>
     </form>
-    <p class="privacy-note">Access is limited to invited accounts. Your email, completion activity, scores and certificate record are retained for training administration.</p>
+    <form id="reset-form" class="stacked-form hidden">
+      <label for="reset-email">Email address</label>
+      <input id="reset-email" name="email" type="email" autocomplete="username" required placeholder="name@example.com">
+      <button class="primary" type="submit">Email me a reset link</button>
+      <button id="back-to-sign-in" class="text-button" type="button">Back to sign in</button>
+      <p id="reset-message" class="form-message" role="status" aria-live="polite"></p>
+    </form>
+    <p class="privacy-note">Access is limited to people invited by Panalo. Your email, training activity, results and any documents you upload are kept for training and HR administration.</p>
+  </section>
+
+  <section id="password-panel" class="portal-card auth-card hidden" aria-labelledby="password-title">
+    <div>
+      <p class="eyebrow">YOUR PASSWORD</p>
+      <h2 id="password-title">Choose your password</h2>
+      <p id="password-intro">Set a password you'll use to sign in from now on.</p>
+      <ul class="password-rules">
+        <li>At least 12 characters</li>
+        <li>A mix of at least three: lower-case, capitals, numbers, symbols</li>
+        <li>Not a common password, and not your email name</li>
+      </ul>
+    </div>
+    <form id="password-form" class="stacked-form">
+      <label for="new-password">New password</label>
+      <input id="new-password" name="password" type="password" autocomplete="new-password" required minlength="12">
+      <label for="confirm-password">Type it again</label>
+      <input id="confirm-password" name="confirm" type="password" autocomplete="new-password" required minlength="12">
+      <button class="primary" type="submit">Save password</button>
+      <p id="password-message" class="form-message" role="status" aria-live="polite"></p>
+    </form>
   </section>
 
   <section id="dashboard" class="hidden" aria-live="polite">
     <section class="learner-summary">
       <div><span>Signed in as</span><strong id="learner-name"></strong><small id="learner-email"></small></div>
       <div><span>Record ID</span><strong id="learner-id">—</strong></div>
+    </section>
+
+    <section id="onboarding" class="portal-card onboarding-card hidden" aria-labelledby="onboarding-title">
+      <div class="register-head"><div><p class="eyebrow">HR ONBOARDING</p><h2 id="onboarding-title">Documents to submit</h2></div>
+        <div id="onboarding-progress" class="filter"></div></div>
+      <p id="onboarding-intro" class="muted"></p>
+      <div id="onboarding-items" class="onboarding-list"></div>
+      <p class="privacy-note">Your documents go straight to Panalo's private HR storage. Only Panalo HR staff can open them, and every view is recorded. Tax file numbers are collected under the Privacy (Tax File Number) Rule 2015.</p>
+      <p id="onboarding-message" class="form-message" role="status" aria-live="polite"></p>
     </section>
 
     <section class="library-head">
@@ -73,7 +112,7 @@
     <p class="eyebrow">TRAINING PATHWAY</p>
     <h2>How completion is recorded</h2>
     <div class="steps">
-      <div><b>1</b><strong>Verify email</strong><span>Use the personal address invited for this assignment.</span></div>
+      <div><b>1</b><strong>Sign in</strong><span>Use the email Panalo invited and your own password.</span></div>
       <div><b>2</b><strong>Complete slides</strong><span>Each slide has a corresponding knowledge check.</span></div>
       <div><b>3</b><strong>Pass theory</strong><span>Achieve 80% overall and answer every critical question correctly.</span></div>
       <div><b>4</b><strong>Verify practical</strong><span>Theory completion does not authorise practical work.</span></div>

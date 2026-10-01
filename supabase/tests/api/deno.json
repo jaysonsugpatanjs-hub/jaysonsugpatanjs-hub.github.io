@@ -1,0 +1,1 @@
+{"imports":{"npm:@supabase/server@^1":"./supabase-server-stub.ts","npm:pdf-lib@1.17.1":"./pdf-lib-stub.ts"}}
