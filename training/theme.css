@@ -1,0 +1,133 @@
+/*
+ * Panalo brand theme: black and charcoal surfaces, Panalo gold for actions
+ * and headings, white text. Loaded after each page's own stylesheet so the
+ * palette lives in one place. Status colours are tuned to read on dark.
+ */
+:root {
+  --navy: #f5b400; /* legacy name: now the brand accent */
+  --navy2: #0d0d0e;
+  --yellow: #f5b400;
+  --gold: #f5b400;
+  --gold-soft: #2a230b;
+  --bg: #0d0d0e;
+  --surface: #18181a;
+  --surface-2: #111113;
+  --raised: #242427;
+  --text: #ececec;
+  --heading: #ffffff;
+  --muted: #a9a9ae;
+  --border: #2c2c2f;
+  --rule: #262629;
+  --green: #6fdc9a;
+  --green-bg: #123222;
+  --red: #ff7d86;
+  --red-bg: #3a1518;
+  --orange: #ff9a45;
+  --orange-bg: #3a2110;
+  --amber: #ffd24d;
+  --amber-bg: #332909;
+  --blue: #8cc4ff;
+  --blue-bg: #14263b;
+  color-scheme: dark;
+}
+
+body { background: var(--bg); color: var(--text); }
+h1, h2, h3 { color: var(--heading); }
+
+/* Header */
+.topbar { background: #000; border-bottom: 3px solid var(--gold); box-shadow: none; }
+.brandmark { background: var(--gold); color: #0d0d0e; }
+.brand small { color: var(--gold); opacity: 1; }
+.draft { background: transparent; border-color: #f5b40099; color: var(--gold); }
+.header-link, .header-button, .account button { background: transparent; border-color: #f5b40099; color: var(--gold); }
+.header-link:hover, .header-button:hover, .account button:hover { background: var(--gold-soft); }
+
+/* Surfaces */
+.portal-card, .module-card, .steps div, .learner-summary > div, .summary-grid > div,
+.landing, .lesson, .sidebar, .gate-card, .register-card, .module-register { background: var(--surface); border-color: var(--border); box-shadow: none; }
+.auth-card form, .upload-block, .check-field, .assessment-intro, .contentcard, .facts div { background: var(--surface-2); border-color: var(--border); }
+.eyebrow, .code, .k { color: var(--gold); }
+.hero p, .lead, .portal-card p, .module-body p, .steps span, .filter, .course-mini p, .slidehead p,
+.admin-heading p, .module-intro p, .field small, .record-note, footer { color: var(--muted); }
+.notice, .draftnote, .source-note, .setup-card { background: #1f1a07; color: #f3e3a6; border-color: var(--gold); }
+.privacy-note { border-color: var(--border); }
+
+/* Forms */
+input, select, textarea,
+.email-row input, .admin-form input, .admin-form select, .field input, .field select, .field textarea, .register-head input, .result input {
+  background: var(--surface-2); color: #fff; border-color: #3a3a3e;
+}
+input::placeholder, textarea::placeholder { color: #75757b; }
+label, .auth-card label, .field label { color: var(--text); }
+.form-message { color: var(--amber) !important; }
+
+/* Buttons */
+.primary { background: var(--gold); color: #0d0d0e; }
+.primary:hover { background: #ffc629; }
+.secondary, .secondary-action, .revoke { background: transparent; color: var(--gold); border: 1px solid #f5b40099; }
+.revoke { color: var(--red); border-color: #ff7d8666; }
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; }
+
+/* Tables and chips */
+.table-wrap { border-color: var(--border); }
+th { background: var(--surface-2); color: var(--gold); border-color: var(--border); }
+td { border-color: var(--rule); }
+td small { color: var(--muted); }
+.status-chip, .meta span, .tag, .slidepill { background: var(--raised); color: #d4d4d8; }
+.status-chip.theory-passed { background: var(--green-bg); color: var(--green); }
+.status-chip.revoked, .status-chip.expired, .slidepill.critical, .badge { background: var(--red-bg); color: var(--red); }
+.status { background: var(--gold); color: #0d0d0e; }
+.summary-grid strong { color: var(--gold); }
+
+/* Admin tabs */
+.admin-tabs { background: var(--surface); border: 1px solid var(--border); }
+.admin-tab { color: #c8c8cc; }
+.admin-tab.active { background: var(--gold); color: #0d0d0e; box-shadow: none; }
+.module-intro { border-left-color: var(--gold); }
+
+/* Learner module */
+.course-mini .tag { background: var(--gold-soft); color: var(--gold); }
+.track, .progress-line { background: var(--raised); }
+nav button { color: #c8c8cc; }
+nav button:hover:not(:disabled) { background: #202023; }
+nav button.active { background: var(--gold-soft); color: var(--gold); }
+.reset { color: var(--muted); }
+.heroimg, .slidevisual, .landing-cover > .image-status { background: var(--surface-2); border-color: var(--border); }
+.image-status { color: var(--muted); }
+.fullsize { background: var(--surface); color: var(--gold); }
+.transcript { background: var(--surface); }
+.keymsg { background: var(--green-bg); border-left-color: var(--green); }
+.verify { background: var(--red-bg); border-left-color: var(--red); }
+.option { border-color: var(--border); }
+.option:hover { background: #202023; }
+.option:has(input:checked) { border-color: var(--gold); background: var(--gold-soft); }
+.feedback.ok, .result.pass { background: var(--green-bg); color: var(--green); }
+.feedback.no, .result.fail { background: var(--red-bg); color: var(--red); }
+.feedback.pending { background: var(--raised); color: var(--muted); }
+.result.pass h2, .result.fail h2 { color: inherit; }
+.examq { border-color: var(--border) !important; border-left-color: var(--border) !important; }
+.examq.critical { border-left-color: var(--red) !important; }
+.facts span { color: var(--muted); }
+.portal-return { color: var(--gold); border-color: var(--border); }
+.certificate-message { color: var(--gold); }
+.load-error { color: var(--red); }
+.secure-cover { background: linear-gradient(145deg, #000, #1d1a10); }
+.secure-cover > div span { color: var(--gold); }
+.progress-line i, .track i { background: var(--gold); }
+
+/* Shared components for the new screens */
+.chip { display: inline-block; border-radius: 999px; padding: 3px 9px; font-size: 12px; font-weight: 700; white-space: nowrap; background: var(--raised); color: #d4d4d8; border: 1px solid transparent; }
+.chip.good { background: var(--green-bg); color: var(--green); }
+.chip.warn { background: var(--orange-bg); color: var(--orange); }
+.chip.bad { background: var(--red-bg); color: var(--red); }
+.chip.pending { background: var(--amber-bg); color: var(--amber); }
+.chip.info { background: var(--blue-bg); color: var(--blue); }
+.chip.gap { background: transparent; color: #bcbcc0; border: 1px dashed #6a6a70; }
+.chip.owner { background: var(--gold); color: #0d0d0e; }
+.chip.approver { background: transparent; color: var(--gold); border-color: var(--gold); }
+.chip.editor { background: var(--raised); color: #fff; border-color: #3a3a3e; }
+.chip.viewer { background: var(--raised); color: #b6b6bb; }
+.chip.none { background: var(--red-bg); color: var(--red); }
+.muted { color: var(--muted); }
+.link-btn { border: 0; background: none; padding: 0; font: inherit; font-weight: 700; color: #fff; cursor: pointer; text-align: left; min-height: 24px; }
+.link-btn:hover { color: var(--gold); text-decoration: underline; }

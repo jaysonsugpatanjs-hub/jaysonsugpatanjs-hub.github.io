@@ -19,7 +19,8 @@ const ui = {
   dashboardMessage: document.getElementById("dashboard-message"),
   moduleGrid: document.getElementById("module-grid"),
   signOut: document.getElementById("sign-out"),
-  adminLink: document.getElementById("admin-link")
+  adminLink: document.getElementById("admin-link"),
+  imsLink: document.getElementById("ims-link")
 };
 
 function show(name) {
@@ -27,6 +28,7 @@ function show(name) {
   ui.signIn.classList.toggle("hidden", name !== "signIn");
   ui.dashboard.classList.toggle("hidden", name !== "dashboard");
   ui.signOut.classList.toggle("hidden", name !== "dashboard");
+  ui.imsLink.classList.toggle("hidden", name !== "dashboard");
 }
 
 function safe(value) {

@@ -17,6 +17,7 @@ supabase secrets set \
   TRAINING_APP_URL="https://jaysonsugpatanjs-hub.github.io/training/"
 supabase functions deploy training-api
 supabase functions deploy admin-api
+supabase functions deploy ims-api
 ```
 
 The database migration creates private training tables, audit records and two private Storage buckets. The Edge Functions contain the assignment checks, marking and certificate issue logic.
@@ -115,3 +116,16 @@ Use one administrator test address and one learner test address:
 8. Revoke the assignment and confirm the learner immediately loses access while the audit history remains.
 
 The module remains **Draft Rev 1** until its technical and IMS approval is recorded. Controlled access alone does not approve training content for employee issue.
+
+## 8. Integrated IMS upgrade (people, competency, documents)
+
+Applies to projects already running the training portal.
+
+1. **Back up first.** In Supabase, confirm a recent backup exists (Database → Backups).
+2. **Apply the migration.** Either run `supabase db push` from a trusted workstation, or in GitHub open *Actions → Supabase database migrations → Run workflow* and type `APPLY`. That workflow runs the database tests first and needs the `SUPABASE_DB_PASSWORD` secret and a `production` environment.
+3. **Deploy the functions.** Merging to `main` deploys `training-api`, `admin-api` and `ims-api` after the tests and type check pass.
+4. **Add yourself to the register.** In *Administration → People*, add each staff member with the same email they use to sign in. "All employees" document access only applies to people on the register as active employees; applicants and contractors invited only for training cannot browse documents.
+5. **Set groups.** On each person, tick their document groups (Document controllers, Supervisors, HR admins, Welding supervisors, WHS advisers).
+6. **Create the folder structure.** Open *IMS documents* and choose *Create Panalo Asset File*, then build folders in the app, or run `supabase/seed/ims_folders.sql` in the SQL editor after filling in its placeholders.
+7. **Set training requirements.** Under *People → Positions and required training*, tick the modules each position needs and the refresher interval.
+8. **Bring existing modules under control.** For each training module, create its document in *08. LABOUR HIRE & HR → Training modules* with the approval gates it needs, add a revision and attach the controlled file, record the approvals, then link the draft version to that revision in *Module management*. Versions published before this upgrade stay published.

@@ -7,6 +7,8 @@
 <title>Training Administration | Panalo Pipes</title>
 <link rel="stylesheet" href="../styles.css">
 <link rel="stylesheet" href="./admin.css">
+<link rel="stylesheet" href="../theme.css">
+<link rel="stylesheet" href="../components.css">
 <script src="../config.js"></script>
 <script type="module" src="./admin.js"></script>
 </head>
@@ -18,11 +20,14 @@
 <main class="admin-page">
   <section id="admin-gate" class="portal-card"><p class="eyebrow">ADMINISTRATION</p><h1 id="gate-title">Checking administrator access…</h1><p id="gate-message"></p></section>
   <div id="admin-app" class="hidden">
-    <section class="admin-heading"><div><p class="eyebrow">CONTROLLED TRAINING SYSTEM</p><h1>Training administration</h1><p id="admin-identity"></p></div><button id="refresh" class="secondary-action" type="button">Refresh registers</button></section>
+    <section class="admin-heading"><div><p class="eyebrow">INTEGRATED MANAGEMENT SYSTEM</p><h1>People, documents and training</h1><p id="admin-identity"></p></div><button id="refresh" class="secondary-action" type="button">Refresh registers</button></section>
     <section id="summary" class="summary-grid"></section>
     <nav class="admin-tabs" aria-label="Training administration areas">
       <button class="admin-tab active" type="button" data-admin-view="access-management" aria-pressed="true">Learner access</button>
       <button class="admin-tab" type="button" data-admin-view="module-management" aria-pressed="false">Module management</button>
+      <button class="admin-tab" type="button" data-admin-view="people-management" aria-pressed="false">People</button>
+      <button class="admin-tab" type="button" data-admin-view="competency-matrix" aria-pressed="false">Competency matrix</button>
+      <button class="admin-tab" type="button" data-admin-view="ims-documents" aria-pressed="false">IMS documents</button>
     </nav>
     <section id="access-management" class="admin-view admin-layout">
       <form id="invite-form" class="portal-card admin-form">
@@ -39,7 +44,7 @@
         <p class="privacy-note">The invitation goes only to the email above. Access can be revoked from the register.</p>
         <p id="invite-message" class="form-message" role="status" aria-live="polite"></p>
       </form>
-      <section class="portal-card register-card"><div class="register-head"><div><p class="eyebrow">ACCESS REGISTER</p><h2>Assignments</h2></div><input id="search" type="search" placeholder="Search name, email, ID or module" aria-label="Search assignments"></div><div class="table-wrap"><table><thead><tr><th>Learner</th><th>Module</th><th>Status</th><th>Result</th><th>Expiry</th><th>Access</th></tr></thead><tbody id="register-body"></tbody></table></div><p id="register-message" class="form-message"></p></section>
+      <section class="portal-card register-card"><div class="register-head"><div><p class="eyebrow">ACCESS REGISTER</p><h2>Assignments</h2></div><input id="search" type="search" placeholder="Search name, email, ID or module" aria-label="Search assignments"></div><div class="table-wrap"><table><thead><tr><th>Learner</th><th>Module</th><th>Status</th><th>Result</th><th>Expiry</th><th>Access</th></tr></thead><tbody id="register-body"></tbody></table></div><p id="register-message" class="form-message"></p><button id="load-more" class="secondary-action hidden" type="button">Load more assignments</button></section>
     </section>
     <section id="module-management" class="admin-view hidden">
       <div class="module-intro portal-card">
@@ -71,11 +76,54 @@
         </form>
         <section class="portal-card module-register">
           <div class="register-head"><div><p class="eyebrow">MODULE REGISTER</p><h2>Drafts and published versions</h2></div><button id="refresh-modules" class="secondary-action" type="button">Refresh modules</button></div>
-          <div class="table-wrap"><table class="module-table"><thead><tr><th>Module</th><th>Version</th><th>Private assets</th><th>Release</th><th>Action</th></tr></thead><tbody id="module-register-body"></tbody></table></div>
+          <div class="table-wrap"><table class="module-table"><thead><tr><th>Module</th><th>Version</th><th>Private assets</th><th>IMS approval</th><th>Release</th><th>Action</th></tr></thead><tbody id="module-register-body"></tbody></table></div>
           <p id="module-register-message" class="form-message"></p>
         </section>
       </div>
     </section>
+
+    <section id="people-management" class="admin-view hidden">
+      <div class="people-layout">
+        <section class="portal-card register-card">
+          <div class="register-head"><div><p class="eyebrow">EMPLOYEE REGISTER</p><h2>People</h2></div>
+            <input data-people-search type="search" placeholder="Search name, number, position or site" aria-label="Search people"></div>
+          <div class="table-wrap"><table><thead><tr><th>Person</th><th>Position · site</th><th>Type · status</th><th>Training login</th><th>Licences</th></tr></thead><tbody data-people-body></tbody></table></div>
+          <p class="form-message" data-people-msg></p>
+        </section>
+        <div class="people-side">
+          <section class="portal-card"><form data-employee-form class="admin-form"></form><div data-employee-extra></div></section>
+          <section class="portal-card" data-positions></section>
+        </div>
+      </div>
+    </section>
+
+    <section id="competency-matrix" class="admin-view hidden">
+      <section class="portal-card register-card">
+        <div class="register-head"><div><p class="eyebrow">TRAINING MATRIX</p><h2>Competency matrix</h2>
+          <p class="muted">Competent means theory passed and practical signed off, within its refresher period.</p></div></div>
+        <div class="matrix-filters" data-matrix-filters></div>
+        <div class="matrix-legend" data-matrix-legend></div>
+        <div class="table-wrap"><table class="matrix-table"><thead data-matrix-head></thead><tbody data-matrix-body></tbody></table></div>
+        <p class="form-message" data-matrix-msg></p>
+      </section>
+      <form data-practical-form class="portal-card admin-form practical-form hidden">
+        <p class="eyebrow">PRACTICAL VERIFICATION</p><h2>Record practical for <span data-practical-who></span></h2>
+        <input type="hidden" name="assignmentId">
+        <div class="field-row">
+          <div class="field"><label for="pv-assessor">Assessor name</label><input id="pv-assessor" name="assessorName" required maxlength="100"></div>
+          <div class="field"><label for="pv-date">Assessed on</label><input id="pv-date" name="assessedOn" type="date" required></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label for="pv-site">Site</label><select id="pv-site" name="siteId"></select></div>
+          <div class="field"><label for="pv-outcome">Outcome</label><select id="pv-outcome" name="outcome"><option value="competent">Competent</option><option value="not_yet_competent">Not yet competent</option></select></div>
+        </div>
+        <div class="field"><label for="pv-notes">Observation notes</label><textarea id="pv-notes" name="notes" rows="3" maxlength="2000"></textarea></div>
+        <div class="form-actions"><button class="primary" type="submit">Record verification</button><button class="secondary-action" type="button" data-practical-cancel>Cancel</button></div>
+        <p class="form-message" role="status" aria-live="polite"></p>
+      </form>
+    </section>
+
+    <section id="ims-documents" class="admin-view hidden"></section>
   </div>
 </main>
 </body>

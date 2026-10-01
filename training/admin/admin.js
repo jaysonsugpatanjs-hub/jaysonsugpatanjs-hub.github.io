@@ -1,5 +1,7 @@
 import { api, completeAuthRedirect, config, friendlyError, getSession, isConfigured, signOut } from "../auth.js";
 import { defaultContentVersion, endOfSydneyDayIso, moduleAuthoringTemplate, sortSlideFiles } from "./module-manager-core.js";
+import { bindMatrix, bindPeople, loadMatrix, loadPeople } from "./people.js";
+import { mountIms } from "../ims/ims.js";
 
 const ui = {
   gate: document.getElementById("admin-gate"),
@@ -17,6 +19,10 @@ const ui = {
 };
 let data = null;
 let moduleData = null;
+let imsRevisions = null;
+let page = 0;
+const loaded = new Set();
+let ims = null;
 
 function safe(value) {
   return String(value ?? "").replace(/[&<>"']/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character]);
@@ -86,21 +92,55 @@ function renderModuleCatalog() {
     const assetDetail = version.assets?.ready
       ? "Complete and validated"
       : missing.length <= 3 ? `Missing: ${missing.join(", ")}` : `${missing.length} files missing`;
+    const imsApproved = version.ims?.status === "approved";
+    const imsCell = version.ims
+      ? `<strong>${safe(version.ims.docNumber)} ${safe(version.ims.revision)}</strong><small><span class="chip ${imsApproved ? "good" : "pending"}">${imsApproved ? "Approved" : "Awaiting approval"}</span></small>`
+      : version.published ? '<small>Published before IMS control</small>' : linkSelect(version);
     const action = version.published
       ? '<span class="status-chip theory-passed">Published</span>'
-      : `<button class="secondary-action publish-module" type="button" data-version="${safe(version.id)}" data-label="${safe(`${version.code} ${version.revision}`)}" ${version.assets?.ready ? "" : "disabled"}>Publish</button>`;
+      : `<button class="secondary-action publish-module" type="button" data-version="${safe(version.id)}" data-label="${safe(`${version.code} ${version.revision}`)}" ${version.assets?.ready && imsApproved ? "" : "disabled"}>Publish</button>
+         <small>${!version.assets?.ready ? "Upload every slide first." : !version.ims ? "Link its IMS revision first." : !imsApproved ? "Waiting for IMS approval." : "Ready to publish."}</small>`;
     return `<tr><td><strong>${safe(version.code)}</strong><small>${safe(module.title || "")}</small><small>${safe(module.status || "draft")}</small></td>
       <td><strong>${safe(version.revision)}</strong><small>${safe(version.contentVersion)}</small><small>${version.slideCount} slides · ${version.passMark}% pass</small></td>
       <td><strong>${version.assets?.present || 0}/${version.assets?.expected || version.slideCount + 1}</strong><small>${safe(assetDetail)}</small></td>
+      <td>${imsCell}</td>
       <td><span class="status-chip ${version.published ? "theory-passed" : ""}">${safe(release)}</span></td><td>${action}</td></tr>`;
   }).join("");
   ui.moduleRegisterMessage.textContent = versions.length ? "" : "No module versions have been created.";
   ui.moduleRegisterBody.querySelectorAll(".publish-module").forEach(button => button.addEventListener("click", publishModule));
+  ui.moduleRegisterBody.querySelectorAll(".link-ims").forEach(button => button.addEventListener("click", linkIms));
 }
 
-async function loadDashboard() {
+function linkSelect(version) {
+  const docs = (imsRevisions?.documents || []).filter(doc => !doc.trainingModuleId || doc.trainingModuleId === version.moduleId);
+  const options = docs.flatMap(doc => doc.revisions.map(revision => `<option value="${safe(revision.id)}">${safe(doc.docNumber)} ${safe(revision.revision)} (${revision.status === "approved" ? "approved" : "in approval"})</option>`)).join("");
+  if (!options) return '<small>Create this module\'s document and revision under IMS documents, then link it here.</small>';
+  return `<label class="sr-only" for="ims-${safe(version.id)}">IMS revision for ${safe(version.code)}</label>
+    <select id="ims-${safe(version.id)}" class="ims-select">${options}</select>
+    <button type="button" class="secondary-action small link-ims" data-version="${safe(version.id)}">Link</button>`;
+}
+
+async function linkIms(event) {
+  const button = event.currentTarget;
+  const select = document.getElementById(`ims-${button.dataset.version}`);
+  button.disabled = true;
+  ui.moduleRegisterMessage.textContent = "Linking the IMS revision…";
+  try {
+    await api(config.adminFunction, { action: "module_link_ims", versionId: button.dataset.version, revisionId: select.value });
+    await loadModules();
+    ui.moduleRegisterMessage.textContent = "Linked. Publishing unlocks once that revision is approved.";
+  } catch (error) {
+    ui.moduleRegisterMessage.textContent = friendlyError(error);
+    button.disabled = false;
+  }
+}
+
+async function loadDashboard(append = false) {
   ui.registerMessage.textContent = "Loading the controlled register…";
-  data = await api(config.adminFunction, { action: "dashboard" });
+  page = append ? page + 1 : 0;
+  const result = await api(config.adminFunction, { action: "dashboard", page });
+  data = append && data ? { ...result, assignments: [...data.assignments, ...result.assignments] } : result;
+  document.getElementById("load-more").classList.toggle("hidden", !result.paging?.hasMore);
   document.getElementById("admin-identity").textContent = `Signed in as ${data.administrator.fullName || data.administrator.email}`;
   renderSummary(data.summary);
   const moduleSelect = document.getElementById("module-code");
@@ -110,7 +150,10 @@ async function loadDashboard() {
 
 async function loadModules() {
   ui.moduleRegisterMessage.textContent = "Checking private module assets…";
-  moduleData = await api(config.adminFunction, { action: "module_catalog" });
+  [moduleData, imsRevisions] = await Promise.all([
+    api(config.adminFunction, { action: "module_catalog" }),
+    api(config.adminFunction, { action: "module_ims_revisions" })
+  ]);
   renderModuleCatalog();
 }
 
@@ -277,8 +320,23 @@ function downloadAuthoringTemplate() {
   window.setTimeout(() => URL.revokeObjectURL(link.href), 1000);
 }
 
+async function loadView(selected) {
+  if (loaded.has(selected)) return;
+  loaded.add(selected);
+  try {
+    if (selected === "people-management") await loadPeople(document.getElementById(selected));
+    if (selected === "competency-matrix") await loadMatrix(document.getElementById(selected));
+    if (selected === "ims-documents") { ims = ims || mountIms(document.getElementById(selected)); await ims.open(); }
+  } catch (error) {
+    loaded.delete(selected);
+    const target = document.querySelector(`#${selected} .form-message`);
+    if (target) target.textContent = friendlyError(error);
+  }
+}
+
 function switchAdminView(event) {
   const selected = event.currentTarget.dataset.adminView;
+  loadView(selected);
   document.querySelectorAll(".admin-view").forEach(view => view.classList.toggle("hidden", view.id !== selected));
   document.querySelectorAll(".admin-tab").forEach(tab => {
     const active = tab.dataset.adminView === selected;
@@ -318,7 +376,16 @@ ui.inviteForm.addEventListener("submit", async event => {
 
 ui.moduleForm.addEventListener("submit", createModuleDraft);
 ui.search.addEventListener("input", renderRegister);
-document.getElementById("refresh").addEventListener("click", () => Promise.all([loadDashboard(), loadModules()]).catch(error => { ui.registerMessage.textContent = friendlyError(error); }));
+document.getElementById("refresh").addEventListener("click", () => {
+  const visible = document.querySelector(".admin-view:not(.hidden)")?.id;
+  loaded.clear();
+  loaded.add("access-management");
+  loaded.add("module-management");
+  return Promise.all([loadDashboard(), loadModules(), visible ? loadView(visible) : null]).catch(error => { ui.registerMessage.textContent = friendlyError(error); });
+});
+document.getElementById("load-more").addEventListener("click", () => loadDashboard(true).catch(error => { ui.registerMessage.textContent = friendlyError(error); }));
+bindPeople(document.getElementById("people-management"));
+bindMatrix(document.getElementById("competency-matrix"));
 document.getElementById("refresh-modules").addEventListener("click", () => loadModules().catch(error => { ui.moduleRegisterMessage.textContent = friendlyError(error); }));
 document.getElementById("download-module-template").addEventListener("click", downloadAuthoringTemplate);
 document.querySelectorAll(".admin-tab").forEach(tab => tab.addEventListener("click", switchAdminView));

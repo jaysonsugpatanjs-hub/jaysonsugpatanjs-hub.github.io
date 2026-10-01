@@ -5,7 +5,8 @@ export const config = Object.freeze({
   publishableKey: String(rawConfig.publishableKey || ""),
   appUrl: String(rawConfig.appUrl || new URL("./", window.location.href)),
   trainingFunction: String(rawConfig.trainingFunction || "training-api"),
-  adminFunction: String(rawConfig.adminFunction || "admin-api")
+  adminFunction: String(rawConfig.adminFunction || "admin-api"),
+  imsFunction: String(rawConfig.imsFunction || "ims-api")
 });
 
 const SESSION_KEY = "panalo-training-session-v1";
