@@ -61,7 +61,13 @@ jobs:
 
       # All functions ship together so the browser and server never drift.
       - name: Deploy training-api, admin-api and ims-api
+        shell: bash
         run: |
+          set -o pipefail
           for fn in training-api admin-api ims-api; do
-            supabase functions deploy "$fn" --project-ref "$SUPABASE_PROJECT_REF"
+            if ! supabase functions deploy "$fn" --project-ref "$SUPABASE_PROJECT_REF" --use-api 2>&1 | tee deploy.log; then
+              grep -v '^\s*$' deploy.log | tail -15 | sed "s/^/::error title=deploy $fn::/"
+              exit 1
+            fi
+            echo "::notice title=deploy::$fn deployed"
           done
