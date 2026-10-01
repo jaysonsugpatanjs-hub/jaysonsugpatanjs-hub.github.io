@@ -63,7 +63,30 @@ jobs:
       - uses: supabase/setup-cli@v1
         with:
           version: 2.119.0
-      - name: Link and push
+      - name: Link project
+        run: supabase link --project-ref "$SUPABASE_PROJECT_REF" --password "$SUPABASE_DB_PASSWORD"
+
+      # The first two migrations were applied by hand in the SQL editor, so the
+      # project has no migration history. Record them as applied, but only
+      # after confirming their tables really exist; otherwise push creates them.
+      - name: Record hand-applied migrations
+        shell: bash
         run: |
-          supabase link --project-ref "$SUPABASE_PROJECT_REF" --password "$SUPABASE_DB_PASSWORD"
-          supabase db push --password "$SUPABASE_DB_PASSWORD"
+          set -euo pipefail
+          supabase migration list --password "$SUPABASE_DB_PASSWORD" | tee migration-list.txt
+          if grep -Eq '20260928000000[[:space:]]*\|[[:space:]]*20260928000000' migration-list.txt; then
+            echo "Migration history already recorded."
+            exit 0
+          fi
+          (supabase inspect db table-stats --linked 2>/dev/null || supabase inspect db table-sizes --linked) | tee tables.txt
+          if grep -q 'training_profiles' tables.txt && grep -q 'training_audit_events' tables.txt; then
+            supabase migration repair --status applied 20260928000000 20260929000000 --password "$SUPABASE_DB_PASSWORD"
+          else
+            echo "Training tables not found; push will create them."
+          fi
+
+      - name: Show pending migrations
+        run: supabase db push --dry-run --password "$SUPABASE_DB_PASSWORD"
+
+      - name: Apply migrations
+        run: supabase db push --password "$SUPABASE_DB_PASSWORD"
