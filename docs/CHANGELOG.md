@@ -1,5 +1,32 @@
 # Changelog
 
+## Panalo Accounts Phase 2 — accounting core (2026-10-08)
+
+**Database** (`20261008000000_ledger_core.sql`)
+
+- Current structure: no ledger tables.
+- Change: `financial_years`, `accounting_periods`, `tax_codes`, `accounts`,
+  `journal_entries`, `journal_lines`; the posting engine and report functions.
+- Reason: Phase 2 of the brief; every later module posts through this engine.
+- Affected modules: none existing (new tables only); the dashboard reads
+  ledger headlines for people with `reports.view`.
+- Migration strategy: additive; seeds the brief's chart, GST codes and two
+  financial years for Panalo.
+
+**API**: ledger actions in `finance-api` (accounts, tax codes, journals,
+periods, reports, logged exports).
+
+**App**: Reports (profit and loss, balance sheet, trial balance, account
+transactions with drill-down and CSV export), Journals (list, editor with live
+GST and balance check, detail, post, reverse), Chart of accounts, Tax codes,
+Periods; dashboard figures for bank, profit, GST and draft journals.
+
+**Tests**: database tests with hand-calculated figures (GST exclusive and
+inclusive, half-cent rounding, prior-year roll-over, balance sheet balancing,
+reversals, period locks, immutability, unbalanced posting refused by the
+database); API tests for permissions, drafts that fail to post, reversal
+links, period rules, report consistency and audited exports.
+
 ## Panalo Accounts Phase 1 — foundation (2026-10-07)
 
 **Database** (`20261007000000_finance_foundation.sql`)
