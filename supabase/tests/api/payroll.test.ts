@@ -119,6 +119,14 @@ Deno.test("leave requests and the payroll summary", async () => {
   const sum = await ok(PAYROLL, { action: "payroll_summary", from: "2026-07-01", to: "2026-10-31" });
   const o = sum.rows.find((r: any) => r.employeeId === OLIVIA);
   assert(o.gross === 3052.5 && o.pays === 2, `summary ${JSON.stringify(o)}`);
+  // Fill in from onboarding: the TFN and account number never reach the browser, and saving copies them on the server.
+  const imp = await ok(PAYROLL, { action: "payroll_import_onboarding", id: TOM });
+  assert(imp.suggested.tfnFromOnboarding && imp.suggested.tfnMasked === "••• ••• 782" && imp.suggested.bank.accountNumber === "•••321", `import ${JSON.stringify(imp)}`);
+  assert(!JSON.stringify(imp).includes("123456782") && !JSON.stringify(imp).includes("87654321"), "nothing sensitive in the import");
+  await ok(PAYROLL, { action: "payroll_bank_request", id: TOM, accountName: "Tom Tradie", bsb: "062-000", accountNumber: "", fromOnboarding: true });
+  const tomNow = await ok(PAYROLL, { action: "payroll_employee_get", id: TOM });
+  assert(tomNow.pay.bankChangePending && tomNow.pay.bank.accountNumber === "•••678", "onboarding account waits for approval");
+
   const dash = await ok(DIRECTOR, { action: "dashboard" });
   assert(dash.payroll && typeof dash.payroll.payRunsToApprove === "number", "dashboard payroll headline");
 });

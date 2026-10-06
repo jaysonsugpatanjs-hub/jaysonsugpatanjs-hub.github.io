@@ -145,6 +145,7 @@ create table public.payroll_employees (
   -- Tax declaration
   tfn text check (tfn is null or tfn ~ '^\d{8,9}$'),
   tfn_status text not null default 'not_provided' check (tfn_status in ('provided', 'applied', 'exempt', 'not_provided')),
+  tfn_applied_on date, -- when the status became "applied": 47% after 28 days
   residency text not null default 'resident' check (residency in ('resident', 'foreign', 'working_holiday')),
   tax_free_threshold boolean not null default true,
   study_loan boolean not null default false,
@@ -222,6 +223,7 @@ create table public.pay_runs (
   super numeric(14,2) not null default 0,
   net numeric(14,2) not null default 0,
   calculated_at timestamptz,
+  edited_by uuid[] not null default '{}', -- everyone who added or removed lines: none of them can approve it
   prepared_by uuid references public.training_profiles(id) on delete set null,
   submitted_at timestamptz,
   approved_by uuid references public.training_profiles(id) on delete set null,
@@ -380,7 +382,7 @@ set search_path = ''
 as $$
   select case
     -- No TFN (or applied more than 28 days ago): 47% resident / 45% foreign.
-    when p_emp.tfn_status = 'not_provided' or (p_emp.tfn_status = 'applied' and coalesce(p_emp.start_date, p_date) < p_date - 28)
+    when p_emp.tfn_status = 'not_provided' or (p_emp.tfn_status = 'applied' and coalesce(p_emp.tfn_applied_on, p_emp.start_date, p_date) < p_date - 28)
       then case when p_emp.residency = 'foreign' then '4f' else '4r' end
     when p_emp.residency = 'foreign' then '3'
     when not p_emp.tax_free_threshold then '1'
@@ -439,6 +441,9 @@ begin
   if not exists (select 1 from public.employees where id = p_employee and organization_id = v_org) then
     raise exception 'Employee not found.' using errcode = 'P0002';
   end if;
+  if (select profile_id from public.employees where id = p_employee) = p_actor then
+    raise exception 'Someone else in payroll must change your own pay details.' using errcode = '42501';
+  end if;
   if (select employment_type from public.employees where id = p_employee) = 'contractor' then
     raise exception 'Contractors are paid through bills, not payroll.' using errcode = '22023';
   end if;
@@ -473,6 +478,8 @@ begin
     end_date = case when p ? 'end_date' then nullif(p->>'end_date', '')::date else end_date end,
     tfn = coalesce(v_tfn, case when coalesce(p->>'tfn_status', tfn_status) = 'provided' then tfn end),
     tfn_status = coalesce(nullif(p->>'tfn_status', ''), tfn_status),
+    tfn_applied_on = case when coalesce(nullif(p->>'tfn_status', ''), tfn_status) = 'applied'
+      then coalesce(case when tfn_status = 'applied' then tfn_applied_on end, current_date) end,
     residency = coalesce(nullif(p->>'residency', ''), residency),
     tax_free_threshold = coalesce((p->>'tax_free_threshold')::boolean, tax_free_threshold),
     study_loan = coalesce((p->>'study_loan')::boolean, study_loan),
@@ -673,15 +680,22 @@ begin
   if p_decision = 'cancelled' then
     if v.status not in ('submitted', 'approved') then raise exception 'This request can''t be cancelled now.' using errcode = '22023'; end if;
     if v_profile is distinct from p_actor then perform public.app_require(p_actor, 'leave.approve'); end if;
+    if v.pay_run_id is not null and (select status from public.pay_runs where id = v.pay_run_id) <> 'draft' then
+      raise exception 'This leave is in a pay run waiting for approval. Ask payroll to send the pay run back first.' using errcode = '22023';
+    end if;
   elsif p_decision in ('approved', 'rejected') then
     perform public.app_require(p_actor, 'leave.approve');
     if v.status <> 'submitted' then raise exception 'Only a waiting request can be approved or declined.' using errcode = '22023'; end if;
     if v_profile = p_actor then raise exception 'Someone else must approve your own leave.' using errcode = '42501'; end if;
+    if v.requested_by = p_actor and v_profile is distinct from p_actor then
+      raise exception 'You recorded this leave, so someone else must approve it.' using errcode = '42501';
+    end if;
     if p_decision = 'rejected' and length(btrim(coalesce(p_comment, ''))) < 3 then raise exception 'Give a reason for declining it.' using errcode = '22023'; end if;
   else
     raise exception 'Unknown decision.' using errcode = '22023';
   end if;
-  update public.leave_requests set status = p_decision, decided_by = p_actor, decided_at = now(), decision_comment = nullif(btrim(coalesce(p_comment, '')), '') where id = p_id;
+  update public.leave_requests set status = p_decision, pay_run_id = case when p_decision = 'cancelled' then null else pay_run_id end,
+    decided_by = p_actor, decided_at = now(), decision_comment = nullif(btrim(coalesce(p_comment, '')), '') where id = p_id;
   if v_profile is not null and v_profile <> p_actor then
     insert into public.notifications (organization_id, profile_id, kind, title, body, link)
     values (v.organization_id, v_profile, 'leave_' || p_decision, 'Leave ' || replace(p_decision, 'rejected', 'declined') || ': ' || to_char(v.start_date, 'DD Mon') || ' to ' || to_char(v.end_date, 'DD Mon'),
@@ -742,6 +756,10 @@ begin
   if exists (select 1 from public.pay_runs where organization_id = v_org and pay_frequency = p_frequency and daterange(period_start, period_end, '[]') && daterange(p_start, p_end, '[]')) then
     raise exception 'A % pay run already covers part of this period.', p_frequency using errcode = '22023';
   end if;
+  -- One open pay run per frequency, so hours, leave and the super cap are counted once.
+  if exists (select 1 from public.pay_runs where organization_id = v_org and pay_frequency = p_frequency and status in ('draft', 'submitted')) then
+    raise exception 'Finish (approve or delete) the open % pay run first.', p_frequency using errcode = '22023';
+  end if;
   insert into public.pay_runs (organization_id, number, pay_frequency, period_start, period_end, payment_date, prepared_by)
   values (v_org, public.next_document_number(v_org, 'pay_run'), p_frequency, p_start, p_end, p_payment, p_actor) returning id into v_id;
   perform public.app_audit(p_actor, 'pay_run_created', 'pay_run', v_id::text, null, jsonb_build_object('frequency', p_frequency, 'start', p_start, 'end', p_end, 'payment', p_payment));
@@ -776,6 +794,9 @@ declare
   v_items jsonb;
   v_pe public.payroll_employees;
   v_worked numeric;
+  v_auto boolean;
+  v_seen uuid[] := '{}';
+  v_unpaid numeric;
 begin
   perform public.app_require(p_actor, 'payroll.run');
   select * into r from public.pay_runs where id = p_run and organization_id = v_org for update;
@@ -788,14 +809,26 @@ begin
   if v_sg_rate is null then raise exception 'No super guarantee rate is recorded for %.', r.payment_date using errcode = '22023'; end if;
   v_periods := case r.pay_frequency when 'weekly' then 52 when 'fortnightly' then 26 else 12 end;
 
-  -- Automatic lines are rebuilt; manual lines stay.
+  -- Automatic lines are rebuilt; manual lines stay. The hours and leave this run
+  -- had claimed are released and claimed again below, so each is paid once.
   delete from public.pay_run_lines l using public.pay_run_employees pre where l.pay_run_employee_id = pre.id and pre.pay_run_id = p_run and not l.manual;
+  update public.timesheet_entries set pay_run_id = null where pay_run_id = p_run;
+  update public.leave_requests set pay_run_id = null where pay_run_id = p_run and status = 'approved';
 
   for e in
-    select pe.*, emp.full_name, emp.profile_id from public.payroll_employees pe join public.employees emp on emp.id = pe.employee_id
-    where pe.organization_id = v_org and pe.pay_frequency = r.pay_frequency and pe.status = 'active'
-      and (pe.start_date is null or pe.start_date <= r.period_end) and (pe.end_date is null or pe.end_date >= r.period_start)
+    select pe.*, emp.full_name, emp.profile_id,
+      (pe.pay_frequency = r.pay_frequency and pe.status = 'active'
+        and (pe.start_date is null or pe.start_date <= r.period_end) and (pe.end_date is null or pe.end_date >= r.period_start)) as in_run
+    from public.payroll_employees pe join public.employees emp on emp.id = pe.employee_id
+    where pe.organization_id = v_org and (
+      (pe.pay_frequency = r.pay_frequency and pe.status = 'active'
+        and (pe.start_date is null or pe.start_date <= r.period_end) and (pe.end_date is null or pe.end_date >= r.period_start))
+      -- Someone no longer in the run keeps the manual lines entered for them (a final payment, say), and only those.
+      or exists (select 1 from public.pay_run_employees x join public.pay_run_lines l on l.pay_run_employee_id = x.id
+                 where x.pay_run_id = p_run and x.employee_id = pe.employee_id and l.manual))
   loop
+    v_auto := e.in_run;
+    v_seen := v_seen || e.employee_id;
     insert into public.pay_run_employees (pay_run_id, employee_id) values (p_run, e.employee_id)
     on conflict (pay_run_id, employee_id) do nothing;
     select id into v_pre from public.pay_run_employees where pay_run_id = p_run and employee_id = e.employee_id;
@@ -807,15 +840,20 @@ begin
       v_warn := v_warn || to_jsonb(format('The base rate %s is below the national minimum wage (%s an hour). Check the award rate.', v_rate, v_nmw));
     end if;
     if e.residency = 'working_holiday' then
-      v_warn := v_warn || to_jsonb('Working holiday makers are taxed under Schedule 15, which isn''t supported yet. Withholding was not calculated; enter it as a manual adjustment and check with the accountant.'::text);
+      v_warn := v_warn || to_jsonb('Working holiday makers are taxed under Schedule 15, which isn''t calculated here. Work out the amount with the accountant and enter it as their extra withholding before submitting.'::text);
     end if;
     if e.bank_bsb is null then v_warn := v_warn || to_jsonb('No bank account on file.'::text); end if;
     if e.super_fund_usi is null and e.super_fund_abn is null then v_warn := v_warn || to_jsonb('No super fund on file. Request the stapled fund from the ATO, or use the default fund.'::text); end if;
+    if not v_auto then v_warn := v_warn || to_jsonb('No longer paid on this pay run''s frequency or dates: only the manual lines are paid.'::text); end if;
 
-    -- Leave taken: approved requests starting in this period.
+    -- Leave taken: approved requests starting by the end of this period, claimed by this run.
+    if v_auto then
+      update public.leave_requests set pay_run_id = p_run
+      where employee_id = e.employee_id and status = 'approved' and pay_run_id is null and start_date <= r.period_end;
+    end if;
     for lv in
       select lr.*, lt.code as type_code, lt.paid, lt.pay_item_code, lt.name as type_name from public.leave_requests lr join public.leave_types lt on lt.id = lr.leave_type_id
-      where lr.employee_id = e.employee_id and lr.status = 'approved' and lr.pay_run_id is null and lr.start_date <= r.period_end
+      where lr.employee_id = e.employee_id and lr.status = 'approved' and lr.pay_run_id = p_run
     loop
       if lv.paid and lv.pay_item_code is not null then
         insert into public.pay_run_lines (pay_run_employee_id, pay_item_id, description, hours, rate, amount, leave_request_id, sort)
@@ -832,21 +870,30 @@ begin
       end if;
     end loop;
 
-    if e.pay_basis = 'salary' then
-      v_hours := round(e.ordinary_hours_per_week * 52 / v_periods, 2)
+    if not v_auto then
+      null; -- manual lines only
+    elsif e.pay_basis = 'salary' then
+      -- Unpaid leave comes off the salary too.
+      v_unpaid := coalesce((select sum(lr.hours) from public.leave_requests lr join public.leave_types lt on lt.id = lr.leave_type_id
+                            where lr.pay_run_id = p_run and lr.employee_id = e.employee_id and lr.status = 'approved' and not lt.paid), 0);
+      v_hours := round(e.ordinary_hours_per_week * 52 / v_periods, 2) - v_unpaid
         - coalesce((select sum(l.hours) from public.pay_run_lines l join public.pay_items pi on pi.id = l.pay_item_id
                     where l.pay_run_employee_id = v_pre and pi.code in ('AL', 'PL', 'LSL') and not l.manual), 0);
       insert into public.pay_run_lines (pay_run_employee_id, pay_item_id, description, hours, rate, amount, sort)
-      values (v_pre, (v_items->>'SALARY')::uuid, 'Salary ' || to_char(e.annual_salary, 'FM$999,999,990.00') || ' a year', greatest(v_hours, 0), v_rate,
-        round(e.annual_salary / v_periods, 2)
+      values (v_pre, (v_items->>'SALARY')::uuid, 'Salary ' || to_char(e.annual_salary, 'FM$999,999,990.00') || ' a year'
+          || case when v_unpaid > 0 then ', less ' || v_unpaid || ' hours unpaid leave' else '' end, greatest(v_hours, 0), v_rate,
+        greatest(0, round(e.annual_salary / v_periods, 2) - round(v_unpaid * v_rate, 2)
           - coalesce((select sum(l.amount) from public.pay_run_lines l join public.pay_items pi on pi.id = l.pay_item_id
-                      where l.pay_run_employee_id = v_pre and pi.code in ('AL', 'PL', 'LSL') and not l.manual), 0), 10);
+                      where l.pay_run_employee_id = v_pre and pi.code in ('AL', 'PL', 'LSL') and not l.manual), 0)), 10);
     else
+      -- Claim the approved hours not yet paid or claimed by another run.
+      update public.timesheet_entries te set pay_run_id = p_run from public.timesheets ts
+      where ts.id = te.timesheet_id and ts.profile_id = e.profile_id and ts.status = 'approved' and te.pay_run_id is null and te.work_date <= r.period_end
+        and (e.start_date is null or te.work_date >= e.start_date);
       -- Hourly: approved timesheet hours in the period not yet paid.
       for t in
         select te.hour_type, te.project_id, sum(te.hours) as hours from public.timesheet_entries te join public.timesheets ts on ts.id = te.timesheet_id
-        where ts.profile_id = e.profile_id and ts.status = 'approved' and te.pay_run_id is null and te.work_date <= r.period_end
-          and (e.start_date is null or te.work_date >= e.start_date)
+        where te.pay_run_id = p_run and ts.profile_id = e.profile_id
         group by te.hour_type, te.project_id order by te.hour_type
       loop
         select * into v_item from public.pay_items where organization_id = v_org and code = case t.hour_type
@@ -904,10 +951,8 @@ begin
     end if;
   end loop;
 
-  -- People no longer in the run (status or frequency changed) and with no manual lines drop out.
-  delete from public.pay_run_employees pre where pre.pay_run_id = p_run
-    and not exists (select 1 from public.payroll_employees pe where pe.employee_id = pre.employee_id and pe.pay_frequency = r.pay_frequency and pe.status = 'active')
-    and not exists (select 1 from public.pay_run_lines l where l.pay_run_employee_id = pre.id);
+  -- People no longer in the run (status, frequency or dates changed) and with no manual lines drop out.
+  delete from public.pay_run_employees pre where pre.pay_run_id = p_run and not (pre.employee_id = any(v_seen));
 
   update public.pay_runs set gross = coalesce((select sum(gross) from public.pay_run_employees where pay_run_id = p_run), 0),
     payg = coalesce((select sum(payg) from public.pay_run_employees where pay_run_id = p_run), 0),
@@ -949,6 +994,7 @@ begin
   end if;
   insert into public.pay_run_lines (pay_run_employee_id, pay_item_id, description, hours, rate, amount, manual, sort)
   values (v_pre, p_item, left(btrim(p_description), 200), p_hours, p_rate, v_amount, true, 200) returning id into v_id;
+  update public.pay_runs set edited_by = array_append(array_remove(edited_by, p_actor), p_actor) where id = p_run;
   perform public.app_audit(p_actor, 'pay_run_line_added', 'pay_run', p_run::text, null,
     jsonb_build_object('employee', p_employee, 'item', (select code from public.pay_items where id = p_item), 'amount', v_amount, 'description', p_description));
   perform public.pay_run_calculate(p_actor, p_run);
@@ -970,6 +1016,7 @@ begin
   where l.id = p_line and l.manual and r.status = 'draft' and r.organization_id = public.app_org_of(p_actor);
   if v_run is null then raise exception 'Only manual lines on a draft pay run can be removed.' using errcode = '22023'; end if;
   delete from public.pay_run_lines where id = p_line;
+  update public.pay_runs set edited_by = array_append(array_remove(edited_by, p_actor), p_actor) where id = v_run;
   perform public.app_audit(p_actor, 'pay_run_line_removed', 'pay_run', v_run::text, jsonb_build_object('line', p_line), null);
   perform public.pay_run_calculate(p_actor, v_run);
 end;
@@ -994,6 +1041,13 @@ begin
     and not exists (select 1 from public.pay_run_lines l where l.pay_run_employee_id = x.id);
   if not exists (select 1 from public.pay_run_employees where pay_run_id = p_run and gross > 0) then raise exception 'Nobody is being paid in this pay run.' using errcode = '22023'; end if;
   if exists (select 1 from public.pay_run_employees where pay_run_id = p_run and net < 0) then raise exception 'Someone''s net pay is negative. Fix their deductions first.' using errcode = '22023'; end if;
+  if exists (select 1 from public.pay_run_employees x join public.payroll_employees pe on pe.employee_id = x.employee_id
+             where x.pay_run_id = p_run and pe.residency = 'working_holiday' and x.gross > 0 and x.payg = 0) then
+    raise exception 'A working holiday maker has no tax withheld. Enter their Schedule 15 amount as extra withholding first.' using errcode = '22023';
+  end if;
+  -- The hours in a submitted pay run can't be reopened while it's being approved.
+  update public.timesheets ts set payroll_locked_at = now()
+  where ts.payroll_locked_at is null and exists (select 1 from public.timesheet_entries te where te.timesheet_id = ts.id and te.pay_run_id = p_run);
   update public.pay_runs set status = 'submitted', submitted_at = now(), prepared_by = p_actor, updated_at = now() where id = p_run;
   perform public.app_notify_holders(r.organization_id, 'payroll.approve', p_actor, 'pay_run_submitted', 'Pay run to approve: ' || r.number,
     'Paid ' || to_char(r.payment_date, 'DD Mon YYYY') || ' · net ' || to_char((select net from public.pay_runs where id = p_run), 'FM$999,999,990.00'), 'pay-runs');
@@ -1017,6 +1071,11 @@ begin
   if not (public.app_has(p_actor, 'payroll.approve') or r.prepared_by = p_actor) then perform public.app_require(p_actor, 'payroll.approve'); end if;
   if length(btrim(coalesce(p_reason, ''))) < 3 then raise exception 'Say what needs changing.' using errcode = '22023'; end if;
   update public.pay_runs set status = 'draft', submitted_at = null, updated_at = now() where id = p_run;
+  -- Its hours can be corrected again, unless an approved pay run has paid some of the week.
+  update public.timesheets ts set payroll_locked_at = null
+  where exists (select 1 from public.timesheet_entries te where te.timesheet_id = ts.id and te.pay_run_id = p_run)
+    and not exists (select 1 from public.timesheet_entries te join public.pay_runs pr on pr.id = te.pay_run_id
+                    where te.timesheet_id = ts.id and pr.status in ('approved', 'paid'));
   if r.prepared_by is not null and r.prepared_by <> p_actor then
     insert into public.notifications (organization_id, profile_id, kind, title, body, link)
     values (r.organization_id, r.prepared_by, 'pay_run_returned', 'Pay run sent back: ' || r.number, btrim(p_reason), 'pay-runs');
@@ -1047,7 +1106,7 @@ begin
   select * into r from public.pay_runs where id = p_run and organization_id = v_org for update;
   if not found then raise exception 'Pay run not found.' using errcode = 'P0002'; end if;
   if r.status <> 'submitted' then raise exception 'Only a submitted pay run can be approved.' using errcode = '22023'; end if;
-  if r.prepared_by = p_actor then raise exception 'Someone other than the person who prepared it must approve the pay run.' using errcode = '42501'; end if;
+  if r.prepared_by = p_actor or p_actor = any(r.edited_by) then raise exception 'Someone other than the people who prepared it must approve the pay run.' using errcode = '42501'; end if;
   if exists (select 1 from public.pay_run_employees pq join public.employees e on e.id = pq.employee_id where pq.pay_run_id = p_run and e.profile_id = p_actor) then
     raise exception 'You''re paid in this pay run, so someone else must approve it.' using errcode = '42501';
   end if;
@@ -1081,18 +1140,12 @@ begin
   v_journal := public.ledger_post_entry(p_actor, r.payment_date, 'Pay run ' || r.number || ' (' || to_char(r.period_start, 'DD Mon') || ' to ' || to_char(r.period_end, 'DD Mon YYYY') || ')',
     'pay_run', p_run, r.number, v_lines, 'no_tax', false);
 
-  -- Timesheet hours, leave taken and leave accruals.
-  update public.timesheet_entries te set pay_run_id = p_run
-  from public.timesheets ts, public.employees e, public.pay_run_employees x
-  where te.timesheet_id = ts.id and ts.profile_id = e.profile_id and x.employee_id = e.id and x.pay_run_id = p_run
-    and ts.status = 'approved' and te.pay_run_id is null and te.work_date <= r.period_end
-    and (select pay_basis from public.payroll_employees where employee_id = e.id) = 'hourly';
+  -- Timesheet hours (claimed when calculated), leave taken and leave accruals.
   update public.timesheets ts set payroll_locked_at = now() where exists (select 1 from public.timesheet_entries te where te.timesheet_id = ts.id and te.pay_run_id = p_run);
   insert into public.leave_transactions (organization_id, employee_id, leave_type_id, txn_date, hours, kind, pay_run_id, leave_request_id, note, created_by)
   select v_org, lr.employee_id, lr.leave_type_id, lr.start_date, -lr.hours, 'taken', p_run, lr.id, 'Taken, paid in ' || r.number, p_actor
   from public.leave_requests lr where lr.id in (select l.leave_request_id from public.pay_run_lines l join public.pay_run_employees x on x.id = l.pay_run_employee_id where x.pay_run_id = p_run);
-  update public.leave_requests set status = 'paid', pay_run_id = p_run
-  where id in (select l.leave_request_id from public.pay_run_lines l join public.pay_run_employees x on x.id = l.pay_run_employee_id where x.pay_run_id = p_run);
+  update public.leave_requests set status = 'paid' where pay_run_id = p_run and status = 'approved';
   for pre in select x.*, pe.employment_basis, pe.annual_leave_weeks from public.pay_run_employees x join public.payroll_employees pe on pe.employee_id = x.employee_id
              where x.pay_run_id = p_run and pe.employment_basis <> 'casual' and x.ordinary_hours > 0 loop
     for lt in select * from public.leave_types where organization_id = v_org and active and accrual_per_hour > 0 loop

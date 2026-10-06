@@ -116,7 +116,7 @@ async function employeeGet(admin: Client, actor: Actor, body: any) {
     leave: (types.data || []).map((t: any) => ({ id: t.id, code: t.code, name: t.name, paid: t.paid, balance: Math.round((balances.get(t.id) || 0) * 100) / 100 })),
     leaveHistory: (txns.data || []).slice(0, 50).map((t: any) => ({ id: t.id, typeId: t.leave_type_id, date: t.txn_date, hours: Number(t.hours), kind: t.kind, note: t.note })),
     leaveRequests: (reqs.data || []).map((r: any) => ({ id: r.id, typeId: r.leave_type_id, start: r.start_date, end: r.end_date, hours: Number(r.hours), status: r.status, reason: r.reason })),
-    payHistory: (runs.data || []).filter((r: any) => ["approved", "paid"].includes(r.pay_runs.status)).map((r: any) => ({ runId: r.pay_runs.id, number: r.pay_runs.number,
+    payHistory: (sensitive || has(actor, "payroll.run") || has(actor, "payroll.approve") ? runs.data || [] : []).filter((r: any) => ["approved", "paid"].includes(r.pay_runs.status)).map((r: any) => ({ runId: r.pay_runs.id, number: r.pay_runs.number,
       paymentDate: r.pay_runs.payment_date, gross: Number(r.gross), payg: Number(r.payg), net: Number(r.net), super: dollars(cents(r.super_guarantee) + cents(r.salary_sacrifice)) }))
       .sort((a: any, b: any) => b.paymentDate.localeCompare(a.paymentDate)),
     can: { edit: sensitive, leave: has(actor, "leave.approve"), adjust: sensitive }
@@ -151,13 +151,17 @@ async function employeeSave(admin: Client, actor: Actor, body: any) {
   };
   // A TFN is only sent when it's being entered or replaced.
   if (body.tfn) p.tfn = String(body.tfn).replace(/\s/g, "").slice(0, 11);
+  else if (body.tfnFromOnboarding === true) {
+    const t = onboardingTfn(await onboardingAnswers(admin, actor, id));
+    if (!t) throw httpError(409, "No TFN was found in their accepted onboarding forms.");
+    p.tfn = t;
+  }
   await rpc(admin, "payroll_employee_save", { p_actor: actor.id, p_employee: id, p });
   return { saved: true };
 }
 
-/** What the person gave in onboarding (accepted items), to fill in the pay form. Bank details still go through approval. */
-async function importOnboarding(admin: Client, actor: Actor, body: any) {
-  const id = uuid(body.id, "Employee");
+/** The latest accepted onboarding answers with pay details, by form. */
+async function onboardingAnswers(admin: Client, actor: Actor, id: string) {
   const { data: e } = await admin.from("employees").select("id").eq("id", id).eq("organization_id", actor.organization_id).maybeSingle();
   if (!e) throw httpError(404, "Employee not found.");
   const { data } = await admin.from("onboarding_items").select("doc_type,answers,reviewed_at,onboarding_requests!inner(employee_id)")
@@ -165,7 +169,25 @@ async function importOnboarding(admin: Client, actor: Actor, body: any) {
     .order("reviewed_at", { ascending: false });
   const latest = new Map<string, any>();
   for (const i of data || []) if (!latest.has(i.doc_type) && i.answers) latest.set(i.doc_type, i.answers);
-  const tfn = latest.get("tfn_declaration") || {}, sup = latest.get("super_choice") || {}, per = latest.get("personal_details") || {}, bank = latest.get("bank_details") || {};
+  return latest;
+}
+const onboardingTfn = (latest: Map<string, any>) => {
+  const t = String(latest.get("tfn_declaration")?.tfn || "").replace(/\s/g, "");
+  return /^\d{8,9}$/.test(t) ? t : null;
+};
+const onboardingBank = (latest: Map<string, any>) => {
+  const b = latest.get("bank_details");
+  if (!b) return null;
+  return { accountName: String(b.account_name || ""), bsb: String(b.bsb || "").replace(/\D/g, ""), accountNumber: String(b.account_number || "").replace(/\D/g, "") };
+};
+
+/** What the person gave in onboarding (accepted items), to fill in the pay form. The TFN and account
+ * number stay on the server: the browser gets them masked, and saving copies them across. */
+async function importOnboarding(admin: Client, actor: Actor, body: any) {
+  const id = uuid(body.id, "Employee");
+  const latest = await onboardingAnswers(admin, actor, id);
+  const tfn = latest.get("tfn_declaration") || {}, sup = latest.get("super_choice") || {}, per = latest.get("personal_details") || {};
+  const bank = onboardingBank(latest), fullTfn = onboardingTfn(latest);
   await rpc(admin, "app_audit", { p_actor: actor.id, p_event: "payroll_onboarding_read", p_entity_type: "payroll_employee", p_entity_id: id, p_old: null, p_new: null,
     p_details: { found: [...latest.keys()] }, p_subject: null });
   const opt = String(tfn.tfn_option || "");
@@ -173,22 +195,28 @@ async function importOnboarding(admin: Client, actor: Actor, body: any) {
     found: [...latest.keys()],
     suggested: {
       ...(latest.has("tfn_declaration") ? {
-        tfn: tfn.tfn ? String(tfn.tfn).replace(/\s/g, "") : null,
-        tfnStatus: tfn.tfn ? "provided" : /applied/i.test(opt) ? "applied" : /exemption/i.test(opt) ? "exempt" : "not_provided",
+        tfnFromOnboarding: Boolean(fullTfn), tfnMasked: fullTfn ? maskTfn(fullTfn) : null,
+        tfnStatus: fullTfn ? "provided" : /applied/i.test(opt) ? "applied" : /exemption/i.test(opt) ? "exempt" : "not_provided",
         residency: /foreign/i.test(tfn.residency || "") ? "foreign" : /working holiday/i.test(tfn.residency || "") ? "working_holiday" : "resident",
         taxFreeThreshold: tfn.tax_free_threshold === "Yes", studyLoan: tfn.study_loan === "Yes",
         basis: /part/i.test(tfn.pay_basis || "") ? "part_time" : /casual/i.test(tfn.pay_basis || "") ? "casual" : /full/i.test(tfn.pay_basis || "") ? "full_time" : null
       } : {}),
       ...(latest.has("super_choice") ? { fundName: sup.fund_name || null, fundUsi: sup.usi || null, memberNumber: sup.member_number || null, defaultFund: !sup.fund_name } : {}),
       ...(latest.has("personal_details") ? { dateOfBirth: per.date_of_birth || null } : {}),
-      ...(latest.has("bank_details") ? { bank: { accountName: bank.account_name || "", bsb: String(bank.bsb || "").replace(/\D/g, ""), accountNumber: String(bank.account_number || "").replace(/\D/g, "") } } : {})
+      ...(bank ? { bank: { accountName: bank.accountName, bsb: bank.bsb, accountNumber: maskAcct(bank.accountNumber), fromOnboarding: true } } : {})
     }
   };
 }
 
 async function bankRequest(admin: Client, actor: Actor, body: any) {
-  const id = await rpc<string>(admin, "payroll_bank_request", { p_actor: actor.id, p_employee: uuid(body.id, "Employee"), p_name: text(body.accountName, 120),
-    p_bsb: text(body.bsb, 10), p_account: text(body.accountNumber, 14) });
+  const employee = uuid(body.id, "Employee");
+  let account = text(body.accountNumber, 14);
+  if (!account && body.fromOnboarding === true) {
+    account = onboardingBank(await onboardingAnswers(admin, actor, employee))?.accountNumber || "";
+    if (!account) throw httpError(409, "No bank account was found in their accepted onboarding forms.");
+  }
+  const id = await rpc<string>(admin, "payroll_bank_request", { p_actor: actor.id, p_employee: employee, p_name: text(body.accountName, 120),
+    p_bsb: text(body.bsb, 10), p_account: account });
   return { approvalId: id, status: "pending" };
 }
 

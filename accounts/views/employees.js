@@ -84,7 +84,8 @@ async function detail(view, id, ctx) {
         <h3>Tax declaration</h3>
         <div class="grid3">
           <div class="fld"><label for="py-tfns">TFN</label><select id="py-tfns">${options([["provided", "Provided"], ["applied", "Applied for (28 days, then 47%)"], ["exempt", "Exempt (under 18 or on a pension)"], ["not_provided", "Not provided: withhold 47%"]], v("tfnStatus", "not_provided"))}</select></div>
-          ${field({ id: "py-tfn", label: p.tfn ? `TFN on file ${p.tfn}` : "Tax file number", value: s.tfn || "", attrs: 'inputmode="numeric" maxlength="11" autocomplete="off"', hint: p.tfn ? "Leave blank to keep it; type a new one to replace it" : "9 digits" })}
+          ${field({ id: "py-tfn", label: s.tfnFromOnboarding ? `TFN from onboarding ${s.tfnMasked}` : p.tfn ? `TFN on file ${p.tfn}` : "Tax file number", value: "", attrs: 'inputmode="numeric" maxlength="11" autocomplete="off"',
+            hint: s.tfnFromOnboarding ? "Leave blank to save the onboarding TFN; type one to use it instead" : p.tfn ? "Leave blank to keep it; type a new one to replace it" : "9 digits" })}
           <div class="fld"><label for="py-res">Residency</label><select id="py-res">${options([["resident", "Australian resident for tax"], ["foreign", "Foreign resident"], ["working_holiday", "Working holiday maker"]], v("residency", "resident"))}</select></div>
           <div class="fld"><label for="py-tft">Tax-free threshold</label><select id="py-tft">${options([["yes", "Claimed from Panalo"], ["no", "Not claimed"]], v("taxFreeThreshold", true) ? "yes" : "no")}</select></div>
           <div class="fld"><label for="py-stsl">Study or training loan</label><select id="py-stsl">${options([["no", "No"], ["yes", "Yes (HELP, VSL, SFSS, SSL or TSL)"]], v("studyLoan", false) ? "yes" : "no")}</select></div>
@@ -110,7 +111,8 @@ async function detail(view, id, ctx) {
         <form data-bank novalidate><div class="grid3">
           ${field({ id: "bk-name", label: "Account name", value: s.bank?.accountName || "", attrs: 'maxlength="120"' })}
           ${field({ id: "bk-bsb", label: "BSB", value: s.bank?.bsb ? formatBsb(s.bank.bsb) : "", attrs: 'inputmode="numeric" maxlength="7"' })}
-          ${field({ id: "bk-acct", label: "Account number", value: s.bank?.accountNumber || "", attrs: 'inputmode="numeric" maxlength="12" autocomplete="off"' })}</div>
+          ${field({ id: "bk-acct", label: s.bank?.fromOnboarding ? `Account number (onboarding ${s.bank.accountNumber})` : "Account number", value: "", attrs: 'inputmode="numeric" maxlength="12" autocomplete="off"',
+            hint: s.bank?.fromOnboarding ? "Leave blank to use the account from onboarding" : "" })}</div>
           <p class="muted small">Confirm new bank details with the employee in person or on a number you already have. Someone with "Approve pay runs" approves the change; nobody can approve their own.</p>
           <div class="actions"><button class="btn" type="submit">${p.bank ? "Request a change" : "Request approval"}</button></div></form>`}</section>` : ""}` : `<section class="panel"><p class="muted">Pay, tax, super and bank details are only shown to people with "Payroll: pay, tax and bank details".</p></section>`}
       ${d.inPayroll ? `<section class="panel"><h2>Leave</h2>
@@ -155,7 +157,7 @@ async function detail(view, id, ctx) {
         if (v("py-paybasis") === "salary" && !(Number(v("py-salary").replace(/[$,]/g, "")) > 0)) return fieldError(view, "py-salary", "Enter the annual salary.");
         await call("payroll_employee_save", { id, basis: v("py-basis"), payBasis: v("py-paybasis"), frequency: v("py-freq"), hourlyRate: v("py-rate"), annualSalary: v("py-salary"),
           ordinaryHours: v("py-hours"), casualLoading: v("py-casual"), leaveLoading: v("py-loading"), annualLeaveWeeks: v("py-alw"), award: v("py-award"), classification: v("py-class"),
-          wagesAccountId: v("py-acc"), dateOfBirth: v("py-dob"), startDate: v("py-start"), endDate: v("py-end"), tfnStatus: v("py-tfns"), tfn: v("py-tfn"), residency: v("py-res"),
+          wagesAccountId: v("py-acc"), dateOfBirth: v("py-dob"), startDate: v("py-start"), endDate: v("py-end"), tfnStatus: v("py-tfns"), tfn: v("py-tfn"), tfnFromOnboarding: Boolean(suggested?.tfnFromOnboarding) && !v("py-tfn"), residency: v("py-res"),
           taxFreeThreshold: v("py-tft") === "yes", studyLoan: v("py-stsl") === "yes", medicareExemption: v("py-med"), extraWithholding: v("py-extra"),
           fundName: v("py-fund"), fundUsi: v("py-usi"), fundAbn: v("py-fundabn"), memberNumber: v("py-member"), salarySacrifice: v("py-ss"), notes: v("py-notes"),
           status: view.querySelector("#py-term").checked ? "terminated" : "active" });
@@ -165,8 +167,9 @@ async function detail(view, id, ctx) {
         flash(view, "Pay details saved.", "good");
       } else if (e.target.matches("[data-bank]")) {
         if (!validBsb(v("bk-bsb"))) return fieldError(view, "bk-bsb", "A BSB is 6 digits, like 062-000.");
-        if (!validAccountNumber(v("bk-acct"))) return fieldError(view, "bk-acct", "An account number is 5 to 10 digits.");
-        await call("payroll_bank_request", { id, accountName: v("bk-name"), bsb: v("bk-bsb"), accountNumber: v("bk-acct") });
+        const fromOnboarding = Boolean(suggested?.bank?.fromOnboarding) && !v("bk-acct");
+        if (!fromOnboarding && !validAccountNumber(v("bk-acct"))) return fieldError(view, "bk-acct", "An account number is 5 to 10 digits.");
+        await call("payroll_bank_request", { id, accountName: v("bk-name"), bsb: v("bk-bsb"), accountNumber: v("bk-acct"), fromOnboarding });
         suggested = null;
         await load();
         flash(view, "Sent for approval. Pay goes to the new account once someone else approves it.", "good");

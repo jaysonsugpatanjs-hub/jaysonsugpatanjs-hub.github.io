@@ -39,13 +39,22 @@ export async function createPayslipPdf(p: PayslipInput): Promise<Uint8Array> {
   const bold = await pdf.embedFont(StandardFonts.HelveticaBold);
   const ink = rgb(0.08, 0.08, 0.09), grey = rgb(0.4, 0.4, 0.44), line = rgb(0.82, 0.82, 0.85), gold = rgb(0.96, 0.72, 0.0), band = rgb(0.96, 0.96, 0.97);
   const [W, H, M] = [595.28, 841.89, 42];
-  const page = pdf.addPage([W, H]);
+  let page = pdf.addPage([W, H]);
   const text = (t: string, x: number, y: number, o: { size?: number; font?: any; color?: any; right?: boolean } = {}) => {
     const size = o.size ?? 9, font = o.font ?? regular, s = latin(t);
     page.drawText(s, { x: o.right ? x - font.widthOfTextAtSize(s, size) : x, y, size, font, color: o.color ?? ink });
   };
   page.drawRectangle({ x: 0, y: H - 6, width: W, height: 6, color: gold });
   let y = H - 36;
+  // A long payslip carries on over the page.
+  const room = (h: number) => {
+    if (y - h >= 48) return;
+    page = pdf.addPage([W, H]);
+    page.drawRectangle({ x: 0, y: H - 6, width: W, height: 6, color: gold });
+    y = H - 36;
+    text(`${p.employee.name} - payslip ${p.payRun.number} (continued)`, M, y, { size: 9, font: bold });
+    y -= 24;
+  };
   text(p.employer.tradingName || p.employer.legalName, M, y, { size: 13, font: bold });
   text("PAYSLIP", W - M, y, { size: 18, font: bold, right: true });
   const emp = [p.employer.tradingName && p.employer.tradingName !== p.employer.legalName ? p.employer.legalName : "", p.employer.abn ? `ABN ${fmtAbn(p.employer.abn)}` : "",
@@ -65,6 +74,7 @@ export async function createPayslipPdf(p: PayslipInput): Promise<Uint8Array> {
 
   // Lines.
   const head = (title: string) => {
+    room(48);
     page.drawRectangle({ x: M, y: y - 4, width: W - 2 * M, height: 16, color: band });
     text(title, M + 4, y, { size: 8, font: bold, color: grey });
     text("Hours", W - M - 200, y, { size: 8, font: bold, color: grey, right: true });
@@ -73,6 +83,7 @@ export async function createPayslipPdf(p: PayslipInput): Promise<Uint8Array> {
     y -= 18;
   };
   const row = (label: string, hours: number | null, rate: number | null, amount: number, sub?: string) => {
+    room(sub ? 23 : 12);
     text(label, M + 4, y);
     if (hours != null) text(Number(hours).toLocaleString("en-AU", { maximumFractionDigits: 2 }), W - M - 200, y, { right: true });
     if (rate != null) text(`$${Number(rate).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 4 })}`, W - M - 110, y, { right: true });
@@ -84,6 +95,7 @@ export async function createPayslipPdf(p: PayslipInput): Promise<Uint8Array> {
   head("EARNINGS AND ALLOWANCES");
   for (const l of p.lines.filter(x => x.kind === "earning" || x.kind === "allowance")) row(l.description || l.name, l.hours, l.rate, l.amount, l.description && l.description !== l.name ? l.name : undefined);
   y -= 2;
+  room(20);
   text("Gross pay", W - M - 110, y, { font: bold, right: true }); text(money(p.totals.gross), W - M - 4, y, { font: bold, right: true }); y -= 20;
 
   head("DEDUCTIONS");
@@ -92,6 +104,7 @@ export async function createPayslipPdf(p: PayslipInput): Promise<Uint8Array> {
   for (const l of p.lines.filter(x => x.kind === "deduction")) row(l.description || l.name, null, null, -l.amount, l.payee ? `Paid to ${l.payee}` : undefined);
   for (const l of p.lines.filter(x => x.kind === "reimbursement")) row(`${l.description || l.name} (reimbursement, not taxed)`, null, null, l.amount);
   y -= 6;
+  room(46);
   page.drawRectangle({ x: W - M - 240, y: y - 6, width: 240, height: 22, color: band });
   text("NET PAY", W - M - 230, y, { size: 11, font: bold }); text(money(p.totals.net), W - M - 8, y, { size: 12, font: bold, right: true });
   y -= 22;
@@ -99,19 +112,27 @@ export async function createPayslipPdf(p: PayslipInput): Promise<Uint8Array> {
   y -= 12;
 
   // Super.
+  room(47);
   text("SUPERANNUATION", M, y, { size: 7, font: bold, color: grey }); y -= 13;
   text(`Super guarantee (employer): ${money(p.totals.superGuarantee)}${p.totals.salarySacrifice ? `   Salary sacrifice: ${money(p.totals.salarySacrifice)}` : ""}`, M, y); y -= 12;
   text(`Fund: ${p.employee.fund || "not recorded"}${p.employee.fundUsi ? ` (USI ${p.employee.fundUsi})` : ""}${p.employee.member ? `   Member no. ${p.employee.member}` : ""}`, M, y); y -= 22;
 
   // Year to date and leave.
   if (p.ytd) {
+    room(35);
     text("YEAR TO DATE (this financial year)", M, y, { size: 7, font: bold, color: grey }); y -= 13;
     text(`Gross ${money(p.ytd.gross)}    Tax ${money(p.ytd.payg)}    Super ${money(p.ytd.super)}    Net ${money(p.ytd.net)}`, M, y); y -= 22;
   }
   if (p.leave?.length) {
+    room(35);
     text("LEAVE BALANCES (hours, end of period)", M, y, { size: 7, font: bold, color: grey }); y -= 13;
     text(p.leave.map(l => `${l.type}: ${Number(l.balance).toLocaleString("en-AU", { maximumFractionDigits: 2 })}`).join("    "), M, y); y -= 22;
   }
-  text(`${p.employer.legalName}${p.employer.abn ? ` - ABN ${fmtAbn(p.employer.abn)}` : ""} - Payslip issued for pay run ${p.payRun.number}. Keep it for your records.`, M, 24, { size: 7, color: grey });
+  const pages = pdf.getPages();
+  pages.forEach((pg, i) => {
+    page = pg;
+    text(`${p.employer.legalName}${p.employer.abn ? ` - ABN ${fmtAbn(p.employer.abn)}` : ""} - Payslip issued for pay run ${p.payRun.number}. Keep it for your records.`
+      + (pages.length > 1 ? `  Page ${i + 1} of ${pages.length}` : ""), M, 24, { size: 7, color: grey });
+  });
   return await pdf.save();
 }

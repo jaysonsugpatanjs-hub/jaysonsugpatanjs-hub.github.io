@@ -38,12 +38,13 @@ rounded, monthly). The tests check it against the ATO's worked examples.
 | Resident, threshold not claimed | 1 |
 | Full / half Medicare levy exemption claimed | 5 / 6 |
 | Foreign resident with a TFN | 3 |
-| No TFN (or applied for more than 28 days ago) | 47% resident, 45% foreign |
+| No TFN (or applied for more than 28 days before payday, counted from when the status was set) | 47% resident, 45% foreign |
 
 Not automated yet: working holiday makers (Schedule 15), tax offset and
 Medicare levy adjustment claims, and the special methods for back pay,
 bonuses and termination payments (Schedules 5 and 7, ETPs). Working holiday
-makers get a warning and no withholding; for the others, bonuses are taxed as
+makers get no calculated withholding: the pay run can't be submitted until
+their Schedule 15 amount is entered as extra withholding; for the others, bonuses are taxed as
 ordinary pay in the period they're paid, so check those runs with the
 accountant and enter any difference as an extra withholding.
 Award rates aren't built in: the employee's rate is entered, and the system
@@ -72,7 +73,8 @@ into the form for checking. Nothing is saved until you save it.
 TFNs and bank account numbers are never sent to the browser in full, never
 written to the audit log, and only people with "Payroll: pay, tax and bank
 details" (`payroll.sensitive`) can see or change pay details. System
-administrators don't get that permission automatically.
+administrators don't get that permission automatically, and nobody can change
+their own pay details.
 
 ## Bank details
 
@@ -90,7 +92,7 @@ audit log.
   starts at no accrual; set the rate with the accountant, or keep it by
   adjustment.
 - Employees request leave in **My pay**; someone with "Approve leave" approves
-  it (never their own). Approved leave is paid in the next pay run that covers
+  it (never their own, nor leave they recorded for someone else). Approved leave is paid in the next pay run that covers
   its first day, with annual leave loading, and comes off the balance then.
 - Opening balances and corrections are recorded with a reason.
 
@@ -98,11 +100,13 @@ audit log.
 
 1. **Create** (`payroll.run`): frequency, period (7 days, 14 days or a
    calendar month) and payment date. Everyone active on that frequency is
-   worked out at once. Overlapping pay runs are refused.
+   worked out at once. Overlapping pay runs are refused, and only one pay run
+   per frequency can be open (draft or waiting for approval) at a time.
 2. Hours come from **approved timesheets** not yet paid (including late
    approvals from earlier periods), by type: ordinary (casual loading added),
-   overtime ×1.5 and ×2, travel. Salaried staff are paid their salary less any
-   paid leave. Approved leave, allowances, bonuses, deductions and
+   overtime ×1.5 and ×2, travel. The pay run claims those hours and the leave
+   when it is worked out, so nothing is paid twice. Salaried staff are paid
+   their salary less any leave (unpaid leave comes off the salary). Approved leave, allowances, bonuses, deductions and
    reimbursements are added as lines.
 3. **Tax** on taxable pay (after salary sacrifice), plus the study loan
    component and any extra withholding requested.
@@ -110,13 +114,16 @@ audit log.
    paid leave, allowances and bonuses for ordinary work; not overtime), up to
    the yearly maximum contribution base; none for an under-18 working 30 hours
    a week or less. Salary sacrifice is paid to super too.
-5. **Submit**, then **approve** by a second person with `payroll.approve`, who
-   can't be the preparer or someone paid in the run. Approval:
+5. **Submit**: the claimed timesheet weeks are locked and the leave can't be
+   cancelled while the run waits (sending it back unlocks them). Then
+   **approve** by a second person with `payroll.approve`, who can't be the
+   preparer, anyone who added or removed lines, or someone paid in the run.
+   Approval:
    - posts the journal: Dr wages (by each employee's wages account), Dr 6100
      super expense, Dr reimbursements; Cr 2100 PAYG withholding, Cr 2200 super
      payable, Cr 2600 deductions, Cr 2400 payroll clearing (net pay);
-   - marks the timesheet hours and leave as paid (those weeks can no longer be
-     reopened) and records leave accruals;
+   - marks the leave as taken and records leave accruals (the paid weeks stay
+     locked);
    - fixes each payslip's content, including year to date and leave balances.
    An approved pay run can't be changed or deleted: corrections go in a later
    pay run.

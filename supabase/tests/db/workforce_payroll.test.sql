@@ -161,6 +161,12 @@ begin
   -- Preparer can't approve; payroll admin can't approve at all; the director approves.
   perform pg_temp.expect_error(format('select public.pay_run_approve(%L, %L)', pg_temp.p('director'), v_run), 'Only a submitted');
   perform public.pay_run_submit(pg_temp.p('payroll'), v_run);
+  -- While it waits for approval: no second weekly run, its hours can't be reopened, its leave can't be cancelled.
+  perform pg_temp.expect_error(format('select public.pay_run_create(%L, %L, %L, %L, %L)', pg_temp.p('payroll'), 'weekly', '2026-10-12', '2026-10-18', '2026-10-21'), 'open weekly pay run');
+  perform pg_temp.eq((select count(*)::int from public.timesheet_entries where pay_run_id = v_run), 6, 'hours claimed by the run when calculated');
+  perform pg_temp.expect_error(format('select public.timesheet_reopen(%L, %L, %L)', pg_temp.p('pm'), (select v from pk where k = 'ts'), 'fix'), 'have been paid');
+  perform pg_temp.expect_error(format('select public.leave_request_decide(%L, %L, %L, null)', pg_temp.p('office'),
+    (select id from public.leave_requests where employee_id = pg_temp.emp('PAY-002')), 'cancelled'), 'waiting for approval');
   perform pg_temp.expect_error(format('select public.pay_run_line_add(%L, %L, %L, %L, %L, null, null, 50)', pg_temp.p('payroll'), v_run, pg_temp.emp('PAY-001'), pg_temp.item('BONUS'), 'Late bonus'), 'draft');
   perform pg_temp.expect_error(format('select public.pay_run_approve(%L, %L)', pg_temp.p('payroll'), v_run), 'Approve pay runs');
   perform public.pay_run_approve(pg_temp.p('director'), v_run);
@@ -199,6 +205,49 @@ begin
   perform pg_temp.eq((select status from public.pay_runs where id = v_run), 'paid', 'pay run paid');
   perform pg_temp.expect_error(format('select public.pay_run_record_super(%L, %L, %L, null)', pg_temp.p('finance'), v_run, pg_temp.acc('1000')), 'already recorded');
 end $$;
+
+-- Review fixes, rolled back so the API tests start from the paid pay run ------------------------------------
+do $$
+declare v_run uuid; v_lr uuid; x record;
+begin
+  begin
+    -- Someone who records leave for another person can't approve it.
+    v_lr := public.leave_request_save(pg_temp.p('payroll'), pg_temp.emp('PAY-001'), pg_temp.lt('PERSONAL'), '2026-10-13', '2026-10-13', 7.6, 'Phoned in sick');
+    perform pg_temp.expect_error(format('select public.leave_request_decide(%L, %L, %L, null)', pg_temp.p('payroll'), v_lr, 'approved'), 'You recorded this leave');
+    -- Unpaid leave comes off a salary.
+    v_lr := public.leave_request_save(pg_temp.p('office'), null, pg_temp.lt('UNPAID'), '2026-10-16', '2026-10-16', 7.6, 'Moving house');
+    perform public.leave_request_decide(pg_temp.p('payroll'), v_lr, 'approved', null);
+    v_run := public.pay_run_create(pg_temp.p('payroll'), 'weekly', '2026-10-12', '2026-10-18', '2026-10-21');
+    select * into x from public.pay_run_employees where pay_run_id = v_run and employee_id = pg_temp.emp('PAY-002');
+    -- 1,500.00 - 7.6 x 39.4737 (300.00) = 1,200.00.
+    perform pg_temp.eq(x.gross, 1200.00, 'salary less unpaid leave');
+    perform pg_temp.eq((select pay_run_id from public.leave_requests where id = v_lr), v_run, 'leave claimed by the run');
+    -- Working holiday makers need their Schedule 15 amount before the run can go for approval.
+    update public.payroll_employees set residency = 'working_holiday' where employee_id = pg_temp.emp('PAY-003');
+    perform public.pay_run_line_add(pg_temp.p('payroll'), v_run, pg_temp.emp('PAY-003'), pg_temp.item('ORD'), 'Ordinary hours', 10, 37.50, null);
+    perform pg_temp.expect_error(format('select public.pay_run_submit(%L, %L)', pg_temp.p('payroll'), v_run), 'working holiday');
+    update public.payroll_employees set residency = 'resident' where employee_id = pg_temp.emp('PAY-003');
+    -- Anyone who changed the lines can't approve it.
+    insert into public.profile_permissions (profile_id, permission_key, granted) values (pg_temp.p('director'), 'payroll.run', true)
+    on conflict do nothing;
+    perform public.pay_run_line_add(pg_temp.p('director'), v_run, pg_temp.emp('PAY-001'), pg_temp.item('BONUS'), 'Safety bonus', null, null, 100);
+    perform public.pay_run_submit(pg_temp.p('payroll'), v_run);
+    perform pg_temp.expect_error(format('select public.pay_run_approve(%L, %L)', pg_temp.p('director'), v_run), 'people who prepared');
+    -- Nobody changes their own pay details.
+    insert into public.employees (employee_number, full_name, email, profile_id) values ('PAY-099', 'Pat Payroll', null, pg_temp.p('payroll'));
+    perform pg_temp.expect_error(format('select public.payroll_employee_save(%L, %L, %L)', pg_temp.p('payroll'), pg_temp.emp('PAY-099'), '{"hourly_rate":"90"}'), 'your own pay details');
+    raise exception 'ROLLBACK_OK';
+  exception when others then
+    if sqlerrm <> 'ROLLBACK_OK' then raise; end if;
+  end;
+end $$;
+
+-- Onboarding answers for the API test of "Fill in from onboarding" (the TFN and account number stay on the server).
+with r as (insert into public.onboarding_requests (employee_id, profile_id, status) values (pg_temp.emp('PAY-001'), pg_temp.p('tradie'), 'complete') returning id)
+insert into public.onboarding_items (request_id, doc_type, required, status, reviewed_at, answers)
+select r.id, d, true, 'accepted', now(), a::jsonb from r, (values
+  ('tfn_declaration', '{"tfn":"123 456 782","residency":"Australian resident for tax purposes","tax_free_threshold":"Yes","study_loan":"No","pay_basis":"Full-time"}'),
+  ('bank_details', '{"account_name":"Tom Tradie","bsb":"062-000","account_number":"87654321"}')) v(d, a);
 
 -- Lock-down -------------------------------------------------------------------------------------------------
 do $$
