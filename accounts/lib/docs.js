@@ -230,7 +230,7 @@ export function attachmentsPanel(list, canAdd, entityType, entityId) {
       <small class="muted">${Math.max(1, Math.round(f.size / 1024))} KB · ${date(f.uploadedAt)}</small>
       ${canAdd ? `<button type="button" class="link muted-link" data-archive-file="${safe(f.id)}" aria-label="Remove ${safe(f.fileName)}">Remove</button>` : ""}</li>`).join("")}</ul>`
       : '<p class="muted small">Nothing attached.</p>'}
-    ${canAdd ? `<label class="btn file">Attach a PDF or photo<input type="file" accept="application/pdf,image/*" data-attach></label>` : ""}
+    ${canAdd ? `<label class="btn file">Attach a PDF or photo<input type="file" accept="application/pdf,image/jpeg,image/png,image/webp" data-attach></label>` : ""}
   </section>`;
 }
 

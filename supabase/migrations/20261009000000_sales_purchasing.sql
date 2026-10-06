@@ -109,7 +109,7 @@ security definer
 set search_path = ''
 as $$
 declare
-  v_source text := (select replace(source_type, '_', ' ') from public.journal_entries where id = p_id);
+  v_source text := (select replace(source_type, '_', ' ') from public.journal_entries where id = p_id and organization_id = public.app_org_of(p_actor));
 begin
   perform public.app_require(p_actor, 'ledger.post');
   if v_source is distinct from 'manual' and v_source is not null then
@@ -211,8 +211,8 @@ begin
   if p_lines is null or jsonb_typeof(p_lines) <> 'array' or jsonb_array_length(p_lines) = 0 then
     raise exception 'Add at least one line.' using errcode = '22023';
   end if;
-  if jsonb_array_length(p_lines) > 300 then
-    raise exception 'A document can have at most 300 lines.' using errcode = '22023';
+  if jsonb_array_length(p_lines) > 150 then
+    raise exception 'A document can have at most 150 lines.' using errcode = '22023';
   end if;
   for l in select * from jsonb_array_elements(p_lines) loop
     v_no := v_no + 1;
@@ -276,6 +276,54 @@ begin
   end loop;
   return jsonb_build_object('lines', v_out, 'subtotal', v_sub, 'gst', v_gst_total, 'total', v_sub + v_gst_total);
 end;
+$$;
+
+-- Default account / tax code on a customer or supplier must be this organisation's.
+create or replace function public.doc_check_defaults(p_org uuid, p_account uuid, p_tax uuid)
+returns void
+language plpgsql
+stable
+security definer
+set search_path = ''
+as $$
+begin
+  if p_account is not null and not exists (select 1 from public.accounts where id = p_account and organization_id = p_org) then
+    raise exception 'Unknown default account.' using errcode = '22023';
+  end if;
+  if p_tax is not null and not exists (select 1 from public.tax_codes where id = p_tax and organization_id = p_org) then
+    raise exception 'Unknown default tax code.' using errcode = '22023';
+  end if;
+end;
+$$;
+
+-- Recalculates a saved document from its stored lines with today's accounts
+-- and tax codes, so what is posted is exactly what was shown and printed.
+create or replace function public.doc_recalc(p_org uuid, p_table text, p_doc uuid, p_amounts_are text, p_side text)
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path = ''
+as $$
+declare
+  v_lines jsonb;
+begin
+  execute format($f$select jsonb_agg(jsonb_build_object('description', description, 'quantity', quantity, 'unit', unit, 'unitPrice', unit_price,
+      'discountPercent', discount_percent, 'accountId', account_id, 'taxCodeId', tax_code_id, 'kind', line_kind) order by line_no)
+    from public.%I where document_id = $1$f$, p_table) into v_lines using p_doc;
+  return public.doc_calc_lines(p_org, coalesce(v_lines, '[]'::jsonb), p_amounts_are, p_side);
+end;
+$$;
+
+-- Masks bank account numbers in values written to the audit log.
+create or replace function public.app_mask_bank(p jsonb)
+returns jsonb
+language sql
+immutable
+set search_path = ''
+as $$
+  select case when p ? 'accountNumber' and coalesce(p->>'accountNumber', '') <> ''
+    then jsonb_set(p, '{accountNumber}', to_jsonb('***' || right(p->>'accountNumber', 3))) else p end;
 $$;
 
 ------------------------------------------------------------------------------
@@ -571,6 +619,7 @@ declare
   v_old jsonb;
 begin
   perform public.app_require(p_actor, 'sales.manage');
+  perform public.doc_check_defaults(v_org, nullif(p->>'default_revenue_account_id', '')::uuid, nullif(p->>'default_tax_code_id', '')::uuid);
   if nullif(p->>'abn', '') is not null and not public.app_valid_abn(p->>'abn') then
     raise exception 'That ABN isn''t valid. Check the 11 digits.' using errcode = '22023';
   end if;
@@ -612,6 +661,7 @@ declare
   v_old jsonb;
 begin
   perform public.app_require(p_actor, 'purchases.manage');
+  perform public.doc_check_defaults(v_org, nullif(p->>'default_expense_account_id', '')::uuid, nullif(p->>'default_tax_code_id', '')::uuid);
   if nullif(p->>'abn', '') is not null and not public.app_valid_abn(p->>'abn') then
     raise exception 'That ABN isn''t valid. Check the 11 digits.' using errcode = '22023';
   end if;
@@ -675,6 +725,32 @@ begin
 end;
 $$;
 
+create unique index approvals_one_pending on public.approvals (kind, entity_id) where status = 'pending';
+
+-- Same as before, with bank account numbers masked in the audit log.
+create or replace function public.approval_request(p_actor uuid, p_kind text, p_entity_type text, p_entity_id uuid,
+  p_title text, p_permission text, p_previous jsonb, p_new jsonb)
+returns uuid
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_org uuid := public.app_org_of(p_actor);
+  v_id uuid;
+begin
+  insert into public.approvals (organization_id, kind, entity_type, entity_id, title, required_permission, requested_by, previous_value, new_value)
+  values (v_org, p_kind, p_entity_type, p_entity_id, p_title, p_permission, p_actor, p_previous, p_new)
+  returning id into v_id;
+  perform public.app_notify_holders(v_org, p_permission, p_actor, 'approval_requested', 'Approval needed: ' || p_title,
+    'Requested by ' || coalesce((select nullif(full_name, '') from public.training_profiles where id = p_actor), (select email from public.training_profiles where id = p_actor)),
+    'approvals');
+  perform public.app_audit(p_actor, 'approval_requested', 'approval', v_id::text, public.app_mask_bank(p_previous), public.app_mask_bank(p_new),
+    jsonb_build_object('kind', p_kind, 'title', p_title));
+  return v_id;
+end;
+$$;
+
 create or replace function public.approval_decide(p_actor uuid, p_approval uuid, p_approve boolean, p_comment text)
 returns jsonb
 language plpgsql
@@ -723,7 +799,7 @@ begin
   values (v.organization_id, v.requested_by, case when p_approve then 'approval_approved' else 'approval_rejected' end,
           case when p_approve then 'Approved: ' else 'Rejected: ' end || v.title, coalesce(btrim(p_comment), ''), 'approvals');
   perform public.app_audit(p_actor, case when p_approve then 'approval_approved' else 'approval_rejected' end, 'approval', p_approval::text,
-    v.previous_value, v.new_value, jsonb_build_object('kind', v.kind, 'title', v.title, 'comment', p_comment), v.requested_by);
+    public.app_mask_bank(v.previous_value), public.app_mask_bank(v.new_value), jsonb_build_object('kind', v.kind, 'title', v.title, 'comment', p_comment), v.requested_by);
   return jsonb_build_object('status', case when p_approve then 'approved' else 'rejected' end);
 end;
 $$;
@@ -837,6 +913,13 @@ begin
   end if;
   v_calc := public.doc_calc_lines(v_org, p_lines, coalesce(p->>'amounts_are', 'exclusive'), 'sales');
   v_terms := coalesce(v_cust.payment_terms_days, (select payment_terms_days from public.company_settings where organization_id = v_org), 30);
+  if nullif(p->>'quote_id', '') is not null and not exists (select 1 from public.quotes where id = (p->>'quote_id')::uuid and organization_id = v_org and customer_id = v_cust.id) then
+    raise exception 'That quote is not for this customer.' using errcode = '22023';
+  end if;
+  if nullif(p->>'original_invoice_id', '') is not null and not exists (select 1 from public.invoices where id = (p->>'original_invoice_id')::uuid
+      and organization_id = v_org and customer_id = v_cust.id and kind = 'invoice' and status = 'approved') then
+    raise exception 'A credit note can only adjust an approved invoice of the same customer.' using errcode = '22023';
+  end if;
   if v_id is null then
     insert into public.invoices (organization_id, kind, customer_id, invoice_date, due_date, created_by)
     values (v_org, coalesce(nullif(p->>'kind', ''), 'invoice'), v_cust.id, (p->>'invoice_date')::date, (p->>'invoice_date')::date, p_actor) returning id into v_id;
@@ -875,6 +958,7 @@ declare
   v_number text;
   v_journal uuid;
   v_credit boolean;
+  v_calc jsonb;
 begin
   perform public.app_require(p_actor, 'sales.manage');
   select * into v from public.invoices where id = p_id and organization_id = v_org for update;
@@ -884,6 +968,13 @@ begin
   if (select abn from public.company_settings where organization_id = v_org) is null then
     raise exception 'Add Panalo''s ABN in Company settings first: a tax invoice must show it.' using errcode = '22023';
   end if;
+  v_calc := public.doc_recalc(v_org, 'invoice_lines', p_id, v.amounts_are, 'sales');
+  if (v_calc->>'total')::numeric <> v.total or (v_calc->>'gst')::numeric <> v.gst then
+    raise exception 'A tax rate or account changed since this was saved. Open it, check the lines and save it again.' using errcode = '22023';
+  end if;
+  if v.gst <> 0 and not (select gst_registered from public.company_settings where organization_id = v_org) then
+    raise exception 'Company settings say Panalo isn''t registered for GST, so it can''t charge GST. Use a GST-free or no-GST code.' using errcode = '22023';
+  end if;
   if (select po_required from public.customers where id = v.customer_id) and v.kind = 'invoice' and v.reference is null then
     raise exception 'This customer needs their purchase order number on every invoice.' using errcode = '22023';
   end if;
@@ -892,7 +983,7 @@ begin
   v_number := public.next_document_number(v_org, case when v_credit then 'credit_note' else 'invoice' end);
   select jsonb_agg(jsonb_build_object('accountId', account_id, 'description', left(description, 300),
            'debit', case when v_credit then amount else 0 end, 'credit', case when v_credit then 0 else amount end, 'taxCodeId', tax_code_id) order by line_no)
-    into v_lines from public.invoice_lines where document_id = p_id;
+    into v_lines from public.invoice_lines where document_id = p_id and amount <> 0;
   v_lines := v_lines || jsonb_build_object('accountId', v_ar, 'description', (select name from public.customers where id = v.customer_id),
     'debit', case when v_credit then 0 else v.total end, 'credit', case when v_credit then v.total else 0 end, 'taxCodeId', null);
   v_journal := public.ledger_post_entry(p_actor, v.invoice_date, (case when v_credit then 'Credit note ' else 'Invoice ' end) || v_number,
@@ -900,7 +991,8 @@ begin
   update public.invoices set status = 'approved', number = v_number, journal_id = v_journal, approved_by = p_actor, approved_at = now(), updated_at = now()
   where id = p_id;
   if v.quote_id is not null then
-    update public.quotes set status = 'converted', converted_invoice_id = p_id, updated_at = now() where id = v.quote_id and status <> 'converted';
+    update public.quotes set status = 'converted', converted_invoice_id = p_id, updated_at = now()
+    where id = v.quote_id and organization_id = v_org and customer_id = v.customer_id and status <> 'converted';
   end if;
   perform public.app_audit(p_actor, 'invoice_approved', 'invoice', p_id::text, jsonb_build_object('status', 'draft'),
     jsonb_build_object('status', 'approved', 'number', v_number, 'total', v.total, 'kind', v.kind));
@@ -972,7 +1064,7 @@ begin
     raise exception 'The amount can''t exceed what is left on the credit note or the invoice.' using errcode = '22023';
   end if;
   insert into public.receivable_allocations (organization_id, invoice_id, credit_note_id, amount, allocation_date, created_by)
-  values (c.organization_id, p_invoice, p_credit, p_amount, coalesce(p_date, greatest(c.invoice_date, i.invoice_date)), p_actor);
+  values (c.organization_id, p_invoice, p_credit, p_amount, greatest(coalesce(p_date, c.invoice_date), c.invoice_date, i.invoice_date), p_actor);
   perform public.app_audit(p_actor, 'credit_note_applied', 'invoice', p_invoice::text, null, jsonb_build_object('creditNote', c.number, 'amount', p_amount));
 end;
 $$;
@@ -1024,7 +1116,7 @@ begin
     end if;
     v_total := v_total + v_amt;
     insert into public.receivable_allocations (organization_id, invoice_id, payment_id, amount, allocation_date, created_by)
-    values (v_org, v_inv.id, v_id, v_amt, p_date, p_actor);
+    values (v_org, v_inv.id, v_id, v_amt, greatest(p_date, v_inv.invoice_date), p_actor);
   end loop;
   if v_total > p_amount then
     raise exception 'You applied % but only % was received.', v_total, p_amount using errcode = '22023';
@@ -1257,6 +1349,10 @@ begin
     amounts_are = coalesce(p->>'amounts_are', 'exclusive'), notes = left(coalesce(p->>'notes', ''), 3000), status = 'draft',
     subtotal = (v_calc->>'subtotal')::numeric, gst = (v_calc->>'gst')::numeric, total = (v_calc->>'total')::numeric, updated_at = now()
   where id = v_id;
+  if exists (select 1 from jsonb_array_elements(v_calc->'lines') x where nullif(x->>'po_line_id', '') is not null
+             and (v_po is null or not exists (select 1 from public.purchase_order_lines pl where pl.id = (x->>'po_line_id')::uuid and pl.document_id = v_po))) then
+    raise exception 'A line is linked to a different purchase order.' using errcode = '22023';
+  end if;
   perform public.doc_insert_lines('bill_lines', v_id, v_calc->'lines');
   update public.bill_lines bl set po_line_id = (x->>'po_line_id')::uuid
   from jsonb_array_elements(v_calc->'lines') x where bl.document_id = v_id and bl.line_no = (x->>'line_no')::int and nullif(x->>'po_line_id', '') is not null;
@@ -1297,6 +1393,7 @@ declare
   v_credit boolean;
   v_rate numeric; v_threshold numeric;
   v_wh numeric := 0;
+  v_calc jsonb;
 begin
   perform public.app_require(p_actor, 'purchases.manage');
   select * into v from public.bills where id = p_id and organization_id = v_org for update;
@@ -1305,9 +1402,20 @@ begin
   if v.total <= 0 then raise exception 'The total must be more than zero.' using errcode = '22023'; end if;
   select * into v_sup from public.suppliers where id = v.supplier_id;
   v_credit := v.kind = 'credit_note';
+  v_calc := public.doc_recalc(v_org, 'bill_lines', p_id, v.amounts_are, 'purchases');
+  if (v_calc->>'total')::numeric <> v.total or (v_calc->>'gst')::numeric <> v.gst then
+    raise exception 'A tax rate or account changed since this was saved. Open it, check the lines and save it again.' using errcode = '22023';
+  end if;
+  -- GST credits need a tax invoice from a GST-registered supplier (who has an ABN).
+  if v.gst <> 0 and (v_sup.abn is null or not v_sup.gst_registered) then
+    raise exception 'This supplier isn''t registered for GST (or has no ABN), so no GST can be claimed. Use a GST-free or no-GST code.' using errcode = '22023';
+  end if;
   -- No ABN quoted: withhold at the top rate unless exempt or under the threshold (ex GST).
   if not v_credit and v_sup.abn is null and not v_sup.withholding_exempt then
     v_rate := (public.compliance_value('no_abn_withholding_rate', v.bill_date))::text::numeric;
+    if v_rate is null then
+      raise exception 'No no-ABN withholding rate is recorded for %. Ask an administrator to add the compliance rule.', v.bill_date using errcode = '22023';
+    end if;
     v_threshold := coalesce((public.compliance_value('no_abn_withholding_threshold', v.bill_date))::text::numeric, 0);
     if v.subtotal > v_threshold then
       v_wh := round(v.total * v_rate, 2);
@@ -1317,7 +1425,7 @@ begin
   select id into v_payg from public.accounts where organization_id = v_org and subtype = 'payg' and status = 'active' order by code limit 1;
   select jsonb_agg(jsonb_build_object('accountId', account_id, 'description', left(description, 300),
            'debit', case when v_credit then 0 else amount end, 'credit', case when v_credit then amount else 0 end, 'taxCodeId', tax_code_id) order by line_no)
-    into v_lines from public.bill_lines where document_id = p_id;
+    into v_lines from public.bill_lines where document_id = p_id and amount <> 0;
   v_lines := v_lines || jsonb_build_object('accountId', v_ap, 'description', v_sup.name,
     'debit', case when v_credit then v.total else 0 end, 'credit', case when v_credit then 0 else v.total - v_wh end, 'taxCodeId', null);
   if v_wh > 0 then
@@ -1379,7 +1487,7 @@ begin
     raise exception 'The amount can''t exceed what is left on the credit or the bill.' using errcode = '22023';
   end if;
   insert into public.payable_allocations (organization_id, bill_id, credit_note_id, amount, allocation_date, created_by)
-  values (c.organization_id, p_bill, p_credit, p_amount, coalesce(p_date, greatest(c.bill_date, b.bill_date)), p_actor);
+  values (c.organization_id, p_bill, p_credit, p_amount, greatest(coalesce(p_date, c.bill_date), c.bill_date, b.bill_date), p_actor);
   perform public.app_audit(p_actor, 'supplier_credit_applied', 'bill', p_bill::text, null, jsonb_build_object('credit', c.number, 'amount', p_amount));
 end;
 $$;
@@ -1428,7 +1536,7 @@ begin
       raise exception 'Bill %: the amount is more than what is owing.', v_bill.number using errcode = '22023';
     end if;
     insert into public.payable_allocations (organization_id, bill_id, payment_id, amount, allocation_date, created_by)
-    values (v_org, v_bill.id, v_id, v_amt, p_date, p_actor);
+    values (v_org, v_bill.id, v_id, v_amt, greatest(p_date, v_bill.bill_date), p_actor);
   end loop;
   v_journal := public.ledger_post_entry(p_actor, p_date, 'Payment to ' || v_sup.name || coalesce(' · ' || nullif(btrim(p_reference), ''), ''),
     'supplier_payment', v_id, nullif(btrim(coalesce(p_reference, '')), ''),
@@ -1535,14 +1643,17 @@ begin
       sum(owing) filter (where kind = 'bill' and p_as_at - due_date > 90) as d90p,
       sum(owing) filter (where kind = 'credit_note') as credits
     from docs group by supplier_id
+  ), unapplied as (
+    select p.supplier_id, sum(p.amount - coalesce((select sum(a.amount) from public.payable_allocations a where a.payment_id = p.id and a.voided_at is null and a.allocation_date <= p_as_at), 0)) as amt
+    from public.supplier_payments p where p.organization_id = v_org and p.status = 'posted' and p.payment_date <= p_as_at group by p.supplier_id
   )
   select coalesce(jsonb_agg(r order by r->>'name'), '[]'::jsonb) into v_rows from (
     select jsonb_build_object('supplierId', s.id, 'name', s.name,
       'current', coalesce(a.cur, 0), 'days30', coalesce(a.d30, 0), 'days60', coalesce(a.d60, 0), 'days90', coalesce(a.d90, 0), 'over90', coalesce(a.d90p, 0),
-      'credits', -coalesce(a.credits, 0),
-      'total', coalesce(a.cur, 0) + coalesce(a.d30, 0) + coalesce(a.d60, 0) + coalesce(a.d90, 0) + coalesce(a.d90p, 0) - coalesce(a.credits, 0)) as r
-    from public.suppliers s join agg a on a.supplier_id = s.id
-    where s.organization_id = v_org and (coalesce(a.cur, 0) + coalesce(a.d30, 0) + coalesce(a.d60, 0) + coalesce(a.d90, 0) + coalesce(a.d90p, 0) + coalesce(a.credits, 0)) <> 0
+      'credits', -(coalesce(a.credits, 0) + coalesce(u.amt, 0)),
+      'total', coalesce(a.cur, 0) + coalesce(a.d30, 0) + coalesce(a.d60, 0) + coalesce(a.d90, 0) + coalesce(a.d90p, 0) - coalesce(a.credits, 0) - coalesce(u.amt, 0)) as r
+    from public.suppliers s left join agg a on a.supplier_id = s.id left join unapplied u on u.supplier_id = s.id
+    where s.organization_id = v_org and (coalesce(a.cur, 0) + coalesce(a.d30, 0) + coalesce(a.d60, 0) + coalesce(a.d90, 0) + coalesce(a.d90p, 0) + coalesce(a.credits, 0) + coalesce(u.amt, 0)) <> 0
   ) q;
   return jsonb_build_object('asAt', p_as_at, 'rows', v_rows, 'totals', (
     select jsonb_build_object('current', coalesce(sum((r->>'current')::numeric), 0), 'days30', coalesce(sum((r->>'days30')::numeric), 0),
@@ -1634,7 +1745,7 @@ begin
   if p_path is null or p_path !~ ('^org/' || v_org::text || '/' || p_entity_type || '/' || p_entity_id::text || '/[A-Za-z0-9._-]{1,140}$') then
     raise exception 'Invalid upload path.' using errcode = '22023';
   end if;
-  if p_content_type not in ('application/pdf', 'image/png', 'image/jpeg', 'image/webp', 'image/heic') then
+  if p_content_type not in ('application/pdf', 'image/png', 'image/jpeg', 'image/webp') then
     raise exception 'Attach a PDF or a photo.' using errcode = '22023';
   end if;
   insert into public.documents (organization_id, entity_type, entity_id, category, title, path, file_name, content_type, size_bytes, uploaded_by)
@@ -1692,6 +1803,7 @@ begin
   end loop;
   foreach f in array array[
     'compliance_value(text, date)', 'journal_reverse(uuid, uuid, date, text)', 'approval_decide(uuid, uuid, boolean, text)',
+    'approval_request(uuid, text, text, uuid, text, text, jsonb, jsonb)', 'doc_check_defaults(uuid, uuid, uuid)', 'doc_recalc(uuid, text, uuid, text, text)', 'app_mask_bank(jsonb)',
     'doc_calc_lines(uuid, jsonb, text, text)', 'invoice_outstanding(uuid, date)', 'bill_outstanding(uuid, date)',
     'customer_payment_unallocated(uuid)', 'supplier_payment_unallocated(uuid)', 'invoice_balances(uuid)', 'bill_balances(uuid)',
     'customer_save(uuid, uuid, jsonb)', 'supplier_save(uuid, uuid, jsonb)', 'supplier_bank_request(uuid, uuid, text, text, text)',

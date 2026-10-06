@@ -191,6 +191,8 @@ async function quoteToInvoice(admin: Client, actor: Actor, body: any) {
   const { data: q } = await admin.from("quotes").select("*,quote_lines(*)").eq("id", id).eq("organization_id", actor.organization_id).maybeSingle();
   if (!q) throw httpError(404, "Quote not found.");
   if (!["approved", "sent", "accepted"].includes(q.status)) throw httpError(409, "Only an approved, sent or accepted quote can be invoiced.");
+  const { data: existing } = await admin.from("invoices").select("id,number").eq("quote_id", id).eq("organization_id", actor.organization_id).neq("status", "void").limit(1);
+  if (existing?.length) throw httpError(409, `An invoice${existing[0].number ? ` (${existing[0].number})` : " draft"} has already been created from this quote.`);
   const lines = (q.quote_lines || []).sort((a: any, b: any) => a.line_no - b.line_no).map((l: any) => ({
     description: l.description, quantity: l.quantity, unit: l.unit, unitPrice: l.unit_price, discountPercent: l.discount_percent,
     accountId: l.account_id, taxCodeId: l.tax_code_id, kind: l.line_kind
@@ -349,7 +351,7 @@ async function invoicePdf(admin: Client, actor: Actor, body: any) {
   const inv = await loadInvoice(admin, actor, id);
   const [ctx, lk, bal, orig] = await Promise.all([
     sellerContext(admin, actor), lookups(admin, actor), balances(admin, actor),
-    inv.original_invoice_id ? admin.from("invoices").select("number").eq("id", inv.original_invoice_id).maybeSingle() : Promise.resolve({ data: null })
+    inv.original_invoice_id ? admin.from("invoices").select("number").eq("id", inv.original_invoice_id).eq("organization_id", actor.organization_id).maybeSingle() : Promise.resolve({ data: null })
   ]);
   const c = inv.customers || {};
   const owing = inv.status === "approved" ? bal.get(id) ?? Number(inv.total) : Number(inv.total);

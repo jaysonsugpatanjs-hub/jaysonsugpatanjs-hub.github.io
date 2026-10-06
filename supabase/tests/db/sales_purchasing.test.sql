@@ -31,6 +31,9 @@ begin
     raise exception '% : expected %, got %', p_label, p_expected, p_actual;
   end if;
 end $$;
+create or replace function pg_temp.bal_at(p_code text, p_date date) returns numeric language sql as $$
+  select coalesce(sum(jl.debit - jl.credit), 0) from public.journal_lines jl join public.journal_entries je on je.id = jl.journal_id
+  where jl.account_id = pg_temp.acc(p_code) and je.status in ('posted', 'reversed') and je.entry_date <= p_date $$;
 create temporary table sp (k text primary key, v uuid);
 create temporary table sn (k text primary key, v numeric);
 -- A project manager who may raise purchase orders but not approve them.
@@ -310,6 +313,50 @@ begin
   perform public.supplier_payment_void(pg_temp.p('finance'), v_pay, 'Wrong account');
   perform pg_temp.eq(public.bill_outstanding(v_b), 396.00, 'payment void reopens bill');
   perform pg_temp.eq(pg_temp.bal('1000') - (select v from sn where k = 'bank0'), 500.00 + 1000.00 - 1000.00 - 300.00, 'bank: receipts less payments after voids');
+end $$;
+
+-- Review cases: dates, links between documents, GST rules, zero lines, audit masking ---------------------
+do $$
+declare v_c uuid; v_i uuid; v_s uuid; v_b uuid; v_zero uuid;
+begin
+  -- A receipt dated before the invoice it pays: the allocation takes the invoice date, so ageing
+  -- at any date in between still agrees with the ledger (receipt as a credit, invoice not yet issued).
+  v_c := public.customer_save(pg_temp.p('finance'), null, '{"name":"Early Payer Pty Ltd"}');
+  v_i := public.invoice_save(pg_temp.p('finance'), null, jsonb_build_object('customer_id', v_c, 'invoice_date', '2026-09-10'), jsonb_build_array(pg_temp.ln('Deposit', 1, 1000, '4000')));
+  perform public.invoice_approve(pg_temp.p('finance'), v_i);
+  perform public.customer_payment_record(pg_temp.p('finance'), v_c, '2026-09-05', 1100, pg_temp.acc('1000'), 'Prepaid', 'bank_transfer',
+    jsonb_build_array(jsonb_build_object('invoiceId', v_i, 'amount', 1100)));
+  perform pg_temp.eq((select allocation_date from public.receivable_allocations where invoice_id = v_i), date '2026-09-10', 'allocation never before the invoice');
+  perform pg_temp.eq((public.report_aged_receivables(pg_temp.p('finance'), '2026-09-07')->'totals'->>'total')::numeric,
+    pg_temp.bal_at('1100', '2026-09-07') - (select v from sn where k = 'ar0'), 'ageing = ledger between receipt and invoice');
+  perform pg_temp.eq((public.report_aged_receivables(pg_temp.p('finance'), '2026-09-30')->'totals'->>'total')::numeric,
+    pg_temp.bal_at('1100', '2026-09-30') - (select v from sn where k = 'ar0'), 'ageing = ledger at month end');
+  perform pg_temp.eq((public.report_aged_payables(pg_temp.p('finance'), '2026-09-30')->'totals'->>'total')::numeric,
+    -(pg_temp.bal_at('2000', '2026-09-30') - (select v from sn where k = 'ap0')), 'aged payables = ledger at month end');
+
+  -- A credit note can only adjust this customer's approved invoice; a quote must be this customer's.
+  perform pg_temp.expect_error(format('select public.invoice_save(%L, null, %L, %L)', pg_temp.p('finance'),
+    jsonb_build_object('kind', 'credit_note', 'customer_id', v_c, 'invoice_date', '2026-09-12', 'original_invoice_id', (select v from sp where k = 'inv1')),
+    jsonb_build_array(pg_temp.ln('x', 1, 1, '4000'))), 'same customer');
+  perform pg_temp.expect_error(format('select public.invoice_save(%L, null, %L, %L)', pg_temp.p('finance'),
+    jsonb_build_object('customer_id', v_c, 'invoice_date', '2026-09-12', 'quote_id', (select id from public.quotes where number = 'QU-1001')),
+    jsonb_build_array(pg_temp.ln('x', 1, 1, '4000'))), 'not for this customer');
+
+  -- A "no charge" line doesn't block approval.
+  v_zero := public.invoice_save(pg_temp.p('finance'), null, jsonb_build_object('customer_id', v_c, 'invoice_date', '2026-09-12'),
+    jsonb_build_array(pg_temp.ln('Inspection', 1, 500, '4000'), pg_temp.ln('Travel (no charge)', 1, 120, '4000', 'GST', 100)));
+  perform public.invoice_approve(pg_temp.p('finance'), v_zero);
+  perform pg_temp.eq((select total from public.invoices where id = v_zero), 550.00, 'zero line ignored in the journal');
+
+  -- No GST credit from a supplier that isn't registered for GST.
+  v_s := public.supplier_save(pg_temp.p('finance'), null, '{"name":"Small Welding Co","abn":"51 824 753 556","gst_registered":false}');
+  v_b := public.bill_save(pg_temp.p('finance'), null, jsonb_build_object('supplier_id', v_s, 'bill_date', '2026-09-12', 'supplier_reference', 'SW1'),
+    jsonb_build_array(pg_temp.ln('Welding', 1, 100, '5300', 'GSTE')));
+  perform pg_temp.expect_error(format('select public.bill_approve(%L, %L)', pg_temp.p('finance'), v_b), 'isn''t registered for GST');
+
+  -- Bank numbers are masked in the audit log.
+  perform pg_temp.eq((select new_value->>'accountNumber' from public.training_audit_events where event_type = 'approval_requested'
+    and details->>'kind' = 'supplier_bank' order by id limit 1), '***678', 'audit log masks the account number');
 end $$;
 
 -- Lock-down ---------------------------------------------------------------------------------------------

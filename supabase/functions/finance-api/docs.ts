@@ -40,7 +40,7 @@ export const LINE_KINDS = ["labour", "materials", "equipment", "subcontract", "t
 
 export function cleanDocLines(lines: unknown) {
   if (!Array.isArray(lines) || !lines.length) throw httpError(400, "Add at least one line.");
-  if (lines.length > 300) throw httpError(400, "A document can have at most 300 lines.");
+  if (lines.length > 150) throw httpError(400, "A document can have at most 150 lines.");
   return lines.map((l: any) => ({
     description: text(l?.description, 500),
     quantity: String(l?.quantity ?? "1").replace(/,/g, "") || "1",
@@ -117,7 +117,7 @@ export async function sellerContext(admin: Client, actor: Actor) {
   };
 }
 
-const ATTACH_TYPES: Record<string, string> = { pdf: "application/pdf", png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", webp: "image/webp", heic: "image/heic" };
+const ATTACH_TYPES: Record<string, string> = { pdf: "application/pdf", png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", webp: "image/webp" };
 
 /** Signed upload for an attachment (supplier invoice, remittance, signed PO). */
 export async function attachmentPrepare(admin: Client, actor: Actor, body: any) {
@@ -129,7 +129,7 @@ export async function attachmentPrepare(admin: Client, actor: Actor, body: any) 
   const id = uuid(body.entityId, "Record");
   const name = String(body.fileName || "");
   const ext = name.includes(".") ? name.split(".").pop()!.toLowerCase() : "";
-  if (!ATTACH_TYPES[ext]) throw httpError(400, "Attach a PDF or a photo (JPG, PNG, WebP or HEIC).");
+  if (!ATTACH_TYPES[ext]) throw httpError(400, "Attach a PDF or a photo (JPG, PNG or WebP).");
   const size = Number(body.size);
   if (!Number.isFinite(size) || size < 1 || size > 15 * 1024 * 1024) throw httpError(400, "Attachments must be under 15 MB.");
   const safe = name.replace(/\.[^.]+$/, "").replace(/[^A-Za-z0-9_-]+/g, "-").slice(0, 60) || "file";

@@ -51,6 +51,13 @@ the engine: `amount = round(qty × unit price × (1 − discount%), 2)`; GST is
 Accounts Receivable, Accounts Payable and Current Year Earnings take no manual
 journals, so their balances always come from these documents.
 
+When a document is approved its lines are recalculated with the current
+accounts and tax codes. If anything changed since it was saved (a rate, an
+archived account), approval stops and asks for the document to be re-saved,
+so the ledger always matches what was printed. Lines worth $0 (for example a
+100% discount) are shown on the document but left out of the journal. A
+document can have up to 150 lines.
+
 ### Tax codes must fit the side
 
 Sales lines take codes that apply to sales or both (GST, FRE, EXP, ITS, NG,
@@ -69,6 +76,10 @@ requirement for invoices of $1,000 or more. An invoice can't be approved until
 Panalo's ABN is in Company settings. If the company is set as not registered
 for GST, the PDF says "Invoice" instead.
 
+If Company settings say Panalo isn't registered for GST, invoices with GST
+can't be approved. On the purchasing side, GST can only be claimed from a
+supplier that has an ABN and is registered for GST.
+
 Credit notes print as an **adjustment note** with the GST adjustment and the
 invoice they adjust. Customers that need their purchase order number on every
 invoice can be flagged; approval is then blocked without a reference.
@@ -86,6 +97,9 @@ A payment is entered once, for the amount that arrived in the bank, and then
 
 - An allocation can't exceed what the invoice still owes, and the total
   allocated can't exceed the payment.
+- An allocation is dated no earlier than the documents it joins (a payment
+  received before its invoice is applied on the invoice date), so ageing at
+  any past date agrees with the ledger.
 - Money not allocated stays on the customer's account as a credit, shown in
   the ageing "Credits" column, and can be applied later from the payment or
   from the invoice.
@@ -140,6 +154,10 @@ accountant's call; the "withholding doesn't apply" flag records that decision.
 - A bill can't reference an order for a different supplier or an unapproved
   order; a supplier's invoice number can't be entered twice for the same
   supplier.
+
+Separation of duties: someone with `purchases.manage` can enter and approve
+the same bill, and approve an order they raised. If Panalo wants a second
+person for those too, that is a small rule change; say so.
 
 ## Reports
 
