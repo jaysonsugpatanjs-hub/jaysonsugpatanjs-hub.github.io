@@ -11,7 +11,7 @@ schema plan) is the "Panalo Accounts — Phase 0 Architecture" document.
 | --- | --- | --- |
 | Accounts web app | `accounts/` → `/accounts/` | Static ES modules, no build step; served by GitHub Pages |
 | Portal | `training/` → `/training/` | Sign-in, onboarding, HR files, IMS, training; also the shared `auth.js` |
-| Finance API | `supabase/functions/finance-api` | Edge Function: session → permissions → MFA → action |
+| Finance API | `supabase/functions/finance-api` | Edge Function: session → permissions → MFA → action. Modules: `index.ts` (foundation), `ledger.ts`, `sales.ts`, `purchases.ts`, `docs.ts` (shared helpers); PDFs in `_shared/finance-pdf.ts` |
 | Database | `supabase/migrations` | Postgres; every write through a security-definer function |
 | Files | Storage buckets `finance-documents`, `hr-documents` | Private; short-lived signed links only |
 
@@ -25,6 +25,9 @@ schema plan) is the "Panalo Accounts — Phase 0 Architecture" document.
 4. The action's own permission is checked.
 5. Writes call a SQL function that checks the permission again, applies the
    business rules and writes the audit row in the same transaction.
+
+Sales and purchasing (Phase 3) are described in `SALES_PURCHASING.md`; the
+ledger and its posting engine in `ACCOUNTING_ENGINE.md`.
 
 ## Phase 1 data model
 
