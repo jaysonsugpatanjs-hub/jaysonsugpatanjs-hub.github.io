@@ -76,3 +76,43 @@ export function journalTotals(lines, rates, amountsAre) {
   }
   return { debit: Math.round(debit * 100) / 100, credit: Math.round(credit * 100) / 100 };
 }
+
+/* ---------------- Sales and purchasing documents ---------------- */
+
+/** One document line, to the cent, half up (mirrors doc_calc_lines). */
+export function docLine({ quantity, unitPrice, discountPercent }, rate, amountsAre) {
+  const q = Number(quantity), p = Number(unitPrice), d = Number(discountPercent) || 0;
+  if (!Number.isFinite(q) || !Number.isFinite(p) || !Number.isFinite(d)) return { amount: NaN, gst: NaN };
+  const amount = Math.round(q * p * (100 - d) + 1e-7) / 100;
+  return { amount, gst: lineGst(amount, rate, amountsAre) };
+}
+
+/** Subtotal (ex GST), GST and total of a document. */
+export function docTotals(lines, rates, amountsAre) {
+  let sub = 0, gst = 0;
+  for (const l of lines) {
+    const r = docLine(l, rates[l.taxCodeId] || 0, amountsAre);
+    if (Number.isNaN(r.amount)) return { subtotal: NaN, gst: NaN, total: NaN };
+    gst += Math.round(r.gst * 100);
+    sub += Math.round((amountsAre === "inclusive" ? r.amount - r.gst : r.amount) * 100);
+  }
+  return { subtotal: sub / 100, gst: gst / 100, total: (sub + gst) / 100 };
+}
+
+/** Spreads a payment over open documents, oldest due first. Returns { id: amount }. */
+export function allocateOldestFirst(docs, amount) {
+  let left = Math.round(Number(amount) * 100) || 0;
+  const out = {};
+  for (const d of [...docs].sort((a, b) => String(a.dueDate).localeCompare(String(b.dueDate)))) {
+    if (left <= 0) break;
+    const take = Math.min(left, Math.round(Number(d.owing) * 100));
+    if (take > 0) { out[d.id] = take / 100; left -= take; }
+  }
+  return out;
+}
+
+/** No-ABN withholding preview (mirrors bill_approve): rate x total, if over the threshold ex GST. */
+export function noAbnWithholding(subtotal, total, rate, threshold = 75) {
+  if (!rate || !(Number(subtotal) > threshold)) return 0;
+  return Math.round(Number(total) * rate * 100 + 1e-7) / 100;
+}

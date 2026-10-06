@@ -203,6 +203,7 @@ declare
   v_tax uuid;
   v_sub numeric := 0; v_gst_total numeric := 0;
   v_kind text;
+  v_applies text;
 begin
   if p_amounts_are not in ('exclusive', 'inclusive', 'no_tax') then
     raise exception 'Choose how amounts are entered.' using errcode = '22023';
@@ -250,9 +251,13 @@ begin
     v_tax := nullif(l->>'taxCodeId', '')::uuid;
     v_rate := 0;
     if v_tax is not null and p_amounts_are <> 'no_tax' then
-      select rate into v_rate from public.tax_codes where id = v_tax and organization_id = p_org and active;
+      select rate, applies_to into v_rate, v_applies from public.tax_codes where id = v_tax and organization_id = p_org and active;
       if not found then
         raise exception 'Line %: unknown or inactive tax code.', v_no using errcode = '22023';
+      end if;
+      -- A purchase code on a sale (or the reverse) would land in the wrong BAS label.
+      if v_applies not in ('both', p_side) then
+        raise exception 'Line %: that tax code is for %, not %.', v_no, v_applies, p_side using errcode = '22023';
       end if;
     elsif p_amounts_are = 'no_tax' then
       v_tax := null;

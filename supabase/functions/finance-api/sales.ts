@@ -406,6 +406,39 @@ async function receiptsList(admin: Client, actor: Actor, body: any) {
     customer: p.customers?.name || "", customerId: p.customer_id, unallocated: p.status === "posted" ? un.get(p.id) ?? Number(p.amount) : 0 })) };
 }
 
+async function receiptGet(admin: Client, actor: Actor, body: any) {
+  const id = uuid(body.id, "Receipt");
+  const { data: p } = await admin.from("customer_payments").select("*,customers(name)").eq("id", id).eq("organization_id", actor.organization_id).maybeSingle();
+  if (!p) throw httpError(404, "Receipt not found.");
+  const [allocs, bank, journals, who] = await Promise.all([
+    admin.from("receivable_allocations").select("id,invoice_id,amount,allocation_date,voided_at").eq("payment_id", id).order("allocation_date"),
+    admin.from("accounts").select("code,name").eq("id", p.bank_account_id).maybeSingle(),
+    admin.from("journal_entries").select("id,number").in("id", [p.journal_id, p.void_journal_id].filter(Boolean).length ? [p.journal_id, p.void_journal_id].filter(Boolean) : ["00000000-0000-0000-0000-000000000000"]),
+    names(admin, [p.created_by])
+  ]);
+  const invIds = (allocs.data || []).map((a: any) => a.invoice_id);
+  const invs = invIds.length ? await admin.from("invoices").select("id,number").in("id", invIds) : { data: [] };
+  const num = new Map(((invs as any).data || []).map((x: any) => [x.id, x.number]));
+  const jn = new Map((journals.data || []).map((j: any) => [j.id, j.number]));
+  const unalloc = p.status === "posted" ? (await paymentUnallocated(admin, [id])).get(id) ?? 0 : 0;
+  let open: any[] = [];
+  if (unalloc > 0) {
+    const [list, bal] = await Promise.all([
+      admin.from("invoices").select("id,number,due_date,total").eq("customer_id", p.customer_id).eq("kind", "invoice").eq("status", "approved").order("due_date"),
+      balances(admin, actor)
+    ]);
+    open = (list.data || []).map((i: any) => ({ id: i.id, number: i.number, dueDate: i.due_date, owing: bal.get(i.id) ?? 0 })).filter((i: any) => i.owing > 0);
+  }
+  return {
+    receipt: { id: p.id, customerId: p.customer_id, customer: p.customers?.name, date: p.payment_date, amount: Number(p.amount), reference: p.reference, method: p.method,
+      status: p.status, bank: bank.data ? `${bank.data.code} ${bank.data.name}` : null, unallocated: unalloc, voidReason: p.void_reason, createdBy: who.get(p.created_by) || null,
+      journal: p.journal_id ? { id: p.journal_id, number: jn.get(p.journal_id) } : null, voidJournal: p.void_journal_id ? { id: p.void_journal_id, number: jn.get(p.void_journal_id) } : null },
+    allocations: (allocs.data || []).map((a: any) => ({ id: a.id, invoiceId: a.invoice_id, number: num.get(a.invoice_id), amount: Number(a.amount), date: a.allocation_date, voided: Boolean(a.voided_at) })),
+    openInvoices: open,
+    can: { void: p.status === "posted" && has(actor, "bank.manage"), allocate: unalloc > 0 && has(actor, "bank.manage") }
+  };
+}
+
 async function receiptRecord(admin: Client, actor: Actor, body: any) {
   const allocations = (Array.isArray(body.allocations) ? body.allocations : []).filter((a: any) => Number(a?.amount) > 0)
     .map((a: any) => ({ invoiceId: uuid(a.invoiceId, "Invoice"), amount: amount(a.amount, "Each amount applied") }));
@@ -489,6 +522,7 @@ export const salesActions: Record<string, { perm: string[] | null; run: Handler 
   invoice_pdf: { perm: SALES_READ, run: invoicePdf },
   credit_apply: { perm: ["sales.manage"], run: creditApply },
   receipts_list: { perm: SALES_READ, run: receiptsList },
+  receipt_get: { perm: SALES_READ, run: receiptGet },
   receipt_record: { perm: ["bank.manage"], run: receiptRecord },
   receipt_allocate: { perm: ["bank.manage"], run: receiptAllocate },
   receipt_void: { perm: ["bank.manage"], run: receiptVoid },

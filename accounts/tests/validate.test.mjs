@@ -44,3 +44,19 @@ test("journal GST estimate matches the ledger's rounding", () => {
   assert.deepEqual(journalTotals([{ debit: 1100 }, { credit: 1000, taxCodeId: "g" }], rates, "exclusive"), { debit: 1100, credit: 1100 });
   assert.deepEqual(journalTotals([{ debit: 110, taxCodeId: "g" }, { credit: 110 }], rates, "inclusive"), { debit: 110, credit: 110 });
 });
+
+test("document lines match the database rounding", async () => {
+  const { docLine, docTotals, allocateOldestFirst, noAbnWithholding } = await import("../lib/validate.js");
+  assert.deepEqual(docLine({ quantity: 3, unitPrice: 333.33, discountPercent: 0 }, 0.1, "exclusive"), { amount: 999.99, gst: 100 });
+  assert.deepEqual(docLine({ quantity: 2, unitPrice: 100, discountPercent: 10 }, 0.1, "exclusive"), { amount: 180, gst: 18 });
+  assert.deepEqual(docLine({ quantity: 1, unitPrice: 110, discountPercent: 0 }, 0.1, "inclusive"), { amount: 110, gst: 10 });
+  assert.deepEqual(docLine({ quantity: 1, unitPrice: 0.05, discountPercent: 50 }, 0, "exclusive"), { amount: 0.03, gst: 0 });
+  const rates = { g: 0.1, f: 0 };
+  assert.deepEqual(docTotals([{ quantity: 3, unitPrice: 333.33, taxCodeId: "g" }, { quantity: 2, unitPrice: 100, discountPercent: 10, taxCodeId: "g" }], rates, "exclusive"),
+    { subtotal: 1179.99, gst: 118, total: 1297.99 });
+  assert.deepEqual(docTotals([{ quantity: 1, unitPrice: 550, taxCodeId: "g" }], rates, "inclusive"), { subtotal: 500, gst: 50, total: 550 });
+  assert.ok(Number.isNaN(docTotals([{ quantity: "x", unitPrice: 1 }], rates, "exclusive").total));
+  assert.deepEqual(allocateOldestFirst([{ id: "b", dueDate: "2026-09-01", owing: 100 }, { id: "a", dueDate: "2026-08-01", owing: 60 }], 120), { a: 60, b: 60 });
+  assert.equal(noAbnWithholding(1000, 1000, 0.47), 470);
+  assert.equal(noAbnWithholding(75, 75, 0.47), 0);
+});

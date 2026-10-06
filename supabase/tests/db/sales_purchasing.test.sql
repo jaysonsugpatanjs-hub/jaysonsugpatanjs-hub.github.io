@@ -83,6 +83,8 @@ begin
     jsonb_build_object('customer_id', (select v from sp where k = 'cust'), 'invoice_date', '2026-08-10'), jsonb_build_array(pg_temp.ln('x', 1, 1, '6300'))), 'income account');
   perform pg_temp.expect_error(format('select public.invoice_save(%L, null, %L, %L)', pg_temp.p('finance'),
     jsonb_build_object('customer_id', (select v from sp where k = 'cust'), 'invoice_date', '2026-08-10'), jsonb_build_array(pg_temp.ln('x', 0, 1, '4100'))), 'quantity must be more than 0');
+  perform pg_temp.expect_error(format('select public.invoice_save(%L, null, %L, %L)', pg_temp.p('finance'),
+    jsonb_build_object('customer_id', (select v from sp where k = 'cust'), 'invoice_date', '2026-08-10'), jsonb_build_array(pg_temp.ln('x', 1, 1, '4100', 'GSTE'))), 'for purchases, not sales');
 
   v_i := public.invoice_save(pg_temp.p('finance'), null,
     jsonb_build_object('customer_id', (select v from sp where k = 'cust'), 'invoice_date', '2026-08-10', 'quote_id', v_q, 'reference', 'PO 7781'),
@@ -270,14 +272,14 @@ begin
 
   -- No-ABN subcontractor: 1,000 GST-free labour. 47% withheld = 470.00; 530.00 payable.
   v_b2 := public.bill_save(pg_temp.p('finance'), null, jsonb_build_object('supplier_id', (select v from sp where k = 'noabn'), 'bill_date', '2026-09-08', 'supplier_reference', 'INV 12'),
-    jsonb_build_array(pg_temp.ln('Rigging, 2 days', 2, 500, '5300', 'FRE')));
+    jsonb_build_array(pg_temp.ln('Rigging, 2 days', 2, 500, '5300', 'FREE')));
   perform public.bill_approve(pg_temp.p('finance'), v_b2);
   perform pg_temp.eq((select withholding from public.bills where id = v_b2), 470.00, 'no-ABN withholding 47%');
   perform pg_temp.eq(public.bill_outstanding(v_b2), 530.00, 'net payable to supplier');
   perform pg_temp.eq(pg_temp.bal('2100') - (select v from sn where k = 'payg0'), -470.00, 'withholding owed to the ATO');
   -- Under the $75 threshold: nothing withheld.
   v_small := public.bill_save(pg_temp.p('finance'), null, jsonb_build_object('supplier_id', (select v from sp where k = 'noabn'), 'bill_date', '2026-09-08', 'supplier_reference', 'INV 13'),
-    jsonb_build_array(pg_temp.ln('Shackle', 1, 60, '5300', 'FRE')));
+    jsonb_build_array(pg_temp.ln('Shackle', 1, 60, '5300', 'FREE')));
   perform public.bill_approve(pg_temp.p('finance'), v_small);
   perform pg_temp.eq((select withholding from public.bills where id = v_small), 0.00, 'no withholding at or under $75');
 

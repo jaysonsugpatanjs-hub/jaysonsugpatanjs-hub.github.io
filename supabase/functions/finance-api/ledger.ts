@@ -255,6 +255,8 @@ async function runReport(admin: Client, actor: Actor, body: any) {
     case "profit_loss": return await rpc(admin, "report_profit_loss", { p_actor: actor.id, p_from: date(body.from, "The start date"), p_to: date(body.to, "The end date") });
     case "account_transactions": return await rpc(admin, "report_account_transactions", {
       p_actor: actor.id, p_account: uuid(body.accountId, "Account"), p_from: date(body.from, "The start date"), p_to: date(body.to, "The end date") });
+    case "aged_receivables": return await rpc(admin, "report_aged_receivables", { p_actor: actor.id, p_as_at: date(body.asAt, "The report date") });
+    case "aged_payables": return await rpc(admin, "report_aged_payables", { p_actor: actor.id, p_as_at: date(body.asAt, "The report date") });
     default: throw httpError(400, "Unknown report.");
   }
 }

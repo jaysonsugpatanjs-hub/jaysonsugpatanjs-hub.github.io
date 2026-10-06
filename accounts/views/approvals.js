@@ -12,6 +12,13 @@ function details(a) {
       <dt>Used for</dt><dd>${safe(v.purpose)}${v.showOnInvoices ? " · shown on invoices" : ""}</dd></dl>
       <p class="note small">Before approving, confirm these details with the bank or the requester by phone, using a number you already know. Never approve from an email request alone.</p>`;
   }
+  if (a.kind === "supplier_bank") {
+    const was = a.previousValue || {};
+    return `<dl class="facts"><dt>Account name</dt><dd>${safe(v.accountName || "—")}</dd>
+      <dt>BSB</dt><dd class="mono">${safe(formatBsb(v.bsb))}</dd><dt>Account number</dt><dd class="mono">${safe(v.accountNumber)}</dd>
+      ${was.bsb ? `<dt>Replaces</dt><dd class="mono">${safe(formatBsb(was.bsb))} · ${safe(was.accountNumber)}</dd>` : "<dt>Replaces</dt><dd>No bank details on file</dd>"}</dl>
+      <p class="note small">Changed supplier bank details are the most common way businesses are defrauded. Phone the supplier on a number you already have (not one from the request or an email) and confirm the BSB and account number before approving.</p>`;
+  }
   return "";
 }
 

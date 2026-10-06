@@ -193,7 +193,7 @@ Deno.test("suppliers, purchase orders, bills, withholding and payments", async (
 
   // No-ABN subcontractor: 47% withheld.
   const nb = await ok(FIN, { action: "bill_save", supplierId: sub, date: "2026-09-14", supplierReference: "Week 37",
-    lines: [{ description: "Rigging labour", quantity: 1, unitPrice: 800, accountId: acc(purch.accounts, "5300"), taxCodeId: tax(purch.taxCodes, "FRE") }], then: "approve" });
+    lines: [{ description: "Rigging labour", quantity: 1, unitPrice: 800, accountId: acc(purch.accounts, "5300"), taxCodeId: tax(purch.taxCodes, "FREE") }], then: "approve" });
   const nbg = await ok(FIN, { action: "bill_get", id: nb.id });
   assert(nbg.bill.withholding === 376 && nbg.bill.owing === 424, `withholding ${JSON.stringify(nbg.bill)}`);
 

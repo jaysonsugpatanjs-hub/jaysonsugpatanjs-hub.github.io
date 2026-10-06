@@ -344,7 +344,7 @@ async function billFromPo(admin: Client, actor: Actor, body: any) {
       taxCodeId: l.tax_code_id, kind: l.line_kind, poLineId: l.id };
   }).filter((l: any) => l.quantity > 0);
   if (!lines.length) throw httpError(409, "Everything on this purchase order has already been billed.");
-  return { draft: { supplierId: p.supplier_id, purchaseOrderId: p.id, amountsAre: p.amounts_are, notes: `PO ${p.number}`, lines } };
+  return { draft: { supplierId: p.supplier_id, purchaseOrderId: p.id, amountsAre: p.amounts_are, notes: `Purchase order ${p.number}`, lines } };
 }
 
 async function billSubmit(admin: Client, actor: Actor, body: any) {
@@ -375,6 +375,33 @@ async function supplierPaymentsList(admin: Client, actor: Actor, body: any) {
   if (error) throw httpError(500, "Payments could not be loaded.");
   return { payments: data.map((p: any) => ({ id: p.id, date: p.payment_date, amount: Number(p.amount), reference: p.reference, method: p.method, status: p.status,
     supplier: p.suppliers?.name || "", supplierId: p.supplier_id })) };
+}
+
+async function supplierPaymentGet(admin: Client, actor: Actor, body: any) {
+  const id = uuid(body.id, "Payment");
+  const { data: p } = await admin.from("supplier_payments").select("*,suppliers(name,bank_account_name,bank_bsb,bank_account_number)").eq("id", id).eq("organization_id", actor.organization_id).maybeSingle();
+  if (!p) throw httpError(404, "Payment not found.");
+  const [allocs, bank, journals, who] = await Promise.all([
+    admin.from("payable_allocations").select("id,bill_id,amount,allocation_date,voided_at").eq("payment_id", id).order("allocation_date"),
+    admin.from("accounts").select("code,name").eq("id", p.bank_account_id).maybeSingle(),
+    admin.from("journal_entries").select("id,number").in("id", [p.journal_id, p.void_journal_id].filter(Boolean).length ? [p.journal_id, p.void_journal_id].filter(Boolean) : ["00000000-0000-0000-0000-000000000000"]),
+    names(admin, [p.created_by])
+  ]);
+  const ids = (allocs.data || []).map((a: any) => a.bill_id);
+  const bills = ids.length ? await admin.from("bills").select("id,number,supplier_reference").in("id", ids) : { data: [] };
+  const bm = new Map(((bills as any).data || []).map((b: any) => [b.id, b]));
+  const jn = new Map((journals.data || []).map((j: any) => [j.id, j.number]));
+  const s = p.suppliers || {};
+  const full = has(actor, "bank.manage") || has(actor, "purchases.bank");
+  return {
+    payment: { id: p.id, supplierId: p.supplier_id, supplier: s.name, date: p.payment_date, amount: Number(p.amount), reference: p.reference, method: p.method, status: p.status,
+      bank: bank.data ? `${bank.data.code} ${bank.data.name}` : null, voidReason: p.void_reason, createdBy: who.get(p.created_by) || null,
+      payTo: s.bank_bsb ? { accountName: s.bank_account_name, bsb: fmtBsb(s.bank_bsb), accountNumber: full ? s.bank_account_number : mask(s.bank_account_number) } : null,
+      journal: p.journal_id ? { id: p.journal_id, number: jn.get(p.journal_id) } : null, voidJournal: p.void_journal_id ? { id: p.void_journal_id, number: jn.get(p.void_journal_id) } : null },
+    allocations: (allocs.data || []).map((a: any) => ({ id: a.id, billId: a.bill_id, number: (bm.get(a.bill_id) as any)?.number, supplierReference: (bm.get(a.bill_id) as any)?.supplier_reference,
+      amount: Number(a.amount), date: a.allocation_date, voided: Boolean(a.voided_at) })),
+    can: { void: p.status === "posted" && has(actor, "bank.manage") }
+  };
 }
 
 async function supplierPaymentRecord(admin: Client, actor: Actor, body: any) {
@@ -434,6 +461,7 @@ export const purchasesActions: Record<string, { perm: string[] | null; run: Hand
   bill_void: { perm: ["purchases.manage"], run: billVoid },
   supplier_credit_apply: { perm: ["purchases.manage"], run: supplierCreditApply },
   supplier_payments_list: { perm: PURCH_READ, run: supplierPaymentsList },
+  supplier_payment_get: { perm: PURCH_READ, run: supplierPaymentGet },
   supplier_payment_record: { perm: ["bank.manage"], run: supplierPaymentRecord },
   supplier_payment_void: { perm: ["bank.manage"], run: supplierPaymentVoid },
   aged_payables: { perm: ["reports.view", "purchases.manage"], run: agedPayables }

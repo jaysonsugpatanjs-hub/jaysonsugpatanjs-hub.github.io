@@ -211,13 +211,17 @@ async function approvalsList(admin: Client, actor: Actor) {
     .eq("organization_id", actor.organization_id).order("requested_at", { ascending: false }).limit(200);
   if (error) throw httpError(500, "Approvals could not be loaded.");
   const who = await names(admin, data.flatMap((a: any) => [a.requested_by, a.decided_by]));
-  const shape = (a: any) => ({
-    id: a.id, kind: a.kind, title: a.title, status: a.status, requestedAt: a.requested_at, requestedBy: who.get(a.requested_by) || "Unknown",
-    decidedAt: a.decided_at, decidedBy: a.decided_by ? who.get(a.decided_by) || "Unknown" : null, comment: a.comment,
-    newValue: a.kind === "company_bank_account" && a.new_value ? { ...a.new_value, accountNumber: a.new_value.accountNumber } : a.new_value,
-    mine: a.requested_by === actor.id
-  });
   const canDecide = (a: any) => a.status === "pending" && a.requested_by !== actor.id && has(actor, a.required_permission);
+  // Full account numbers only for the approver (to check them) and the requester.
+  const shape = (a: any) => {
+    const full = canDecide(a) || a.requested_by === actor.id;
+    const v = a.new_value && !full && a.new_value.accountNumber ? { ...a.new_value, accountNumber: maskAccount(String(a.new_value.accountNumber)) } : a.new_value;
+    return {
+      id: a.id, kind: a.kind, title: a.title, status: a.status, requestedAt: a.requested_at, requestedBy: who.get(a.requested_by) || "Unknown",
+      decidedAt: a.decided_at, decidedBy: a.decided_by ? who.get(a.decided_by) || "Unknown" : null, comment: a.comment,
+      newValue: v, previousValue: full ? a.previous_value : null, mine: a.requested_by === actor.id
+    };
+  };
   return {
     toDecide: data.filter(canDecide).map(shape),
     mine: data.filter((a: any) => a.requested_by === actor.id).slice(0, 50).map(shape),

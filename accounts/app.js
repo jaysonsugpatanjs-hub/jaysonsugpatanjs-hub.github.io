@@ -15,17 +15,31 @@ import { renderTaxCodes } from "./views/taxcodes.js";
 import { renderJournals } from "./views/journals.js";
 import { renderPeriods } from "./views/periods.js";
 import { renderReports } from "./views/reports.js";
+import { renderCustomers } from "./views/customers.js";
+import { renderQuotes } from "./views/quotes.js";
+import { renderInvoices } from "./views/invoices.js";
+import { renderReceipts } from "./views/receipts.js";
+import { renderSuppliers } from "./views/suppliers.js";
+import { renderPurchaseOrders } from "./views/purchase-orders.js";
+import { renderBills } from "./views/bills.js";
+import { renderSupplierPayments } from "./views/supplier-payments.js";
 
 const $ = sel => document.querySelector(sel);
 const state = { me: null };
 const can = key => state.me?.permissions.includes(key);
 
 const LEDGER = ["reports.view", "ledger.manage", "ledger.journal", "ledger.post", "audit.view"];
+const SALES = ["sales.manage", "bank.manage", "reports.view"];
+const PURCHASES = ["purchases.manage", "purchases.raise", "bank.manage", "reports.view"];
 /* Menu from the brief (section 80). Items not built yet show the phase that delivers them. */
 const MENU = [
   { group: null, items: [{ path: "dashboard", label: "Dashboard" }] },
-  { group: "Sales", items: [["customers", "Customers", 3], ["quotes", "Quotes", 3], ["invoices", "Invoices", 3], ["receipts", "Payments", 3]] },
-  { group: "Purchases", items: [["suppliers", "Suppliers", 3], ["purchase-orders", "Purchase orders", 3], ["bills", "Bills", 3], ["supplier-payments", "Payments", 3]] },
+  { group: "Sales", items: [
+    { path: "customers", label: "Customers", any: SALES }, { path: "quotes", label: "Quotes", any: SALES },
+    { path: "invoices", label: "Invoices", any: SALES }, { path: "receipts", label: "Payments received", any: SALES }] },
+  { group: "Purchases", items: [
+    { path: "suppliers", label: "Suppliers", any: PURCHASES }, { path: "purchase-orders", label: "Purchase orders", any: PURCHASES },
+    { path: "bills", label: "Bills", any: ["purchases.manage", "bank.manage", "reports.view"] }, { path: "supplier-payments", label: "Supplier payments", any: ["purchases.manage", "bank.manage", "reports.view"] }] },
   { group: "Projects", items: [["projects", "Projects", 4], ["job-costing", "Job costing", 4], ["timesheets", "Timesheets", 4]] },
   { group: "Payroll", items: [["employees", "Employees", 5], ["pay-runs", "Pay runs", 5], ["leave", "Leave", 5], ["super", "Super", 5], ["stp", "STP", 8], ["payroll-reports", "Payroll reports", 5]] },
   { group: "Accounting", items: [
@@ -47,7 +61,9 @@ const MENU = [
 const VIEWS = {
   dashboard: renderDashboard, company: renderCompany, users: renderUsers, approvals: renderApprovals,
   integrations: renderIntegrations, audit: renderAudit, "chart-of-accounts": renderChart, "tax-codes": renderTaxCodes,
-  journals: renderJournals, periods: renderPeriods, reports: renderReports
+  journals: renderJournals, periods: renderPeriods, reports: renderReports,
+  customers: renderCustomers, quotes: renderQuotes, invoices: renderInvoices, receipts: renderReceipts,
+  suppliers: renderSuppliers, "purchase-orders": renderPurchaseOrders, bills: renderBills, "supplier-payments": renderSupplierPayments
 };
 const allowed = i => (!i.perm || can(i.perm)) && (!i.any || i.any.some(can));
 
@@ -174,7 +190,8 @@ async function start() {
 }
 
 async function init() {
-  completeAuthRedirect();
+  // Only sign-in redirects carry tokens in the hash; leave app links such as #/invoices/<id> alone.
+  if (/(^|[#&])(access_token|error)=/.test(location.hash)) completeAuthRedirect();
   if (!isConfigured()) return gate("Not connected yet", '<p class="muted">The secure service has not been configured.</p>');
   if (!await getSession()) return gate("Sign in to Panalo Accounts", signInLink());
   try {
