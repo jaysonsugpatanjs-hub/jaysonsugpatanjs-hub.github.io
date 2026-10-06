@@ -120,7 +120,7 @@ end $$;
 -- Onboarding ------------------------------------------------------------------
 do $$
 declare
-  v_req uuid; v_item uuid; v_opt uuid; v_emp uuid; v_result jsonb;
+  v_req uuid; v_item uuid; v_opt uuid; v_form uuid; v_emp uuid; v_result jsonb;
 begin
   v_emp := (select id from public.employees where employee_number = 'A-NEW');
   perform pg_temp.expect_error(format('select public.onboarding_create(%L, %L, %L, null, %L)', pg_temp.a('worker'), v_emp, '{tfn_declaration}', ''), 'HR onboarding');
@@ -128,9 +128,21 @@ begin
   perform public.hr_document_type_save(pg_temp.a('hr'), 'tickets', 'Licences and tickets', 'Combine into one PDF.', false, true);
   perform pg_temp.expect_error(format('select public.onboarding_create(%L, %L, %L, null, %L)', pg_temp.a('hr'), v_emp, '{nope}', ''), 'Unknown document');
   perform pg_temp.expect_error(format('select public.onboarding_create(%L, %L, %L, current_date - 1, %L)', pg_temp.a('hr'), v_emp, '{tfn_declaration}', ''), 'past');
-  v_req := public.onboarding_create(pg_temp.a('hr'), v_emp, '{tfn_declaration,tickets}', current_date + 7, 'Welcome aboard');
+  v_req := public.onboarding_create(pg_temp.a('hr'), v_emp, '{tfn_declaration,contract,tickets}', current_date + 7, 'Welcome aboard');
   perform pg_temp.expect_error(format('select public.onboarding_create(%L, %L, %L, null, %L)', pg_temp.a('hr'), v_emp, '{photo_id}', ''), 'onboarding_one_open_per_person');
-  select id into v_item from public.onboarding_items where request_id = v_req and doc_type = 'tfn_declaration';
+  select id into v_item from public.onboarding_items where request_id = v_req and doc_type = 'contract';
+  select id into v_form from public.onboarding_items where request_id = v_req and doc_type = 'tfn_declaration';
+
+  -- Forms take typed answers, never files; uploads never take answers.
+  perform pg_temp.expect_error(format('select public.onboarding_record_upload(%L, %L, %L, %L)', pg_temp.a('applicant'), v_form, v_req || '/' || v_form || '/t.pdf', 't.pdf'), 'Fill in this item');
+  perform pg_temp.expect_error(format('select public.onboarding_record_answers(%L, %L, %L)', pg_temp.a('applicant'), v_item, '{"a":"b"}'), 'needs a file');
+  perform pg_temp.expect_error(format('select public.onboarding_record_answers(%L, %L, %L)', pg_temp.a('worker'), v_form, '{"a":"b"}'), 'not found');
+  perform pg_temp.expect_error(format('select public.onboarding_record_answers(%L, %L, %L)', pg_temp.a('applicant'), v_form, '[1]'), 'missing');
+  perform public.onboarding_record_answers(pg_temp.a('applicant'), v_form, '{"tfn_option":"I''ll provide my TFN","tfn":"123456782"}');
+  perform pg_temp.eq((select status from public.onboarding_items where id = v_form), 'uploaded', 'submitted form waits for HR');
+  perform pg_temp.eq((select count(*)::int from public.training_audit_events where event_type = 'onboarding_form_submitted' and details::text like '%123456782%'), 0, 'answers stay out of the audit log');
+  perform public.onboarding_review(pg_temp.a('hr'), v_form, true, null);
+  perform pg_temp.expect_error(format('select public.onboarding_record_answers(%L, %L, %L)', pg_temp.a('applicant'), v_form, '{"a":"b"}'), 'already been accepted');
   select id into v_opt from public.onboarding_items where request_id = v_req and doc_type = 'tickets';
   perform pg_temp.eq((select required from public.onboarding_items where id = v_opt), false, 'optional item copied from type');
 
@@ -138,13 +150,13 @@ begin
   perform pg_temp.expect_error(format('select public.onboarding_record_upload(%L, %L, %L, %L)', pg_temp.a('worker'), v_item, v_req || '/' || v_item || '/a.pdf', 'a.pdf'), 'not found');
   perform pg_temp.expect_error(format('select public.onboarding_record_upload(%L, %L, %L, %L)', pg_temp.a('applicant'), v_item, 'elsewhere/a.pdf', 'a.pdf'), 'Invalid upload path');
   perform pg_temp.expect_error(format('select public.onboarding_review(%L, %L, true, null)', pg_temp.a('hr'), v_item), 'Only an uploaded');
-  perform public.onboarding_record_upload(pg_temp.a('applicant'), v_item, v_req || '/' || v_item || '/tfn-1.pdf', 'TFN declaration.pdf');
+  perform public.onboarding_record_upload(pg_temp.a('applicant'), v_item, v_req || '/' || v_item || '/contract-1.pdf', 'Contract.pdf');
 
   -- HR review: rejection needs a reason; re-upload; acceptance completes it.
   perform pg_temp.expect_error(format('select public.onboarding_review(%L, %L, false, %L)', pg_temp.a('hr'), v_item, ''), 'reason');
   perform public.onboarding_review(pg_temp.a('hr'), v_item, false, 'Page 2 is missing the signature');
   perform pg_temp.eq((select status from public.onboarding_items where id = v_item), 'rejected', 'rejected');
-  perform public.onboarding_record_upload(pg_temp.a('applicant'), v_item, v_req || '/' || v_item || '/tfn-2.pdf', 'TFN signed.pdf');
+  perform public.onboarding_record_upload(pg_temp.a('applicant'), v_item, v_req || '/' || v_item || '/contract-2.pdf', 'Contract signed.pdf');
   perform pg_temp.eq((select reject_reason from public.onboarding_items where id = v_item), null::text, 're-upload clears the reason');
   v_result := public.onboarding_review(pg_temp.a('hr'), v_item, true, null);
   perform pg_temp.eq(v_result ->> 'requestComplete', 'true', 'optional items do not block completion');
@@ -152,7 +164,7 @@ begin
   perform pg_temp.expect_error(format('select public.onboarding_record_upload(%L, %L, %L, %L)', pg_temp.a('applicant'), v_opt, v_req || '/' || v_opt || '/t.pdf', 't.pdf'), 'closed');
 
   -- HR cannot review their own documents; cancelled requests are closed.
-  v_req := public.onboarding_create(pg_temp.a('boss'), (select id from public.employees where employee_number = 'X-HR'), '{photo_id}', null, '');
+  v_req := public.onboarding_create(pg_temp.a('boss'), (select id from public.employees where employee_number = 'X-HR'), '{white_card}', null, '');
   select id into v_item from public.onboarding_items where request_id = v_req;
   perform public.onboarding_record_upload(pg_temp.a('hr'), v_item, v_req || '/' || v_item || '/id.jpg', 'id.jpg');
   perform pg_temp.expect_error(format('select public.onboarding_review(%L, %L, true, null)', pg_temp.a('hr'), v_item), 'your own');

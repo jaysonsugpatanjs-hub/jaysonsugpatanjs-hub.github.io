@@ -12,7 +12,15 @@ function fmt(iso) {
   if (!iso) return "—";
   return new Intl.DateTimeFormat("en-AU", { dateStyle: "medium", timeZone: "Australia/Sydney" }).format(new Date(iso));
 }
-const ITEM = { pending: ["Not yet uploaded", ""], uploaded: ["To review", "pending"], accepted: ["Accepted", "good"], rejected: ["Sent back", "bad"] };
+const ITEM = { pending: ["Not sent yet", ""], uploaded: ["To review", "pending"], accepted: ["Accepted", "good"], rejected: ["Sent back", "bad"] };
+const mask = v => (v.length > 3 ? "•".repeat(Math.min(v.length - 3, 8)) + v.slice(-3) : "•••");
+
+function answersHtml(item) {
+  if (!item.answers?.length) return "";
+  return `<dl class="answer-list">${item.answers.map(a => `<dt>${safe(a.label)}</dt><dd>${a.sensitive
+    ? `<span class="masked" data-secret="${safe(a.value)}">${safe(mask(a.value))}</span> <button type="button" class="text-button" data-reveal>Show</button>`
+    : safe(a.value)}</dd>`).join("")}</dl>`;
+}
 
 /** Shows a temporary password exactly once, with copy and a reminder. */
 export function showTemporaryPassword({ name, email, password }) {
@@ -58,14 +66,14 @@ function renderForm(root) {
   const person = state.people.find(p => p.id === selected);
   const open = new Set(state.requests.filter(r => r.status === "open").map(r => r.employeeId));
   form.innerHTML = `
-    <p class="eyebrow">SEND ONBOARDING LINK</p><h2>Request documents</h2>
+    <p class="eyebrow">SEND ONBOARDING LINK</p><h2>Request details</h2>
     <div class="field"><label for="onb-person">Person</label>
       <select id="onb-person" name="employeeId" required><option value="">Choose from the register</option>
       ${state.people.map(p => `<option value="${safe(p.id)}" ${p.id === selected ? "selected" : ""} ${open.has(p.id) ? "disabled" : ""}>${safe(p.fullName)} · ${safe(p.employmentType)}${p.email ? "" : " · no email"}${open.has(p.id) ? " · request open" : ""}</option>`).join("")}
       </select><small>Add new applicants under People first, with their email address.</small></div>
     ${person ? `<fieldset class="doc-picks"><legend>Documents for ${safe(person.employmentType)}s</legend>
       ${typesFor(person).map(t => `<label class="check-field"><input type="checkbox" name="types" value="${safe(t.key)}" ${t.required ? "checked" : ""}>
-        <span><strong>${safe(t.name)}</strong>${t.required ? "" : " <span class='chip'>Optional</span>"}${t.sensitive ? " <span class='chip info'>Sensitive</span>" : ""}<small>${safe(t.guidance)}</small></span></label>`).join("")}
+        <span><strong>${safe(t.name)}</strong> <span class='chip'>${t.kind === "form" ? "Fill in" : "Photo/PDF"}</span>${t.required ? "" : " <span class='chip'>Optional</span>"}${t.sensitive ? " <span class='chip info'>Sensitive</span>" : ""}<small>${safe(t.guidance)}</small></span></label>`).join("")}
       </fieldset>
       <div class="field-row">
         <div class="field"><label for="onb-due">Due by</label><input id="onb-due" name="dueOn" type="date"></div>
@@ -75,7 +83,7 @@ function renderForm(root) {
         </select></div>
       </div>
       <small class="muted">${person.profileId ? "They already have a sign-in; they'll see the checklist next time they sign in." : "They don't have a sign-in yet; one is created now."}</small>
-      <div class="field"><label for="onb-msg">Message to them (optional)</label><textarea id="onb-msg" name="message" rows="2" maxlength="1000" placeholder="Welcome to Panalo. Please upload these before your first day."></textarea></div>
+      <div class="field"><label for="onb-msg">Message to them (optional)</label><textarea id="onb-msg" name="message" rows="2" maxlength="1000" placeholder="Welcome to Panalo. Please complete these before your first day."></textarea></div>
       <button class="primary" type="submit">Send request</button>` : ""}
     <p class="form-message" data-onb-form-msg role="status" aria-live="polite"></p>`;
 }
@@ -109,14 +117,18 @@ async function openRequest(root, id) {
         const [label, tone] = ITEM[i.status] || [i.status, ""];
         return `<div class="list-row review-row"><div>
             <strong>${safe(i.name)}</strong>${i.required ? "" : " <span class='chip'>Optional</span>"}${i.sensitive ? " <span class='chip info'>Sensitive</span>" : ""}
-            <small>${i.fileName ? `${safe(i.fileName)} · uploaded ${fmt(i.uploadedAt)}` : "Nothing uploaded yet"}${i.reviewer ? ` · reviewed by ${safe(i.reviewer)}` : ""}</small>
-            ${i.status === "rejected" ? `<small class="reject-note">Sent back: ${safe(i.rejectReason)}</small>` : ""}</div>
+            <small>${i.kind === "form"
+              ? (i.submittedAt ? `Filled in ${fmt(i.submittedAt)}` : "Not filled in yet")
+              : (i.fileName ? `${safe(i.fileName)} · uploaded ${fmt(i.uploadedAt)}` : "Nothing uploaded yet")}${i.kind === "form" && i.fileName ? ` · earlier file: ${safe(i.fileName)}` : ""}${i.reviewer ? ` · reviewed by ${safe(i.reviewer)}` : ""}</small>
+            ${i.status === "rejected" ? `<small class="reject-note">Sent back: ${safe(i.rejectReason)}</small>` : ""}
+            ${answersHtml(i)}</div>
           <div class="row-actions"><span class="chip ${tone}">${label}</span>
             ${i.fileName ? `<button type="button" class="secondary-action small" data-view="${safe(i.id)}">View</button>` : ""}
             ${i.status === "uploaded" && request.status === "open" ? `<button type="button" class="primary small" data-accept="${safe(i.id)}">Accept</button><button type="button" class="revoke" data-reject="${safe(i.id)}">Send back</button>` : ""}
           </div></div>`;
       }).join("")}</div>
-      <p class="muted small">Viewing a document is recorded in the audit log. Links last two minutes.</p>
+      ${request.status === "open" && items.filter(i => i.status === "uploaded").length > 1 ? '<div class="form-actions"><button type="button" class="primary" data-accept-all>Accept everything waiting for review</button></div>' : ""}
+      <p class="muted small">Opening a request with answers, and viewing each file, is recorded in the audit log. File links last two minutes.</p>
       <p class="form-message" data-detail-msg role="status" aria-live="polite"></p>`;
   } catch (error) {
     panel.innerHTML = `<p class="form-message">${safe(friendlyError(error))}</p>`;
@@ -166,6 +178,19 @@ export function bindOnboarding(root) {
         const r = await call("onboarding_review", { itemId: b.dataset.accept, accept: true });
         await loadOnboarding(root, { canIssuePasswords: state.canIssuePasswords });
         if (r.requestComplete && detailMsg()) detailMsg().textContent = "All required documents accepted. Onboarding is complete.";
+      } else if ("reveal" in b.dataset) {
+        const span = b.previousElementSibling;
+        const shown = b.textContent === "Hide";
+        span.textContent = shown ? mask(span.dataset.secret) : span.dataset.secret;
+        b.textContent = shown ? "Show" : "Hide";
+      } else if ("acceptAll" in b.dataset) {
+        const ids = [...root.querySelectorAll("[data-accept]")].map(x => x.dataset.accept);
+        if (!window.confirm(`Accept ${ids.length} items? Check the answers first.`)) return;
+        b.disabled = true;
+        let complete = false;
+        for (const id of ids) complete = (await call("onboarding_review", { itemId: id, accept: true })).requestComplete || complete;
+        await loadOnboarding(root, { canIssuePasswords: state.canIssuePasswords });
+        if (complete && detailMsg()) detailMsg().textContent = "All required items accepted. Onboarding is complete.";
       } else if (b.dataset.reject) {
         const reason = window.prompt("What should they fix? They'll see this message.", "");
         if (reason === null) return;

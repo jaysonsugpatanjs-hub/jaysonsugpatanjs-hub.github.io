@@ -3,6 +3,7 @@ import { createCertificatePdf } from "../_shared/certificate.ts";
 import { allLearningSlidesComplete, gradeAssessment, isSlideUnlocked } from "../_shared/grading.ts";
 import { corsHeaders, errorJson, httpError, json, rpc } from "../_shared/http.ts";
 import { passwordProblem } from "../_shared/accounts.ts";
+import { FORMS, FormError, validateAnswers } from "../_shared/onboarding-forms.ts";
 
 type Client = any;
 
@@ -420,21 +421,21 @@ async function myOnboardingItem(admin: Client, userId: string, itemId: unknown) 
   const id = String(itemId || "");
   if (!/^[0-9a-f-]{36}$/i.test(id)) throw httpError(400, "That document is not valid.");
   const { data, error } = await admin.from("onboarding_items")
-    .select("id,request_id,status,doc_type,onboarding_requests(profile_id,status)").eq("id", id).maybeSingle();
+    .select("id,request_id,status,doc_type,onboarding_requests(profile_id,status),hr_document_types(kind)").eq("id", id).maybeSingle();
   if (error) throw httpError(500, "The document request could not be loaded.");
   if (!data || data.onboarding_requests?.profile_id !== userId) throw httpError(404, "Document request not found.");
   if (data.onboarding_requests.status !== "open") throw httpError(409, "This onboarding request is closed.");
   if (data.status === "accepted") throw httpError(409, "This document has already been accepted.");
-  return data;
+  return { ...data, kind: data.hr_document_types?.kind || "upload" };
 }
 
 async function handleOnboardingView(admin: Client, userId: string) {
   const { data, error } = await admin.from("onboarding_requests")
-    .select("id,status,due_on,message,created_at,onboarding_items(id,doc_type,required,status,file_name,uploaded_at,reject_reason)")
+    .select("id,status,due_on,message,created_at,onboarding_items(id,doc_type,required,status,file_name,uploaded_at,reject_reason,answers,submitted_at)")
     .eq("profile_id", userId).in("status", ["open", "complete"]).order("created_at", { ascending: false }).limit(1).maybeSingle();
   if (error) throw httpError(500, "Your onboarding documents could not be loaded.");
   if (!data) return { request: null };
-  const types = await admin.from("hr_document_types").select("key,name,guidance,sensitive,sort");
+  const types = await admin.from("hr_document_types").select("key,name,guidance,sensitive,sort,kind");
   if (types.error) throw httpError(500, "Document types could not be loaded.");
   const typeMap = new Map(types.data.map((t: any) => [t.key, t]));
   return {
@@ -442,15 +443,35 @@ async function handleOnboardingView(admin: Client, userId: string) {
     items: (data.onboarding_items || []).map((i: any) => {
       const t: any = typeMap.get(i.doc_type) || {};
       return {
-        id: i.id, name: t.name || i.doc_type, guidance: t.guidance || "", sensitive: Boolean(t.sensitive), sort: t.sort ?? 999,
+        id: i.id, docType: i.doc_type, name: t.name || i.doc_type, guidance: t.guidance || "", sensitive: Boolean(t.sensitive), sort: t.sort ?? 999,
+        kind: FORMS[i.doc_type] && t.kind === "form" ? "form" : "upload",
+        form: t.kind === "form" ? FORMS[i.doc_type] ?? null : null,
+        // Your own answers come back only while you can still change them.
+        answers: i.status === "accepted" ? null : i.answers ?? null,
+        submittedAt: i.submitted_at,
         required: i.required, status: i.status, fileName: i.file_name, uploadedAt: i.uploaded_at, rejectReason: i.reject_reason
       };
     }).sort((a: any, b: any) => a.sort - b.sort)
   };
 }
 
+async function handleOnboardingSubmitForm(admin: Client, userId: string, body: any) {
+  const item = await myOnboardingItem(admin, userId, body.itemId);
+  if (item.kind !== "form" || !FORMS[item.doc_type]) throw httpError(400, "This item needs a file upload.");
+  let answers;
+  try {
+    answers = validateAnswers(item.doc_type, body.answers);
+  } catch (error) {
+    if (error instanceof FormError) throw httpError(400, error.message, `field:${error.field}`);
+    throw error;
+  }
+  await rpc(admin, "onboarding_record_answers", { p_actor: userId, p_item: item.id, p_answers: answers });
+  return { submitted: true };
+}
+
 async function handleOnboardingPrepare(admin: Client, userId: string, body: any) {
   const item = await myOnboardingItem(admin, userId, body.itemId);
+  if (item.kind === "form") throw httpError(400, "Fill in this item on the portal instead of uploading a file.");
   const size = Number(body.size);
   if (!Number.isFinite(size) || size < 1 || size > HR_MAX_BYTES) throw httpError(400, "Files must be under 20 MB.");
   const raw = String(body.fileName || "").trim();
@@ -497,6 +518,7 @@ export default {
         case "bootstrap": result = await handleBootstrap(context.supabaseAdmin, userId); break;
         case "change_password": result = await handleChangePassword(context.supabaseAdmin, userId, body); break;
         case "onboarding_view": result = await handleOnboardingView(context.supabaseAdmin, userId); break;
+        case "onboarding_submit_form": result = await handleOnboardingSubmitForm(context.supabaseAdmin, userId, body); break;
         case "onboarding_prepare_upload": result = await handleOnboardingPrepare(context.supabaseAdmin, userId, body); break;
         case "onboarding_attach": result = await handleOnboardingAttach(context.supabaseAdmin, userId, body); break;
         case "module": result = await handleModule(context.supabaseAdmin, userId, body); break;
