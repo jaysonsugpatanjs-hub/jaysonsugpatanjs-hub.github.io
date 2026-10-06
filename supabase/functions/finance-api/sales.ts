@@ -5,7 +5,7 @@
 import { httpError, rpc } from "../_shared/http.ts";
 import { createFinanceDocumentPdf, createStatementPdf, toBase64 } from "../_shared/finance-pdf.ts";
 import {
-  accountOption, amount, amountsAre, attachmentsFor, auditPdf, cents, cleanDocLines, date, dollars, has, lookups, mapLines, names, optDate, optUuid,
+  accountOption, amount, projectOptions, amountsAre, attachmentsFor, auditPdf, cents, cleanDocLines, date, dollars, has, lookups, mapLines, names, optDate, optUuid,
   sellerContext, taxOption, text, uuid, type Actor, type Client, type Handler
 } from "./docs.ts";
 import { todaySydney } from "./ledger.ts";
@@ -43,6 +43,7 @@ async function salesSetup(admin: Client, actor: Actor) {
     accounts: lk.accounts.filter(a => a.status === "active" && a.allow_manual && ["revenue", "other_income"].includes(a.type)).map(accountOption),
     bankAccounts: lk.accounts.filter(a => a.status === "active" && a.subtype === "bank").map(accountOption),
     taxCodes: lk.taxCodes.filter(t => t.active && t.applies_to !== "purchases").map(taxOption),
+    projects: projectOptions(lk),
     can: { manage: has(actor, "sales.manage"), bank: has(actor, "bank.manage"), reports: has(actor, "reports.view") }
   };
 }
@@ -163,7 +164,7 @@ async function quoteGet(admin: Client, actor: Actor, body: any) {
       status: q.status, expired: Boolean(q.expiry_date && q.expiry_date < today && ["draft", "approved", "sent"].includes(q.status)),
       createdBy: who.get(q.created_by) || null, approvedBy: who.get(q.approved_by) || null, approvedAt: q.approved_at, sentAt: q.sent_at,
       invoice: (inv as any).data ? { id: (inv as any).data.id, number: (inv as any).data.number } : null },
-    lines: mapLines(q.quote_lines, lk.codeMap, lk.accountMap),
+    lines: mapLines(q.quote_lines, lk.codeMap, lk.accountMap, lk),
     attachments: files,
     can: { edit: q.status === "draft" && has(actor, "sales.manage"), manage: has(actor, "sales.manage") }
   };
@@ -195,7 +196,7 @@ async function quoteToInvoice(admin: Client, actor: Actor, body: any) {
   if (existing?.length) throw httpError(409, `An invoice${existing[0].number ? ` (${existing[0].number})` : " draft"} has already been created from this quote.`);
   const lines = (q.quote_lines || []).sort((a: any, b: any) => a.line_no - b.line_no).map((l: any) => ({
     description: l.description, quantity: l.quantity, unit: l.unit, unitPrice: l.unit_price, discountPercent: l.discount_percent,
-    accountId: l.account_id, taxCodeId: l.tax_code_id, kind: l.line_kind
+    accountId: l.account_id, taxCodeId: l.tax_code_id, kind: l.line_kind, projectId: l.project_id
   }));
   const invoiceId = await rpc<string>(admin, "invoice_save", {
     p_actor: actor.id, p_id: null,
@@ -292,7 +293,7 @@ async function invoiceGet(admin: Client, actor: Actor, body: any) {
       voidJournal: inv.void_journal_id ? { id: inv.void_journal_id, number: jn.get(inv.void_journal_id) } : null,
       createdBy: who.get(inv.created_by) || null, approvedBy: who.get(inv.approved_by) || null, approvedAt: inv.approved_at
     },
-    lines: mapLines(inv.invoice_lines, lk.codeMap, lk.accountMap),
+    lines: mapLines(inv.invoice_lines, lk.codeMap, lk.accountMap, lk),
     allocations: (allocs.data || []).map((a: any) => ({
       id: a.id, date: a.allocation_date, amount: Number(a.amount),
       source: a.payment_id ? `Receipt ${(payMap.get(a.payment_id) as any)?.reference || ""}`.trim() : credit ? `Invoice ${otherMap.get(a.invoice_id) || ""}` : `Credit note ${otherMap.get(a.credit_note_id) || ""}`,
@@ -355,7 +356,7 @@ async function invoicePdf(admin: Client, actor: Actor, body: any) {
   ]);
   const c = inv.customers || {};
   const owing = inv.status === "approved" ? bal.get(id) ?? Number(inv.total) : Number(inv.total);
-  const lines = mapLines(inv.invoice_lines, lk.codeMap, lk.accountMap);
+  const lines = mapLines(inv.invoice_lines, lk.codeMap, lk.accountMap, lk);
   const bytes = await createFinanceDocumentPdf({
     kind: inv.kind, gstRegistered: ctx.gstRegistered, seller: ctx.seller, logo: ctx.logo,
     to: { name: c.name, abn: c.abn, address: c.billing_address, email: c.email, contact: c.contact_name },
@@ -380,7 +381,7 @@ async function quotePdf(admin: Client, actor: Actor, body: any) {
     kind: "quote", gstRegistered: ctx.gstRegistered, seller: ctx.seller, logo: ctx.logo,
     to: { name: c.name, abn: c.abn, address: c.site_address?.street ? c.site_address : c.billing_address, email: c.email, contact: c.contact_name },
     number: q.number, date: q.quote_date, expiryDate: q.expiry_date, reference: q.reference, title: q.title, scope: q.scope, amountsAre: q.amounts_are,
-    lines: mapLines(q.quote_lines, lk.codeMap, lk.accountMap), subtotal: Number(q.subtotal), gst: Number(q.gst), total: Number(q.total), terms: q.terms,
+    lines: mapLines(q.quote_lines, lk.codeMap, lk.accountMap, lk), subtotal: Number(q.subtotal), gst: Number(q.gst), total: Number(q.total), terms: q.terms,
     status: q.status === "draft" ? "draft" : "approved"
   });
   await auditPdf(admin, actor, "quote", id, q.number);

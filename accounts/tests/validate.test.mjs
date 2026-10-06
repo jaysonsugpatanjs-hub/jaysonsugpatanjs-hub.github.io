@@ -60,3 +60,16 @@ test("document lines match the database rounding", async () => {
   assert.equal(noAbnWithholding(1000, 1000, 0.47), 470);
   assert.equal(noAbnWithholding(75, 75, 0.47), 0);
 });
+
+test("timesheet hours match the database", async () => {
+  const { mondayOf, entryHours, labourCost } = await import("../lib/validate.js");
+  assert.equal(mondayOf("2026-09-09"), "2026-09-07");
+  assert.equal(mondayOf("2026-09-13"), "2026-09-07");
+  assert.equal(mondayOf("2026-09-07"), "2026-09-07");
+  assert.equal(entryHours("07:00", "15:30", 30), 8);
+  assert.equal(entryHours("22:00", "06:00", 30), 7.5);
+  assert.equal(entryHours("06:30", "15:00", 30), 8);
+  assert.equal(entryHours("7am", "15:00", 0), null);
+  assert.equal(labourCost(2, 65, "overtime_150"), 195);
+  assert.equal(labourCost(23.5, 65, "ordinary"), 1527.5);
+});

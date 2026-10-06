@@ -91,12 +91,15 @@ async function editor(view, id) {
   const terms = c => c?.termsDays ?? setup.defaultTermsDays;
   if (!doc.dueDate) doc.dueDate = addDays(doc.date, terms(custOf(doc.partyId)));
 
+  const fromProject = hashParams().get("project");
+  if (fromProject && !id) doc.lines.forEach(l => { if (!l.projectId) l.projectId = fromProject; });
   documentEditor(view, {
     eyebrow: `SALES · ${credit ? "CREDIT NOTES" : "INVOICES"}`,
     title: id ? `Edit draft ${credit ? "credit note" : "invoice"}` : credit ? "New credit note" : "New invoice",
     intro: credit ? "A credit note (adjustment note) reduces what the customer owes, and the GST, once approved. Apply it to an invoice afterwards."
       : "Saved drafts don't affect the books. Approve to number the invoice and post it.",
     partyLabel: "Customer", parties: setup.customers, accounts: setup.accounts, taxCodes: setup.taxCodes, doc,
+    projects: setup.projects,
     partyNote: c => [c.termsDays != null ? `${c.termsDays}-day terms` : `Default terms (${setup.defaultTermsDays} days)`, c.poRequired ? "needs their PO number" : ""].filter(Boolean).join(" · "),
     defaultAccount: c => defaults(c).acc, defaultTax: c => defaults(c).tax,
     onParty: (d, c) => {

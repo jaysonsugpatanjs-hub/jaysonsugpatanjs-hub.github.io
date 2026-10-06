@@ -57,7 +57,8 @@ export const addressText = a => [a?.street, [a?.suburb, a?.state, a?.postcode].f
 
 /* ---------------- Line-item editor ---------------- */
 
-const blankLine = (acc = "", tax = "") => ({ description: "", kind: "other", quantity: "1", unit: "", unitPrice: "", discountPercent: "", accountId: acc, taxCodeId: tax, poLineId: null });
+const blankLine = (acc = "", tax = "", project = "", costCode = "") => ({ description: "", kind: "other", quantity: "1", unit: "", unitPrice: "", discountPercent: "", accountId: acc, taxCodeId: tax, poLineId: null,
+  projectId: project, costCodeId: costCode });
 
 /**
  * Renders the editor and wires it up.
@@ -87,7 +88,11 @@ export function documentEditor(view, cfg) {
           <th scope="col" class="num">Disc %</th><th scope="col">Tax</th><th scope="col" class="num">GST</th><th scope="col" class="num">Amount</th><th scope="col"><span class="sr-only">Remove</span></th></tr></thead><tbody>
           ${doc.lines.map((l, i) => `<tr data-line="${i}">
             <td class="desc"><textarea rows="1" aria-label="Description, line ${i + 1}" data-f="description" maxlength="500">${safe(l.description)}</textarea>
-              <select aria-label="Type, line ${i + 1}" data-f="kind" class="kind">${options(LINE_KINDS, l.kind)}</select>${l.poLineId ? '<small class="muted">From the purchase order</small>' : ""}</td>
+              <div class="line-tags"><select aria-label="Type, line ${i + 1}" data-f="kind" class="kind">${options(LINE_KINDS, l.kind)}</select>
+              ${cfg.projects ? `<select aria-label="Project, line ${i + 1}" data-f="projectId" class="kind">${options([["", "No project"], ...cfg.projects.map(p => [p.id, `${p.number} ${p.name}`]),
+                ...(l.projectId && !cfg.projects.some(p => p.id === l.projectId) ? [[l.projectId, l.projectNumber || "Closed project"]] : [])], l.projectId || "")}</select>` : ""}
+              ${cfg.costCodes ? `<select aria-label="Cost code, line ${i + 1}" data-f="costCodeId" class="kind" ${l.projectId ? "" : "disabled"}>${options([["", "Cost code…"], ...cfg.costCodes.map(c => [c.id, `${c.code} ${c.name}`])], l.costCodeId || "")}</select>` : ""}</div>
+              ${l.poLineId ? '<small class="muted">From the purchase order</small>' : ""}</td>
             <td><select aria-label="Account, line ${i + 1}" data-f="accountId">${accountOptions(cfg.accounts, l.accountId)}</select></td>
             <td><input aria-label="Quantity, line ${i + 1}" data-f="quantity" class="num qty" inputmode="decimal" value="${safe(l.quantity)}"></td>
             <td><input aria-label="Unit price, line ${i + 1}" data-f="unitPrice" class="num" inputmode="decimal" value="${safe(l.unitPrice)}"></td>
@@ -167,6 +172,10 @@ export function documentEditor(view, cfg) {
       const tax = row.querySelector('[data-f="taxCodeId"]');
       if (acc && !tax.value && acc.defaultTaxCodeId && cfg.taxCodes.some(t => t.id === acc.defaultTaxCodeId)) tax.value = acc.defaultTaxCodeId;
     }
+    if (e.target.dataset.f === "projectId") {
+      const cc = e.target.closest("[data-line]").querySelector('[data-f="costCodeId"]');
+      if (cc) { cc.disabled = !e.target.value; if (!e.target.value) cc.value = ""; }
+    }
     if (cfg.onFieldChange) cfg.onFieldChange(view, doc, e.target);
     totals();
   });
@@ -175,7 +184,7 @@ export function documentEditor(view, cfg) {
       read();
       const p = party();
       const prev = doc.lines[doc.lines.length - 1] || {};
-      doc.lines.push(blankLine(prev.accountId || cfg.defaultAccount?.(p) || "", prev.taxCodeId || cfg.defaultTax?.(p) || ""));
+      doc.lines.push(blankLine(prev.accountId || cfg.defaultAccount?.(p) || "", prev.taxCodeId || cfg.defaultTax?.(p) || "", prev.projectId || "", prev.costCodeId || ""));
       draw();
       view.querySelector(`[data-line="${doc.lines.length - 1}"] textarea`).focus();
     }
@@ -209,7 +218,7 @@ export function linesTable(lines, amountsAre) {
   return `<div class="tbl-wrap"><table class="tbl"><thead><tr><th scope="col">Description</th><th scope="col">Account</th><th scope="col" class="num">Qty</th>
     <th scope="col" class="num">Unit price</th><th scope="col" class="num">Disc</th><th scope="col">Tax</th><th scope="col" class="num">GST</th>
     <th scope="col" class="num">Amount${amountsAre === "inclusive" ? " (inc)" : amountsAre === "exclusive" ? " (ex)" : ""}</th></tr></thead><tbody>
-    ${lines.map(l => `<tr><td>${safe(l.description)}<small>${safe(LINE_KINDS.find(k => k[0] === l.kind)?.[1] || "")}</small></td>
+    ${lines.map(l => `<tr><td>${safe(l.description)}<small>${safe(LINE_KINDS.find(k => k[0] === l.kind)?.[1] || "")}${l.projectNumber ? ` · <a href="#/projects/${safe(l.projectId)}">${safe(l.projectNumber)}</a>${l.costCode ? ` / ${safe(l.costCode)}` : ""}` : ""}</small></td>
       <td><span class="mono">${safe(l.accountCode || "")}</span> ${safe(l.accountName || "")}</td>
       <td class="num mono">${safe(String(l.quantity))}${l.unit ? ` ${safe(l.unit)}` : ""}${l.receivedQuantity != null ? `<small>${safe(String(l.receivedQuantity))} received</small>` : ""}</td>
       <td class="num mono">${money(l.unitPrice)}</td><td class="num mono">${l.discountPercent ? `${safe(String(l.discountPercent))}%` : ""}</td>

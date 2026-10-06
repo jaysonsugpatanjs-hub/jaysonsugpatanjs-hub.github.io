@@ -5,7 +5,7 @@
 import { httpError, rpc } from "../_shared/http.ts";
 import { createFinanceDocumentPdf, toBase64 } from "../_shared/finance-pdf.ts";
 import {
-  accountOption, amount, amountsAre, attachmentsFor, auditPdf, cents, cleanDocLines, date, dollars, has, lookups, mapLines, names, optDate, optUuid,
+  accountOption, amount, costCodeOptions, projectOptions, amountsAre, attachmentsFor, auditPdf, cents, cleanDocLines, date, dollars, has, lookups, mapLines, names, optDate, optUuid,
   sellerContext, taxOption, text, uuid, type Actor, type Client, type Handler
 } from "./docs.ts";
 import { todaySydney } from "./ledger.ts";
@@ -44,6 +44,7 @@ async function purchasesSetup(admin: Client, actor: Actor) {
     accounts: lk.accounts.filter(a => a.status === "active" && a.allow_manual && !["revenue", "other_income", "equity"].includes(a.type)).map(accountOption),
     bankAccounts: lk.accounts.filter(a => a.status === "active" && a.subtype === "bank").map(accountOption),
     taxCodes: lk.taxCodes.filter(t => t.active && t.applies_to !== "sales").map(taxOption),
+    projects: projectOptions(lk), costCodes: costCodeOptions(lk),
     can: { manage: has(actor, "purchases.manage"), raise: has(actor, "purchases.raise") || has(actor, "purchases.manage"), bank: has(actor, "bank.manage"),
       approveBank: has(actor, "purchases.bank"), reports: has(actor, "reports.view") }
   };
@@ -164,7 +165,7 @@ async function poGet(admin: Client, actor: Actor, body: any) {
       date: p.order_date, expectedDate: p.expected_date, reference: p.reference, deliveryAddress: p.delivery_address, notes: p.notes, amountsAre: p.amounts_are,
       subtotal: Number(p.subtotal), gst: Number(p.gst), total: Number(p.total), status: p.status, billed: dollars(billed),
       requestedBy: who.get(p.requested_by) || null, approvedBy: who.get(p.approved_by) || null, approvedAt: p.approved_at, issuedAt: p.issued_at },
-    lines: mapLines(p.purchase_order_lines, lk.codeMap, lk.accountMap),
+    lines: mapLines(p.purchase_order_lines, lk.codeMap, lk.accountMap, lk),
     bills: (bills.data || []).map((b: any) => ({ id: b.id, number: b.number, supplierReference: b.supplier_reference, total: Number(b.total), status: b.status })),
     attachments: files,
     can: {
@@ -212,7 +213,7 @@ async function poPdf(admin: Client, actor: Actor, body: any) {
     kind: "purchase_order", gstRegistered: ctx.gstRegistered, seller: ctx.seller, logo: ctx.logo,
     to: { name: s.name, abn: s.abn, address: s.address, email: s.email, contact: s.contact_name },
     number: p.number, date: p.order_date, dueDate: p.expected_date, reference: p.reference, deliverTo: p.delivery_address, amountsAre: p.amounts_are,
-    lines: mapLines(p.purchase_order_lines, lk.codeMap, lk.accountMap), subtotal: Number(p.subtotal), gst: Number(p.gst), total: Number(p.total), notes: p.notes,
+    lines: mapLines(p.purchase_order_lines, lk.codeMap, lk.accountMap, lk), subtotal: Number(p.subtotal), gst: Number(p.gst), total: Number(p.total), notes: p.notes,
     status: ["draft", "submitted"].includes(p.status) ? "draft" : p.status === "cancelled" ? "void" : "approved"
   });
   await auditPdf(admin, actor, "purchase_order", id, p.number);
@@ -266,7 +267,7 @@ async function billGet(admin: Client, actor: Actor, body: any) {
   const others = otherIds.length ? await admin.from("bills").select("id,number").in("id", otherIds) : { data: [] };
   const om = new Map(((others as any).data || []).map((x: any) => [x.id, x.number]));
   const owing = b.status === "approved" ? bal.get(id) ?? 0 : b.status === "void" ? 0 : Number(b.total);
-  const lines = mapLines(b.bill_lines, lk.codeMap, lk.accountMap);
+  const lines = mapLines(b.bill_lines, lk.codeMap, lk.accountMap, lk);
   // Three-way match: what was ordered and received against what is billed.
   const poData = (po as any).data;
   const match = poData ? {
@@ -341,7 +342,7 @@ async function billFromPo(admin: Client, actor: Actor, body: any) {
   const lines = (p.purchase_order_lines || []).sort((a: any, b: any) => a.line_no - b.line_no).map((l: any) => {
     const left = Math.max(0, Number(anyReceived ? l.received_quantity : l.quantity) - (done.get(l.id) || 0));
     return { description: l.description, quantity: left, unit: l.unit, unitPrice: l.unit_price, discountPercent: l.discount_percent, accountId: l.account_id,
-      taxCodeId: l.tax_code_id, kind: l.line_kind, poLineId: l.id };
+      taxCodeId: l.tax_code_id, kind: l.line_kind, poLineId: l.id, projectId: l.project_id, costCodeId: l.cost_code_id };
   }).filter((l: any) => l.quantity > 0);
   if (!lines.length) throw httpError(409, "Everything on this purchase order has already been billed.");
   return { draft: { supplierId: p.supplier_id, purchaseOrderId: p.id, amountsAre: p.amounts_are, notes: `Purchase order ${p.number}`, lines } };

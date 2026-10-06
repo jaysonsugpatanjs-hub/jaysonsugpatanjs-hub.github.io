@@ -86,11 +86,14 @@ async function editor(view, id) {
   const terms = s => s?.termsDays ?? 30;
   if (!doc.dueDate) doc.dueDate = addDays(doc.date, terms(supOf(doc.partyId)));
 
+  const fromProject = hashParams().get("project");
+  if (fromProject && !id) doc.lines.forEach(l => { if (!l.projectId) l.projectId = fromProject; });
   documentEditor(view, {
     eyebrow: `PURCHASES · ${credit ? "SUPPLIER CREDITS" : "BILLS"}`,
     title: id ? `Edit ${credit ? "supplier credit" : "bill"}` : credit ? "New supplier credit" : doc.purchaseOrderId ? "Bill from purchase order" : "Enter a bill",
     intro: credit ? "Enter the supplier's credit note as they issued it." : "Copy the supplier's invoice: their reference, the lines and the GST. Attach a copy of it after saving.",
     partyLabel: "Supplier", parties: setup.suppliers, accounts: setup.accounts, taxCodes: setup.taxCodes, doc,
+    projects: setup.projects, costCodes: setup.costCodes,
     partyNote: s => [!s.hasAbn && !s.withholdingExempt ? `No ABN: ${Math.round((setup.noAbnWithholdingRate || 0) * 100)}% will be withheld` : "", s.gstRegistered ? "" : "Not registered for GST: use a GST-free code"].filter(Boolean).join(" · "),
     defaultAccount: s => defaults(s).acc, defaultTax: s => defaults(s).tax,
     onParty: (d, s) => {
