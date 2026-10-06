@@ -199,3 +199,32 @@ form.sub { border-top: 1px solid var(--border); margin-top: 16px; padding-top: 6
   .top-link { padding: 5px 8px; }
   .notes { right: 12px; top: 52px; }
 }
+
+/* Phase 2: ledger screens */
+.num { text-align: right !important; white-space: nowrap; }
+input.num { text-align: right; }
+.tbl tr.group th { background: var(--surface-2); color: var(--gold); font-size: 11.5px; letter-spacing: .08em; text-transform: uppercase; }
+.tbl.report td, .tbl.report th { padding: 6px 10px; }
+.tbl.report tr.sub th, .tbl.report tr.sub td { color: var(--muted); font-weight: 700; border-top: 1px solid var(--border); }
+.tbl.report tr.total th, .tbl.report tr.total td { font-weight: 800; color: var(--heading); border-top: 1px solid var(--muted); }
+.tbl.report tr.grand th, .tbl.report tr.grand td { font-weight: 800; color: var(--heading); border-top: 2px solid var(--gold); border-bottom: 3px double var(--muted); font-size: 14.5px; }
+.tbl.report td a, .tbl td a { color: var(--text); text-decoration: none; }
+.tbl.report td a:hover, .tbl td a:hover { color: var(--gold); text-decoration: underline; }
+.tbl.lines td { padding: 4px 6px; }
+.tbl.lines select, .tbl.lines input { min-height: 34px; padding: 5px 8px; }
+.tbl.lines td:first-child { min-width: 240px; }
+.tbl.lines td:nth-child(4), .tbl.lines td:nth-child(5) { width: 130px; }
+.tbl.lines td:nth-child(3) { width: 96px; }
+.tbl tr.taxline td { color: var(--muted); font-style: italic; }
+.tbl tr.current td { background: #1a1708; }
+.row-acts { white-space: nowrap; text-align: right; }
+.row-acts .link + .link { margin-left: 10px; }
+.balance { margin: 10px 0 0; font-weight: 700; font-size: 13.5px; }
+.balance.good { color: var(--good); } .balance.bad { color: var(--bad); }
+.tabs { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 12px; border-bottom: 1px solid var(--border); }
+.tabs button { background: none; border: 0; border-bottom: 2px solid transparent; color: var(--muted); padding: 8px 12px; font: inherit; font-weight: 700; cursor: pointer; }
+.tabs button.on { color: var(--gold); border-bottom-color: var(--gold); }
+.cards.figures .big { font-size: 24px; }
+.wide { grid-column: span 2; }
+@media (max-width: 900px) { .wide { grid-column: auto; } }
+.btn { white-space: nowrap; }

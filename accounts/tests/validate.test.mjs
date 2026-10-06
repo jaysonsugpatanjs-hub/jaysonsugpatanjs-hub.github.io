@@ -31,3 +31,16 @@ test("number preview", () => {
   assert.equal(previewNumber("inv-", 1001, 5), "INV-01001");
   assert.equal(previewNumber("", 7, 1), "7");
 });
+
+import { journalTotals, lineGst } from "../lib/validate.js";
+
+test("journal GST estimate matches the ledger's rounding", () => {
+  assert.equal(lineGst(1000, 0.1, "exclusive"), 100);
+  assert.equal(lineGst(110, 0.1, "inclusive"), 10);
+  assert.equal(lineGst(33.33, 0.1, "exclusive"), 3.33);
+  assert.equal(lineGst(0.05, 0.1, "exclusive"), 0.01);
+  assert.equal(lineGst(100, 0.1, "no_tax"), 0);
+  const rates = { g: 0.1 };
+  assert.deepEqual(journalTotals([{ debit: 1100 }, { credit: 1000, taxCodeId: "g" }], rates, "exclusive"), { debit: 1100, credit: 1100 });
+  assert.deepEqual(journalTotals([{ debit: 110, taxCodeId: "g" }, { credit: 110 }], rates, "inclusive"), { debit: 110, credit: 110 });
+});

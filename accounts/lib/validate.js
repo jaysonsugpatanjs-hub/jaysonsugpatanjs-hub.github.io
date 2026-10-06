@@ -55,3 +55,24 @@ export function previewNumber(prefix, next, padding) {
   const n = Math.max(1, Math.floor(Number(next) || 1));
   return `${String(prefix || "").toUpperCase()}${String(n).padStart(Math.min(10, Math.max(1, Number(padding) || 1)), "0")}`;
 }
+
+/** GST for one journal line, to the cent, half up (mirrors ledger_build_lines). */
+export function lineGst(amount, rate, amountsAre) {
+  if (!rate || amountsAre === "no_tax") return 0;
+  const cents = Math.round(amount * 100);
+  const gst = amountsAre === "inclusive" ? (cents * rate) / (1 + rate) : cents * rate;
+  return Math.round(gst + 1e-9) / 100;
+}
+
+/** Totals of a journal as the ledger will post it (GST lines included). */
+export function journalTotals(lines, rates, amountsAre) {
+  let debit = 0, credit = 0;
+  for (const l of lines) {
+    const dr = Number(l.debit) || 0, cr = Number(l.credit) || 0;
+    const amount = dr || cr;
+    const gst = lineGst(amount, rates[l.taxCodeId] || 0, amountsAre);
+    const posted = amountsAre === "exclusive" ? amount + gst : amount;
+    if (dr) debit += posted; else credit += posted;
+  }
+  return { debit: Math.round(debit * 100) / 100, credit: Math.round(credit * 100) / 100 };
+}

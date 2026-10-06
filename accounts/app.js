@@ -10,11 +10,17 @@ import { renderApprovals } from "./views/approvals.js";
 import { renderAudit } from "./views/audit.js";
 import { renderIntegrations } from "./views/integrations.js";
 import { renderPlanned } from "./views/planned.js";
+import { renderChart } from "./views/chart.js";
+import { renderTaxCodes } from "./views/taxcodes.js";
+import { renderJournals } from "./views/journals.js";
+import { renderPeriods } from "./views/periods.js";
+import { renderReports } from "./views/reports.js";
 
 const $ = sel => document.querySelector(sel);
 const state = { me: null };
 const can = key => state.me?.permissions.includes(key);
 
+const LEDGER = ["reports.view", "ledger.manage", "ledger.journal", "ledger.post", "audit.view"];
 /* Menu from the brief (section 80). Items not built yet show the phase that delivers them. */
 const MENU = [
   { group: null, items: [{ path: "dashboard", label: "Dashboard" }] },
@@ -22,7 +28,13 @@ const MENU = [
   { group: "Purchases", items: [["suppliers", "Suppliers", 3], ["purchase-orders", "Purchase orders", 3], ["bills", "Bills", 3], ["supplier-payments", "Payments", 3]] },
   { group: "Projects", items: [["projects", "Projects", 4], ["job-costing", "Job costing", 4], ["timesheets", "Timesheets", 4]] },
   { group: "Payroll", items: [["employees", "Employees", 5], ["pay-runs", "Pay runs", 5], ["leave", "Leave", 5], ["super", "Super", 5], ["stp", "STP", 8], ["payroll-reports", "Payroll reports", 5]] },
-  { group: "Accounting", items: [["bank-accounts", "Bank accounts", 6], ["reconciliation", "Reconciliation", 6], ["chart-of-accounts", "Chart of accounts", 2], ["journals", "Journals", 2], ["assets", "Assets", 8], ["bas", "BAS", 7], ["reports", "Reports", 2]] },
+  { group: "Accounting", items: [
+    { path: "reports", label: "Reports", any: LEDGER },
+    { path: "journals", label: "Journals", any: LEDGER },
+    { path: "chart-of-accounts", label: "Chart of accounts", any: LEDGER },
+    { path: "tax-codes", label: "Tax codes", any: LEDGER },
+    { path: "periods", label: "Periods", any: LEDGER },
+    ["bank-accounts", "Bank accounts", 6], ["reconciliation", "Reconciliation", 6], ["assets", "Assets", 8], ["bas", "BAS", 7]] },
   { group: "Administration", items: [
     { path: "company", label: "Company settings" },
     { path: "users", label: "Users and roles", perm: "access.manage" },
@@ -34,8 +46,10 @@ const MENU = [
 
 const VIEWS = {
   dashboard: renderDashboard, company: renderCompany, users: renderUsers, approvals: renderApprovals,
-  integrations: renderIntegrations, audit: renderAudit
+  integrations: renderIntegrations, audit: renderAudit, "chart-of-accounts": renderChart, "tax-codes": renderTaxCodes,
+  journals: renderJournals, periods: renderPeriods, reports: renderReports
 };
+const allowed = i => (!i.perm || can(i.perm)) && (!i.any || i.any.some(can));
 
 /* ---------------- Gate and MFA ---------------- */
 
@@ -99,9 +113,9 @@ document.addEventListener("submit", async event => {
 let counts = { approvals: 0 };
 
 function renderNav() {
-  const current = (location.hash.replace(/^#\/?/, "") || "dashboard").split("?")[0];
+  const current = (location.hash.replace(/^#\/?/, "") || "dashboard").split("?")[0].split("/")[0];
   $("[data-nav]").innerHTML = MENU.map(g => {
-    const items = g.items.filter(i => !i.perm || can(i.perm));
+    const items = g.items.filter(allowed);
     if (!items.length) return "";
     return `<div class="nav-group">${g.group ? `<p class="nav-title">${safe(g.group)}</p>` : ""}
       ${items.map(i => `<a href="#/${i.path}" class="nav-item${i.path === current ? " active" : ""}${i.phase ? " later" : ""}" ${i.path === current ? 'aria-current="page"' : ""}>
@@ -124,7 +138,8 @@ async function refreshCounts() {
 }
 
 async function route() {
-  const path = (location.hash.replace(/^#\/?/, "") || "dashboard").split("?")[0];
+  const full = (location.hash.replace(/^#\/?/, "") || "dashboard").split("?")[0];
+  const [path, ...rest] = full.split("/");
   renderNav();
   // A fresh element per screen, so listeners from the last screen don't linger.
   const old = $("[data-view]");
@@ -135,7 +150,7 @@ async function route() {
   const item = MENU.flatMap(g => g.items.map(i => ({ ...i, group: g.group }))).find(i => i.path === path);
   view.innerHTML = '<p class="muted">Loading…</p>';
   try {
-    if (VIEWS[path] && (!item?.perm || can(item.perm))) await VIEWS[path](view, { me: state.me, can, refreshCounts });
+    if (VIEWS[path] && (!item || allowed(item))) await VIEWS[path](view, { me: state.me, can, refreshCounts, sub: rest.join("/") });
     else if (item?.phase) renderPlanned(view, item);
     else { location.hash = "#/dashboard"; return; }
   } catch (error) {

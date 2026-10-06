@@ -1,4 +1,4 @@
-import { call, safe } from "../lib/ui.js";
+import { call, date, money, safe } from "../lib/ui.js";
 import { formatAbn } from "../lib/validate.js";
 
 const ROADMAP = [
@@ -21,6 +21,12 @@ export async function renderDashboard(view, { can }) {
       <p class="muted">${safe(d.company.legalName || "")}${d.company.abn ? ` · ABN ${safe(formatAbn(d.company.abn))}` : ""}</p></div>
       ${d.company.logoUrl ? `<img class="logo" src="${safe(d.company.logoUrl)}" alt="Company logo">` : ""}</header>
 
+    ${d.ledger ? `<div class="cards figures">
+      <section class="card"><h2>Bank</h2><p class="big mono">${money(d.ledger.bank)}</p><p class="muted small">Bank accounts in the ledger, as at ${date(d.ledger.asAt)}</p><a class="link" href="#/reports?type=account">Transactions</a></section>
+      <section class="card"><h2>Net profit this financial year</h2><p class="big mono">${money(d.ledger.netProfitYearToDate)}</p><p class="muted small">From ${date(d.ledger.financialYearStart)}</p><a class="link" href="#/reports?type=pl">Profit and loss</a></section>
+      <section class="card"><h2>GST owed (estimate)</h2><p class="big mono">${money(d.ledger.gstOwed)}</p><p class="muted small">Balance of the GST account; bracketed means a refund is due</p></section>
+      <section class="card ${d.ledger.draftJournals ? "attention" : ""}"><h2>Draft journals</h2><p class="big">${d.ledger.draftJournals}</p><p class="muted small">Not in the ledger until posted</p><a class="link" href="#/journals?status=draft">Review drafts</a></section>
+    </div>` : ""}
     <div class="cards">
       <section class="card ${setupDone ? "" : "attention"}">
         <h2>Company setup</h2>
@@ -45,7 +51,7 @@ export async function renderDashboard(view, { can }) {
       <h2>What's being built</h2>
       <p class="muted">Panalo Accounts is delivered in phases, each tested before the next starts. Menu items marked with a phase arrive then.</p>
       <table class="tbl"><thead><tr><th scope="col">Phase</th><th scope="col">Module</th><th scope="col">Includes</th><th scope="col">Status</th></tr></thead><tbody>
-        ${ROADMAP.map(([n, name, inc]) => `<tr><td>${n}</td><td><strong>${safe(name)}</strong></td><td class="muted">${safe(inc)}</td><td>${n === 1 ? '<span class="chip good">Live</span>' : n === 2 ? '<span class="chip info">Next</span>' : '<span class="chip">Planned</span>'}</td></tr>`).join("")}
+        ${ROADMAP.map(([n, name, inc]) => `<tr><td>${n}</td><td><strong>${safe(name)}</strong></td><td class="muted">${safe(inc)}</td><td>${n <= 2 ? '<span class="chip good">Live</span>' : n === 3 ? '<span class="chip info">Next</span>' : '<span class="chip">Planned</span>'}</td></tr>`).join("")}
       </tbody></table>
     </section>
     ${can("audit.view") ? '<p class="muted small">Every change in Panalo Accounts is recorded in the <a href="#/audit">audit log</a>.</p>' : ""}`;

@@ -5,6 +5,7 @@
 // the permission again and writes the audit row in the same transaction.
 import { withSupabase } from "npm:@supabase/server@^1";
 import { corsHeaders, errorJson, httpError, json, rpc } from "../_shared/http.ts";
+import { ledgerActions, ledgerHeadlines } from "./ledger.ts";
 
 type Client = any;
 type Actor = { id: string; email: string; full_name: string; role: string; organization_id: string; permissions: string[] };
@@ -316,12 +317,13 @@ async function auditList(admin: Client, actor: Actor, body: any) {
 /* ---------------- Dashboard ---------------- */
 
 async function dashboard(admin: Client, actor: Actor) {
-  const [company, approvals, notes] = await Promise.all([companyGet(admin, actor), approvalsList(admin, actor), notificationsList(admin, actor)]);
+  const [company, approvals, notes, ledger] = await Promise.all([companyGet(admin, actor), approvalsList(admin, actor), notificationsList(admin, actor), ledgerHeadlines(admin, actor)]);
   return {
     setup: { complete: Boolean(company.settings?.setup_completed_at), missing: company.missing, canEdit: company.canEdit },
     approvalsWaiting: approvals.toDecide.length,
     myPending: approvals.mine.filter((a: any) => a.status === "pending").length,
     unread: notes.unread,
+    ledger,
     company: { legalName: company.settings?.legal_name, tradingName: company.settings?.trading_name, abn: company.settings?.abn, logoUrl: company.logoUrl }
   };
 }
@@ -346,7 +348,8 @@ const ACTIONS: Record<string, { perm: string[] | null; run: Handler }> = {
   roles_catalogue: { perm: ["access.manage"], run: admin => rolesCatalogue(admin) },
   users_list: { perm: ["access.manage"], run: usersList },
   role_set: { perm: ["access.manage"], run: roleSet },
-  audit_list: { perm: ["audit.view"], run: auditList }
+  audit_list: { perm: ["audit.view"], run: auditList },
+  ...ledgerActions
 };
 
 export default {
