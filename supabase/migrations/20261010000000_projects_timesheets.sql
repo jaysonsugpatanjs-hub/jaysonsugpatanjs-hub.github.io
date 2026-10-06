@@ -713,6 +713,20 @@ as $$
   where t.organization_id = public.app_org_of(p_actor) and t.status = 'approved' and e.work_date between p_from and p_to;
 $$;
 
+-- People who record time: anyone holding "Enter my timesheets", or who has a labour class.
+create or replace function public.timesheet_people(p_actor uuid)
+returns jsonb
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select coalesce(jsonb_agg(jsonb_build_object('id', tp.id, 'name', coalesce(nullif(tp.full_name, ''), tp.email), 'email', tp.email,
+      'labourClassId', lp.labour_class_id) order by coalesce(nullif(tp.full_name, ''), tp.email)), '[]'::jsonb)
+  from public.training_profiles tp left join public.labour_profiles lp on lp.profile_id = tp.id
+  where tp.organization_id = public.app_org_of(p_actor) and tp.active and (lp.profile_id is not null or public.app_has(tp.id, 'time.submit'));
+$$;
+
 ------------------------------------------------------------------------------
 -- 6. Document lines carry project and cost code tags
 ------------------------------------------------------------------------------
@@ -876,7 +890,7 @@ begin
     'cost_code_save(uuid, uuid, text, text, text, boolean)', 'labour_class_save(uuid, uuid, text, text, numeric, numeric, boolean)',
     'labour_profile_set(uuid, uuid, uuid)', 'project_save(uuid, uuid, jsonb, jsonb)', 'project_set_status(uuid, uuid, text)',
     'timesheet_save(uuid, uuid, date, jsonb, boolean)', 'timesheet_decide(uuid, uuid, boolean, text)', 'timesheet_reopen(uuid, uuid, text)',
-    'report_project_costing(uuid, uuid, date)', 'report_projects_summary(uuid, text)', 'report_timesheet_hours(uuid, date, date)']
+    'report_project_costing(uuid, uuid, date)', 'report_projects_summary(uuid, text)', 'report_timesheet_hours(uuid, date, date)', 'timesheet_people(uuid)']
   loop
     execute format('revoke execute on function public.%s from public, anon, authenticated', f);
     execute format('grant execute on function public.%s to service_role', f);

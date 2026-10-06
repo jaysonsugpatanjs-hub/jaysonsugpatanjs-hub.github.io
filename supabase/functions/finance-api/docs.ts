@@ -50,11 +50,13 @@ export function cleanDocLines(lines: unknown) {
     accountId: optUuid(l?.accountId),
     taxCodeId: optUuid(l?.taxCodeId),
     kind: LINE_KINDS.includes(l?.kind) ? l.kind : "other",
-    poLineId: optUuid(l?.poLineId)
+    poLineId: optUuid(l?.poLineId),
+    projectId: optUuid(l?.projectId),
+    costCodeId: optUuid(l?.costCodeId)
   }));
 }
 
-export function mapLines(rows: any[], codes: Map<string, any>, accounts: Map<string, any>) {
+export function mapLines(rows: any[], codes: Map<string, any>, accounts: Map<string, any>, tags?: { projectMap: Map<string, any>; costCodeMap: Map<string, any> }) {
   return (rows || []).sort((a, b) => a.line_no - b.line_no).map((l: any) => ({
     id: l.id, lineNo: l.line_no, description: l.description, quantity: Number(l.quantity), unit: l.unit, unitPrice: Number(l.unit_price),
     discountPercent: Number(l.discount_percent), accountId: l.account_id, accountCode: accounts.get(l.account_id)?.code || null,
@@ -62,25 +64,37 @@ export function mapLines(rows: any[], codes: Map<string, any>, accounts: Map<str
     taxRate: codes.has(l.tax_code_id) ? Number(codes.get(l.tax_code_id).rate) : 0,
     kind: l.line_kind, amount: Number(l.amount), gst: Number(l.gst),
     ...(l.received_quantity != null ? { receivedQuantity: Number(l.received_quantity) } : {}),
-    ...(l.po_line_id !== undefined ? { poLineId: l.po_line_id } : {})
+    ...(l.po_line_id !== undefined ? { poLineId: l.po_line_id } : {}),
+    projectId: l.project_id ?? null, projectNumber: l.project_id ? tags?.projectMap.get(l.project_id)?.number ?? null : null,
+    costCodeId: l.cost_code_id ?? null, costCode: l.cost_code_id ? tags?.costCodeMap.get(l.cost_code_id)?.code ?? null : null
   }));
 }
 
 export async function lookups(admin: Client, actor: Actor) {
-  const [accounts, codes] = await Promise.all([
+  const [accounts, codes, projects, costCodes] = await Promise.all([
     admin.from("accounts").select("id,code,name,type,subtype,status,allow_manual,default_tax_code_id").eq("organization_id", actor.organization_id).order("code"),
-    admin.from("tax_codes").select("id,code,name,kind,rate,applies_to,active,sort").eq("organization_id", actor.organization_id).order("sort")
+    admin.from("tax_codes").select("id,code,name,kind,rate,applies_to,active,sort").eq("organization_id", actor.organization_id).order("sort"),
+    admin.from("projects").select("id,number,name,status,customer_id").eq("organization_id", actor.organization_id).order("number", { ascending: false }),
+    admin.from("cost_codes").select("id,code,name,category,active,sort").eq("organization_id", actor.organization_id).order("sort")
   ]);
-  if (accounts.error || codes.error) throw httpError(500, "Accounts could not be loaded.");
+  if (accounts.error || codes.error || projects.error || costCodes.error) throw httpError(500, "Accounts could not be loaded.");
   return {
     accounts: accounts.data as any[],
     taxCodes: codes.data as any[],
+    projects: projects.data as any[],
+    costCodes: costCodes.data as any[],
     accountMap: new Map<string, any>(accounts.data.map((a: any) => [a.id, a])),
-    codeMap: new Map<string, any>(codes.data.map((t: any) => [t.id, t]))
+    codeMap: new Map<string, any>(codes.data.map((t: any) => [t.id, t])),
+    projectMap: new Map<string, any>(projects.data.map((p: any) => [p.id, p])),
+    costCodeMap: new Map<string, any>(costCodes.data.map((c: any) => [c.id, c]))
   };
 }
 
 export const accountOption = (a: any) => ({ id: a.id, code: a.code, name: a.name, type: a.type, subtype: a.subtype, defaultTaxCodeId: a.default_tax_code_id });
+/** Projects that can take new costs or revenue, and active cost codes, for line tagging. */
+export const projectOptions = (lk: any) => lk.projects.filter((p: any) => !["closed", "cancelled"].includes(p.status))
+  .map((p: any) => ({ id: p.id, number: p.number, name: p.name, customerId: p.customer_id }));
+export const costCodeOptions = (lk: any) => lk.costCodes.filter((c: any) => c.active).map((c: any) => ({ id: c.id, code: c.code, name: c.name, category: c.category }));
 export const taxOption = (t: any) => ({ id: t.id, code: t.code, name: t.name, kind: t.kind, rate: Number(t.rate), appliesTo: t.applies_to });
 
 export async function names(admin: Client, ids: string[]) {
