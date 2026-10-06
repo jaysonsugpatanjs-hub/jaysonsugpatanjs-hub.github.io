@@ -1,5 +1,33 @@
 # Changelog
 
+## Panalo Accounts Phase 5 — payroll (2026-10-11)
+
+**Database** (`20261011000000_payroll.sql`)
+
+- Current structure: an HR employee register; no pay records.
+- Change: pay items, leave types and balances, employee pay, tax, super and
+  bank details, leave requests, pay runs with lines and payslip snapshots;
+  dated rules for PAYG (Schedule 1), study loans (Schedule 8), super
+  guarantee 12%, the maximum contribution base, super due 7 business days
+  after payday, and the national minimum wage. Details in `PAYROLL.md`.
+- Reason: Phase 5 of the brief.
+- Affected modules: timesheets (paid hours are locked), approvals (new kind
+  `employee_bank`), dashboard; new permission `payroll.self` (My pay).
+- Migration strategy: additive; no existing rows change.
+
+**API**: payroll employees (TFN and bank masked), import from onboarding,
+bank change requests, leave requests and adjustments, pay runs (create,
+recalculate, lines, submit, return, approve, delete drafts, record pay and
+super payments, bank payment list), payslip PDFs, My pay, payroll summary.
+
+**Screens**: Employees, Pay runs, Super, Leave, Payroll reports, My pay;
+dashboard payroll cards.
+
+**Not included**: STP reporting (Phase 8), ABA bank files (Phase 6), working
+holiday makers, tax offsets, special bonus/back pay/termination methods, award
+rate tables. Rules need the accountant's confirmation before live use. Not
+STP or ATO certified.
+
 ## Panalo Accounts Phase 4 — projects, timesheets and job costing (2026-10-10)
 
 **Database** (`20261010000000_projects_timesheets.sql`)
