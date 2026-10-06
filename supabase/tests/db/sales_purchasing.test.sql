@@ -33,6 +33,8 @@ begin
 end $$;
 create temporary table sp (k text primary key, v uuid);
 create temporary table sn (k text primary key, v numeric);
+-- A project manager who may raise purchase orders but not approve them.
+insert into auth.users (email) values ('pm@fin.test');
 insert into sn values ('ar0', pg_temp.bal('1100')), ('ap0', pg_temp.bal('2000')), ('payg0', pg_temp.bal('2100')), ('bank0', pg_temp.bal('1000'));
 
 -- Compliance rules -------------------------------------------------------------------------
@@ -224,22 +226,22 @@ end $$;
 do $$
 declare v_po uuid; v_l1 uuid; v_l2 uuid;
 begin
-  perform public.app_set_profile_role(pg_temp.p('sysadmin'), pg_temp.p('staff'), 'project_manager', true);
+  perform public.app_set_profile_role(pg_temp.p('sysadmin'), pg_temp.p('pm'), 'project_manager', true);
   -- 10 rods x 25 = 250 + 25 GST; 2 bottles x 80 = 160 + 16 GST. Total 451.
-  v_po := public.po_save(pg_temp.p('staff'), null, jsonb_build_object('supplier_id', (select v from sp where k = 'sup'), 'order_date', '2026-09-01'),
+  v_po := public.po_save(pg_temp.p('pm'), null, jsonb_build_object('supplier_id', (select v from sp where k = 'sup'), 'order_date', '2026-09-01'),
     jsonb_build_array(pg_temp.ln('Welding rods (box)', 10, 25, '5200', 'GSTE'), pg_temp.ln('Argon bottle', 2, 80, '5200', 'GSTE')));
   perform pg_temp.eq((select number || ' ' || total from public.purchase_orders where id = v_po), 'PO-1001 451.00', 'PO number and total');
-  perform public.po_set_status(pg_temp.p('staff'), v_po, 'submitted', null);
-  perform pg_temp.expect_error(format('select public.po_set_status(%L, %L, %L, null)', pg_temp.p('staff'), v_po, 'approved'), 'Purchases');
-  perform pg_temp.expect_error(format('select public.po_receive(%L, %L, %L)', pg_temp.p('staff'), v_po, '[]'), 'issued purchase order');
+  perform public.po_set_status(pg_temp.p('pm'), v_po, 'submitted', null);
+  perform pg_temp.expect_error(format('select public.po_set_status(%L, %L, %L, null)', pg_temp.p('pm'), v_po, 'approved'), 'Purchases');
+  perform pg_temp.expect_error(format('select public.po_receive(%L, %L, %L)', pg_temp.p('pm'), v_po, '[]'), 'issued purchase order');
   perform public.po_set_status(pg_temp.p('finance'), v_po, 'approved', null);
   perform public.po_set_status(pg_temp.p('finance'), v_po, 'issued', null);
   select id into v_l1 from public.purchase_order_lines where document_id = v_po and line_no = 1;
   select id into v_l2 from public.purchase_order_lines where document_id = v_po and line_no = 2;
-  perform pg_temp.eq(public.po_receive(pg_temp.p('staff'), v_po, jsonb_build_array(jsonb_build_object('lineId', v_l1, 'quantity', 6))), 'partially_received', 'part received');
-  perform pg_temp.expect_error(format('select public.po_receive(%L, %L, %L)', pg_temp.p('staff'), v_po,
+  perform pg_temp.eq(public.po_receive(pg_temp.p('pm'), v_po, jsonb_build_array(jsonb_build_object('lineId', v_l1, 'quantity', 6))), 'partially_received', 'part received');
+  perform pg_temp.expect_error(format('select public.po_receive(%L, %L, %L)', pg_temp.p('pm'), v_po,
     jsonb_build_array(jsonb_build_object('lineId', v_l1, 'quantity', 5))), 'more than ordered');
-  perform pg_temp.eq(public.po_receive(pg_temp.p('staff'), v_po, jsonb_build_array(jsonb_build_object('lineId', v_l1, 'quantity', 4), jsonb_build_object('lineId', v_l2, 'quantity', 2))),
+  perform pg_temp.eq(public.po_receive(pg_temp.p('pm'), v_po, jsonb_build_array(jsonb_build_object('lineId', v_l1, 'quantity', 4), jsonb_build_object('lineId', v_l2, 'quantity', 2))),
     'completed', 'fully received');
   insert into sp values ('po', v_po), ('pol1', v_l1);
 end $$;

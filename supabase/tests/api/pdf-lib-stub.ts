@@ -10,7 +10,7 @@ export const PDFDocument: any = {
     const pages: any[] = [];
     return {
       setTitle: () => {}, setAuthor: () => {},
-      embedFont: async () => font, embedJpg: async () => ({ scale: () => ({ width: 1, height: 1 }) }),
+      embedFont: async () => font, embedJpg: async () => ({ scale: () => ({ width: 1, height: 1 }) }), embedPng: async () => ({ scale: () => ({ width: 1, height: 1 }) }),
       addPage: () => { const p = page(); pages.push(p); return p; },
       getPages: () => pages,
       save: async () => new TextEncoder().encode(pdfText.join("\n"))

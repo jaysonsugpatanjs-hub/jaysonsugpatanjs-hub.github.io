@@ -1,4 +1,4 @@
-// Panalo Accounts API (Phase 1: foundation).
+// Panalo Accounts API (foundation, ledger, sales and purchasing).
 // Every request: verified session -> active profile -> effective permissions
 // -> MFA (aal2) for anyone holding a privileged key -> the action's permission.
 // Every write then goes through a security-definer SQL function that checks
@@ -6,6 +6,9 @@
 import { withSupabase } from "npm:@supabase/server@^1";
 import { corsHeaders, errorJson, httpError, json, rpc } from "../_shared/http.ts";
 import { ledgerActions, ledgerHeadlines } from "./ledger.ts";
+import { salesActions, salesHeadlines } from "./sales.ts";
+import { purchasesActions, purchasesHeadlines } from "./purchases.ts";
+import { attachmentArchive, attachmentAttach, attachmentOpen, attachmentPrepare } from "./docs.ts";
 
 type Client = any;
 type Actor = { id: string; email: string; full_name: string; role: string; organization_id: string; permissions: string[] };
@@ -317,13 +320,16 @@ async function auditList(admin: Client, actor: Actor, body: any) {
 /* ---------------- Dashboard ---------------- */
 
 async function dashboard(admin: Client, actor: Actor) {
-  const [company, approvals, notes, ledger] = await Promise.all([companyGet(admin, actor), approvalsList(admin, actor), notificationsList(admin, actor), ledgerHeadlines(admin, actor)]);
+  const [company, approvals, notes, ledger, sales, purchases] = await Promise.all([companyGet(admin, actor), approvalsList(admin, actor), notificationsList(admin, actor),
+    ledgerHeadlines(admin, actor), salesHeadlines(admin, actor), purchasesHeadlines(admin, actor)]);
   return {
     setup: { complete: Boolean(company.settings?.setup_completed_at), missing: company.missing, canEdit: company.canEdit },
     approvalsWaiting: approvals.toDecide.length,
     myPending: approvals.mine.filter((a: any) => a.status === "pending").length,
     unread: notes.unread,
     ledger,
+    sales,
+    purchases,
     company: { legalName: company.settings?.legal_name, tradingName: company.settings?.trading_name, abn: company.settings?.abn, logoUrl: company.logoUrl }
   };
 }
@@ -349,7 +355,13 @@ const ACTIONS: Record<string, { perm: string[] | null; run: Handler }> = {
   users_list: { perm: ["access.manage"], run: usersList },
   role_set: { perm: ["access.manage"], run: roleSet },
   audit_list: { perm: ["audit.view"], run: auditList },
-  ...ledgerActions
+  ...ledgerActions,
+  ...salesActions,
+  ...purchasesActions,
+  attachment_prepare_upload: { perm: ["sales.manage", "purchases.manage", "purchases.raise"], run: attachmentPrepare },
+  attachment_attach: { perm: ["sales.manage", "purchases.manage", "purchases.raise"], run: attachmentAttach },
+  attachment_open: { perm: ["sales.manage", "purchases.manage", "purchases.raise", "reports.view"], run: attachmentOpen },
+  attachment_archive: { perm: ["sales.manage", "purchases.manage"], run: attachmentArchive }
 };
 
 export default {

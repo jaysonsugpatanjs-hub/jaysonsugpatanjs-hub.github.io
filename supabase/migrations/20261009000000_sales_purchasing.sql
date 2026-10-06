@@ -499,6 +499,35 @@ as $$
   from public.bills b where b.id = p_id;
 $$;
 
+-- Balances of every approved document in one pass (for lists in the app).
+create or replace function public.invoice_balances(p_org uuid)
+returns table (id uuid, owing numeric)
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select i.id, i.total - coalesce(sum(a.amount), 0)
+  from public.invoices i
+  left join public.receivable_allocations a on a.voided_at is null and ((i.kind = 'invoice' and a.invoice_id = i.id) or (i.kind = 'credit_note' and a.credit_note_id = i.id))
+  where i.organization_id = p_org and i.status = 'approved'
+  group by i.id, i.total;
+$$;
+
+create or replace function public.bill_balances(p_org uuid)
+returns table (id uuid, owing numeric)
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select b.id, b.total - b.withholding - coalesce(sum(a.amount), 0)
+  from public.bills b
+  left join public.payable_allocations a on a.voided_at is null and ((b.kind = 'bill' and a.bill_id = b.id) or (b.kind = 'credit_note' and a.credit_note_id = b.id))
+  where b.organization_id = p_org and b.status = 'approved'
+  group by b.id, b.total, b.withholding;
+$$;
+
 create or replace function public.customer_payment_unallocated(p_id uuid)
 returns numeric
 language sql
@@ -1215,7 +1244,7 @@ begin
   end if;
   if exists (select 1 from public.bills where supplier_id = v_sup.id and id <> v_id and status <> 'void'
              and lower(supplier_reference) = lower(nullif(btrim(coalesce(p->>'supplier_reference', '')), ''))) then
-    raise exception 'A bill with supplier reference % already exists for this supplier.', btrim(p->>'supplier_reference') using errcode = '23505';
+    raise exception 'A bill with supplier reference % already exists for this supplier.', btrim(p->>'supplier_reference') using errcode = '22023';
   end if;
   update public.bills set supplier_id = v_sup.id, bill_date = (p->>'bill_date')::date,
     due_date = coalesce(nullif(p->>'due_date', '')::date, (p->>'bill_date')::date + v_terms),
@@ -1563,6 +1592,73 @@ end;
 $$;
 
 ------------------------------------------------------------------------------
+-- 12b. Attachments (supplier invoices, remittances, signed POs)
+------------------------------------------------------------------------------
+
+create or replace function public.finance_attach_document(p_actor uuid, p_entity_type text, p_entity_id uuid, p_path text, p_file_name text,
+  p_content_type text, p_size bigint)
+returns uuid
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_org uuid := public.app_org_of(p_actor);
+  v_id uuid;
+  v_ok boolean;
+begin
+  if p_entity_type in ('bill', 'purchase_order', 'supplier') then
+    if not (public.app_has(p_actor, 'purchases.manage') or (p_entity_type = 'purchase_order' and public.app_has(p_actor, 'purchases.raise'))) then
+      perform public.app_require(p_actor, 'purchases.manage');
+    end if;
+  elsif p_entity_type in ('invoice', 'quote', 'customer') then
+    perform public.app_require(p_actor, 'sales.manage');
+  else
+    raise exception 'Attachments are not available here.' using errcode = '22023';
+  end if;
+  v_ok := case p_entity_type
+    when 'bill' then exists (select 1 from public.bills where id = p_entity_id and organization_id = v_org)
+    when 'purchase_order' then exists (select 1 from public.purchase_orders where id = p_entity_id and organization_id = v_org)
+    when 'supplier' then exists (select 1 from public.suppliers where id = p_entity_id and organization_id = v_org)
+    when 'invoice' then exists (select 1 from public.invoices where id = p_entity_id and organization_id = v_org)
+    when 'quote' then exists (select 1 from public.quotes where id = p_entity_id and organization_id = v_org)
+    when 'customer' then exists (select 1 from public.customers where id = p_entity_id and organization_id = v_org) end;
+  if not v_ok then
+    raise exception 'Record not found.' using errcode = 'P0002';
+  end if;
+  if p_path is null or p_path !~ ('^org/' || v_org::text || '/' || p_entity_type || '/' || p_entity_id::text || '/[A-Za-z0-9._-]{1,140}$') then
+    raise exception 'Invalid upload path.' using errcode = '22023';
+  end if;
+  if p_content_type not in ('application/pdf', 'image/png', 'image/jpeg', 'image/webp', 'image/heic') then
+    raise exception 'Attach a PDF or a photo.' using errcode = '22023';
+  end if;
+  insert into public.documents (organization_id, entity_type, entity_id, category, title, path, file_name, content_type, size_bytes, uploaded_by)
+  values (v_org, p_entity_type, p_entity_id::text, 'attachment', left(coalesce(nullif(btrim(p_file_name), ''), 'Attachment'), 160), p_path,
+    left(coalesce(p_file_name, ''), 200), p_content_type, greatest(p_size, 1), p_actor)
+  returning id into v_id;
+  perform public.app_audit(p_actor, 'document_attached', p_entity_type, p_entity_id::text, null, jsonb_build_object('document', v_id, 'fileName', p_file_name));
+  return v_id;
+end;
+$$;
+
+create or replace function public.finance_archive_document(p_actor uuid, p_document uuid)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v record;
+begin
+  select * into v from public.documents where id = p_document and organization_id = public.app_org_of(p_actor) and category = 'attachment' for update;
+  if not found then raise exception 'Attachment not found.' using errcode = 'P0002'; end if;
+  perform public.app_require(p_actor, case when v.entity_type in ('invoice', 'quote', 'customer') then 'sales.manage' else 'purchases.manage' end);
+  update public.documents set archived_at = now() where id = p_document and archived_at is null;
+  perform public.app_audit(p_actor, 'document_archived', v.entity_type, v.entity_id, jsonb_build_object('document', p_document), null);
+end;
+$$;
+
+------------------------------------------------------------------------------
 -- 13. Lock down
 ------------------------------------------------------------------------------
 
@@ -1592,7 +1688,7 @@ begin
   foreach f in array array[
     'compliance_value(text, date)', 'journal_reverse(uuid, uuid, date, text)', 'approval_decide(uuid, uuid, boolean, text)',
     'doc_calc_lines(uuid, jsonb, text, text)', 'invoice_outstanding(uuid, date)', 'bill_outstanding(uuid, date)',
-    'customer_payment_unallocated(uuid)', 'supplier_payment_unallocated(uuid)',
+    'customer_payment_unallocated(uuid)', 'supplier_payment_unallocated(uuid)', 'invoice_balances(uuid)', 'bill_balances(uuid)',
     'customer_save(uuid, uuid, jsonb)', 'supplier_save(uuid, uuid, jsonb)', 'supplier_bank_request(uuid, uuid, text, text, text)',
     'quote_save(uuid, uuid, jsonb, jsonb)', 'quote_set_status(uuid, uuid, text)',
     'invoice_save(uuid, uuid, jsonb, jsonb)', 'invoice_approve(uuid, uuid)', 'invoice_void(uuid, uuid, text)', 'invoice_mark_sent(uuid, uuid)',
@@ -1603,7 +1699,8 @@ begin
     'bill_save(uuid, uuid, jsonb, jsonb)', 'bill_submit(uuid, uuid)', 'bill_approve(uuid, uuid)', 'bill_void(uuid, uuid, text)',
     'supplier_credit_apply(uuid, uuid, uuid, numeric, date)',
     'supplier_payment_record(uuid, uuid, date, uuid, text, text, jsonb)', 'supplier_payment_void(uuid, uuid, text)',
-    'report_aged_receivables(uuid, date)', 'report_aged_payables(uuid, date)', 'report_customer_statement(uuid, uuid, date, date)']
+    'report_aged_receivables(uuid, date)', 'report_aged_payables(uuid, date)', 'report_customer_statement(uuid, uuid, date, date)',
+    'finance_attach_document(uuid, text, uuid, text, text, text, bigint)', 'finance_archive_document(uuid, uuid)']
   loop
     execute format('revoke execute on function public.%s from public, anon, authenticated', f);
     execute format('grant execute on function public.%s to service_role', f);
