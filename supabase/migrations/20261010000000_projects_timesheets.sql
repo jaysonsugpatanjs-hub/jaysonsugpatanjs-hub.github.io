@@ -176,6 +176,31 @@ create table public.timesheet_entries (
 );
 create index timesheet_entries_project_idx on public.timesheet_entries (project_id) where project_id is not null;
 
+-- Every approved version of a week, kept for good (employee time records).
+-- A correction reopens the week; the version that was approved stays here.
+create table public.timesheet_versions (
+  id uuid primary key default gen_random_uuid(),
+  organization_id uuid not null references public.organizations(id) on delete restrict,
+  timesheet_id uuid not null references public.timesheets(id) on delete restrict,
+  version integer not null,
+  approved_at timestamptz not null default now(),
+  approved_by uuid references public.training_profiles(id) on delete set null,
+  total_hours numeric(6,2) not null,
+  entries jsonb not null,
+  unique (timesheet_id, version)
+);
+create or replace function public.timesheet_versions_append_only()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  raise exception 'Approved timesheet versions can''t be changed or deleted.' using errcode = '42501';
+end;
+$$;
+create trigger timesheet_versions_append_only before update or delete on public.timesheet_versions
+  for each row execute function public.timesheet_versions_append_only();
+
 create or replace function public.hour_type_factor(p_type text)
 returns numeric
 language sql
@@ -396,6 +421,7 @@ declare
   v_project uuid; v_code uuid; v_type text;
   v_total numeric := 0;
   v_name text;
+  v_kept uuid[] := '{}';
 begin
   if v_profile = p_actor then
     if not (public.app_has(p_actor, 'time.submit') or public.app_has(p_actor, 'time.approve')) then
@@ -426,6 +452,8 @@ begin
       raise exception 'This week is waiting for approval. Recall it first to make a change.' using errcode = '22023';
     end if;
     v_id := v_ts.id;
+    -- Hours already on this week may stay on a project that has since closed.
+    select coalesce(array_agg(distinct project_id) filter (where project_id is not null), '{}') into v_kept from public.timesheet_entries where timesheet_id = v_id;
   else
     insert into public.timesheets (organization_id, profile_id, week_start, created_by) values (v_org, v_profile, p_week, p_actor) returning id into v_id;
   end if;
@@ -451,6 +479,9 @@ begin
     if v_break < 0 or v_break > 600 then
       raise exception 'Entry %: the break must be between 0 and 600 minutes.', v_no using errcode = '22023';
     end if;
+    if v_start is not null and v_start = v_end then
+      raise exception 'Entry %: the start and finish are the same time.', v_no using errcode = '22023';
+    end if;
     if v_start is not null then
       v_minutes := extract(epoch from (v_end - v_start)) / 60;
       if v_minutes <= 0 then v_minutes := v_minutes + 1440; end if;
@@ -461,7 +492,8 @@ begin
     end if;
     v_project := nullif(e->>'projectId', '')::uuid;
     v_code := nullif(e->>'costCodeId', '')::uuid;
-    if v_project is not null and not exists (select 1 from public.projects where id = v_project and organization_id = v_org and status not in ('closed', 'cancelled')) then
+    if v_project is not null and not exists (select 1 from public.projects where id = v_project and organization_id = v_org
+        and (status not in ('closed', 'cancelled') or (status = 'closed' and v_project = any(v_kept)))) then
       raise exception 'Entry %: that project is closed or doesn''t exist.', v_no using errcode = '22023';
     end if;
     if v_code is not null and not exists (select 1 from public.cost_codes where id = v_code and organization_id = v_org and active and category = 'labour') then
@@ -477,6 +509,14 @@ begin
   end loop;
   if exists (select 1 from public.timesheet_entries where timesheet_id = v_id group by work_date having sum(hours) > 24) then
     raise exception 'A day can''t have more than 24 hours.' using errcode = '22023';
+  end if;
+  -- The same hours can't be booked twice (a shift past midnight ends the next day).
+  if exists (
+    with r as (
+      select line_no, tsrange(work_date + start_time, work_date + end_time + case when end_time <= start_time then interval '1 day' else interval '0' end) as span
+      from public.timesheet_entries where timesheet_id = v_id and start_time is not null)
+    select 1 from r a join r b on a.line_no < b.line_no and a.span && b.span) then
+    raise exception 'Two entries overlap in time. Split the shift between projects instead of entering the same hours twice.' using errcode = '22023';
   end if;
   update public.timesheets set total_hours = v_total, status = case when p_submit then 'submitted' else 'draft' end,
     submitted_at = case when p_submit then now() end, submitted_by = case when p_submit then p_actor end,
@@ -510,6 +550,7 @@ begin
   if not found then raise exception 'Timesheet not found.' using errcode = 'P0002'; end if;
   if v.status <> 'submitted' then raise exception 'Only a submitted timesheet can be approved or rejected.' using errcode = '22023'; end if;
   if v.profile_id = p_actor then raise exception 'Someone else must approve your own timesheet.' using errcode = '42501'; end if;
+  if v.submitted_by = p_actor then raise exception 'You entered and submitted this week, so someone else must approve it.' using errcode = '42501'; end if;
   if p_approve then
     select c.* into v_class from public.labour_profiles lp join public.labour_classes c on c.id = lp.labour_class_id where lp.profile_id = v.profile_id;
     if v_class.id is null then
@@ -525,6 +566,15 @@ begin
   update public.timesheets set status = case when p_approve then 'approved' else 'rejected' end, decided_at = now(), decided_by = p_actor,
     decision_comment = nullif(btrim(coalesce(p_comment, '')), ''), updated_at = now()
   where id = p_id;
+  if p_approve then
+    insert into public.timesheet_versions (organization_id, timesheet_id, version, approved_by, total_hours, entries)
+    select v.organization_id, p_id, coalesce((select max(version) from public.timesheet_versions where timesheet_id = p_id), 0) + 1, p_actor, v.total_hours,
+      coalesce(jsonb_agg(jsonb_build_object('date', e.work_date, 'project', pr.number, 'projectName', pr.name, 'costCode', cc.code, 'start', e.start_time,
+        'end', e.end_time, 'breakMinutes', e.break_minutes, 'hours', e.hours, 'hourType', e.hour_type, 'notes', e.notes, 'costRate', e.cost_rate,
+        'cost', e.cost_amount) order by e.work_date, e.line_no), '[]'::jsonb)
+    from public.timesheet_entries e left join public.projects pr on pr.id = e.project_id left join public.cost_codes cc on cc.id = e.cost_code_id
+    where e.timesheet_id = p_id;
+  end if;
   insert into public.notifications (organization_id, profile_id, kind, title, body, link)
   values (v.organization_id, v.profile_id, case when p_approve then 'timesheet_approved' else 'timesheet_rejected' end,
     case when p_approve then 'Timesheet approved: ' else 'Timesheet sent back: ' end || 'week of ' || to_char(v.week_start, 'DD Mon'),
@@ -597,6 +647,9 @@ declare
   v_pc numeric;
   v_earned numeric;
 begin
+  if not (public.app_has(p_actor, 'projects.manage') or public.app_has(p_actor, 'reports.view')) then
+    perform public.app_require(p_actor, 'reports.view');
+  end if;
   select * into v_p from public.projects where id = p_project and organization_id = v_org;
   if not found then raise exception 'Project not found.' using errcode = 'P0002'; end if;
 
@@ -611,7 +664,7 @@ begin
   ), billed as (
     select bl.po_line_id, sum(bl.quantity) as qty
     from public.bill_lines bl join public.bills b on b.id = bl.document_id
-    where bl.po_line_id is not null and b.status = 'approved' and b.kind = 'bill' group by bl.po_line_id
+    where bl.po_line_id is not null and b.status = 'approved' and b.kind = 'bill' and b.bill_date <= v_to group by bl.po_line_id
   ), committed as (
     select pl.cost_code_id,
       sum((pl.amount - case when po.amounts_are = 'inclusive' then pl.gst else 0 end) * greatest(0, 1 - coalesce(bd.qty, 0) / pl.quantity)) as cost
@@ -710,7 +763,8 @@ as $$
   join public.training_profiles tp on tp.id = t.profile_id
   left join public.projects pr on pr.id = e.project_id
   left join public.cost_codes cc on cc.id = e.cost_code_id
-  where t.organization_id = public.app_org_of(p_actor) and t.status = 'approved' and e.work_date between p_from and p_to;
+  where t.organization_id = public.app_org_of(p_actor) and t.status = 'approved' and e.work_date between p_from and p_to
+    and (public.app_has(p_actor, 'time.approve') or public.app_has(p_actor, 'projects.manage') or public.app_has(p_actor, 'payroll.run'));
 $$;
 
 -- People who record time: anyone holding "Enter my timesheets", or who has a labour class.
@@ -724,7 +778,8 @@ as $$
   select coalesce(jsonb_agg(jsonb_build_object('id', tp.id, 'name', coalesce(nullif(tp.full_name, ''), tp.email), 'email', tp.email,
       'labourClassId', lp.labour_class_id) order by coalesce(nullif(tp.full_name, ''), tp.email)), '[]'::jsonb)
   from public.training_profiles tp left join public.labour_profiles lp on lp.profile_id = tp.id
-  where tp.organization_id = public.app_org_of(p_actor) and tp.active and (lp.profile_id is not null or public.app_has(tp.id, 'time.submit'));
+  where tp.organization_id = public.app_org_of(p_actor) and tp.active and (lp.profile_id is not null or public.app_has(tp.id, 'time.submit'))
+    and (public.app_has(p_actor, 'time.approve') or public.app_has(p_actor, 'projects.manage'));
 $$;
 
 ------------------------------------------------------------------------------
@@ -814,8 +869,9 @@ begin
     -- Optional job costing tags (Phase 4). Cost codes only make sense on costs.
     v_project := nullif(l->>'projectId', '')::uuid;
     v_cost_code := case when p_side = 'purchases' then nullif(l->>'costCodeId', '')::uuid end;
-    if v_project is not null and not exists (select 1 from public.projects where id = v_project and organization_id = p_org and status not in ('closed', 'cancelled')) then
-      raise exception 'Line %: that project is closed or doesn''t exist.', v_no using errcode = '22023';
+    -- Late bills and final invoices still belong to a completed or closed job; only cancelled projects are refused.
+    if v_project is not null and not exists (select 1 from public.projects where id = v_project and organization_id = p_org and status <> 'cancelled') then
+      raise exception 'Line %: that project was cancelled or doesn''t exist.', v_no using errcode = '22023';
     end if;
     if v_cost_code is not null and not exists (select 1 from public.cost_codes where id = v_cost_code and organization_id = p_org and active) then
       raise exception 'Line %: unknown or inactive cost code.', v_no using errcode = '22023';
@@ -881,7 +937,7 @@ declare
   t text;
   f text;
 begin
-  foreach t in array array['cost_codes', 'labour_classes', 'labour_profiles', 'projects', 'project_budgets', 'timesheets', 'timesheet_entries'] loop
+  foreach t in array array['cost_codes', 'labour_classes', 'labour_profiles', 'projects', 'project_budgets', 'timesheets', 'timesheet_entries', 'timesheet_versions'] loop
     execute format('alter table public.%I enable row level security', t);
     execute format('revoke all on table public.%I from anon, authenticated', t);
     execute format('grant select on table public.%I to service_role', t);

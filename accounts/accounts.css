@@ -295,3 +295,5 @@ fieldset.day.empty { border-style: dashed; }
 .entry .remove { margin-bottom: 12px; }
 @media (max-width: 1100px) { .entry { grid-template-columns: 1fr 1fr 1fr; } .entry .fld.wide { grid-column: span 3; } .entry .fld.t { min-width: 0; } }
 @media (max-width: 900px) { .week-total { margin-left: 0; align-items: flex-start; } .entry { grid-template-columns: 1fr 1fr; } .entry .fld.wide { grid-column: span 2; } }
+details.version { border-top: 1px solid var(--rule); padding: 8px 0; }
+details.version summary { cursor: pointer; font-weight: 700; }

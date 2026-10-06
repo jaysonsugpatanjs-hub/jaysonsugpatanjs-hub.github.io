@@ -169,12 +169,12 @@ begin
   perform public.invoice_approve(pg_temp.p('finance'), v_id);
   perform pg_temp.eq((select cost_code_id from public.invoice_lines where document_id = v_id), null::uuid, 'no cost codes on income');
 
-  -- A closed project can't take new costs.
+  -- A late bill can still be tagged to a closed job (it belongs to that job's costs); its draft is deleted again here.
   v_other := public.project_save(pg_temp.p('pm'), null, '{"name":"Old job"}', null);
   perform public.project_set_status(pg_temp.p('pm'), v_other, 'closed');
-  perform pg_temp.expect_error(format('select public.bill_save(%L, null, %L, %L)', pg_temp.p('finance'),
-    jsonb_build_object('supplier_id', v_boc, 'bill_date', '2026-09-11', 'supplier_reference', 'JOB-Y'),
-    jsonb_build_array(pg_temp.ln('x', 1, 1, '5100', 'GSTE', v_other, '200'))), 'closed');
+  v_id := public.bill_save(pg_temp.p('finance'), null, jsonb_build_object('supplier_id', v_boc, 'bill_date', '2026-09-11', 'supplier_reference', 'JOB-Y'),
+    jsonb_build_array(pg_temp.ln('x', 1, 1, '5100', 'GSTE', v_other, '200')));
+  perform public.bill_void(pg_temp.p('finance'), v_id, 'test draft');
 end $$;
 
 -- The job costing report -----------------------------------------------------------------------------
@@ -206,6 +206,81 @@ begin
   v_sum := (select x from jsonb_array_elements(public.report_projects_summary(pg_temp.p('pm'), 'open')) x where x->>'number' = 'JOB-1001');
   perform pg_temp.eq((v_sum->>'cost')::numeric, 4372.50, 'summary agrees');
   perform pg_temp.eq(jsonb_array_length(public.report_timesheet_hours(pg_temp.p('pm'), '2026-09-01', '2026-09-30')), 4, 'approved entries for payroll');
+end $$;
+
+-- A third tradesperson for these cases (the API tests rely on welder2 having no labour class).
+insert into auth.users (email) values ('welder3@fin.test');
+insert into public.profile_permissions (profile_id, permission_key, granted) select id, 'time.submit', true from public.training_profiles where email = 'welder3@fin.test';
+
+-- Review cases: overlaps, who may approve, kept versions, closed projects, commitments by date ---------
+do $$
+declare v_job uuid; v_ts uuid; v_po uuid; v_pol uuid; v_bill uuid; v_cancel uuid; r jsonb; v_week jsonb;
+begin
+  perform public.labour_profile_set(pg_temp.p('pm'), pg_temp.p('welder3'), (select id from public.labour_classes where code = 'WELDER'));
+  v_job := public.project_save(pg_temp.p('pm'), null, '{"name":"Short job"}', null);
+
+  -- The same hours can't be booked twice, including a night shift running into the next morning.
+  perform pg_temp.expect_error(format('select public.timesheet_save(%L, null, %L, %L, false)', pg_temp.p('welder3'), '2026-08-03',
+    jsonb_build_array(pg_temp.te('2026-08-03', v_job, '110', '07:00', '15:30', 30), pg_temp.te('2026-08-03', v_job, '100', '07:00', '15:30', 30))), 'overlap');
+  perform pg_temp.expect_error(format('select public.timesheet_save(%L, null, %L, %L, false)', pg_temp.p('welder3'), '2026-08-03',
+    jsonb_build_array(pg_temp.te('2026-08-03', v_job, '110', '22:00', '06:00', 30), pg_temp.te('2026-08-04', v_job, '110', '05:00', '13:00', 30))), 'overlap');
+  perform pg_temp.expect_error(format('select public.timesheet_save(%L, null, %L, %L, false)', pg_temp.p('welder3'), '2026-08-03',
+    jsonb_build_array(pg_temp.te('2026-08-03', v_job, '110', '07:00', '07:00', 0))), 'same time');
+  -- Back-to-back shifts are fine.
+  perform public.timesheet_save(pg_temp.p('welder3'), null, '2026-08-03',
+    jsonb_build_array(pg_temp.te('2026-08-03', v_job, '110', '06:00', '10:00', 0), pg_temp.te('2026-08-03', v_job, '100', '10:00', '14:00', 0)), false);
+  perform public.timesheet_save(pg_temp.p('welder3'), null, '2026-08-03', '[]'::jsonb, false); -- cleared again so the job can close below
+
+  -- A supervisor who entered and submitted a crew member's week can't also approve it.
+  v_ts := public.timesheet_save(pg_temp.p('pm'), pg_temp.p('welder3'), '2026-08-10',
+    jsonb_build_array(pg_temp.te('2026-08-10', v_job, '110', '07:00', '15:30', 30)), true);
+  perform pg_temp.expect_error(format('select public.timesheet_decide(%L, %L, true, null)', pg_temp.p('pm'), v_ts), 'someone else must approve');
+  perform public.timesheet_decide(pg_temp.p('payroll'), v_ts, true, 'Checked');
+  perform pg_temp.eq((select count(*)::int from public.timesheet_versions where timesheet_id = v_ts), 1, 'approved version kept');
+  perform pg_temp.eq((select (entries->0->>'hours')::numeric from public.timesheet_versions where timesheet_id = v_ts), 8.00, 'version records the hours');
+  perform pg_temp.expect_error(format('update public.timesheet_versions set total_hours = 1 where timesheet_id = %L', v_ts), 'can''t be changed');
+  perform pg_temp.expect_error(format('delete from public.timesheet_versions where timesheet_id = %L', v_ts), 'can''t be changed');
+
+  -- A purchase order on the job, billed later: committed until the bill's date, then actual.
+  v_po := public.po_save(pg_temp.p('finance'), null, jsonb_build_object('supplier_id', (select id from public.suppliers where name = 'BOC Gases'), 'order_date', '2026-08-05'),
+    jsonb_build_array(pg_temp.ln('Argon', 10, 100, '5200', 'GSTE', v_job, '210')));
+  perform public.po_set_status(pg_temp.p('finance'), v_po, 'submitted', null);
+  perform public.po_set_status(pg_temp.p('finance'), v_po, 'approved', null);
+  select id into v_pol from public.purchase_order_lines where document_id = v_po;
+
+  -- The job closes; the reopened week can keep its hours on it, but new weeks can't add any.
+  perform public.project_set_status(pg_temp.p('pm'), v_job, 'closed');
+  perform public.timesheet_reopen(pg_temp.p('payroll'), v_ts, 'Wrong cost code');
+  perform pg_temp.eq((select count(*)::int from public.timesheet_versions where timesheet_id = v_ts), 1, 'reopening keeps the approved version');
+  perform public.timesheet_save(pg_temp.p('welder3'), null, '2026-08-10', jsonb_build_array(pg_temp.te('2026-08-10', v_job, '100', '07:00', '15:30', 30)), true);
+  perform public.timesheet_decide(pg_temp.p('payroll'), v_ts, true, null);
+  perform pg_temp.eq((select count(*)::int from public.timesheet_versions where timesheet_id = v_ts), 2, 'corrected version added');
+  perform pg_temp.eq((select entries->0->>'costCode' from public.timesheet_versions where timesheet_id = v_ts and version = 1), '110', 'first version unchanged');
+  perform pg_temp.expect_error(format('select public.timesheet_save(%L, null, %L, %L, false)', pg_temp.p('welder3'), '2026-08-17',
+    jsonb_build_array(pg_temp.te('2026-08-17', v_job, '110', '07:00', '15:30', 30))), 'closed');
+
+  -- A late bill still lands on the closed job.
+  v_bill := public.bill_save(pg_temp.p('finance'), null, jsonb_build_object('supplier_id', (select id from public.suppliers where name = 'BOC Gases'), 'bill_date', '2026-08-20',
+      'supplier_reference', 'BOC-AUG-ARGON', 'purchase_order_id', v_po),
+    jsonb_build_array(pg_temp.ln('Argon', 10, 100, '5200', 'GSTE', v_job, '210') || jsonb_build_object('poLineId', v_pol)));
+  perform public.bill_approve(pg_temp.p('finance'), v_bill);
+  r := public.report_project_costing(pg_temp.p('pm'), v_job, '2026-08-10');
+  perform pg_temp.eq((r->'totals'->>'committed')::numeric, 1000.00, 'committed until the bill is dated');
+  perform pg_temp.eq((r->'totals'->>'otherCost')::numeric, 0::numeric, 'no actual before the bill');
+  r := public.report_project_costing(pg_temp.p('pm'), v_job, '2026-08-31');
+  perform pg_temp.eq((r->'totals'->>'committed')::numeric, 0::numeric, 'nothing committed once billed');
+  perform pg_temp.eq((r->'totals'->>'otherCost')::numeric, 1000.00, 'actual after the bill');
+
+  -- Cancelled projects take nothing.
+  v_cancel := public.project_save(pg_temp.p('pm'), null, '{"name":"Lost tender"}', null);
+  perform public.project_set_status(pg_temp.p('pm'), v_cancel, 'cancelled');
+  perform pg_temp.expect_error(format('select public.bill_save(%L, null, %L, %L)', pg_temp.p('finance'),
+    jsonb_build_object('supplier_id', (select id from public.suppliers where name = 'BOC Gases'), 'bill_date', '2026-08-21', 'supplier_reference', 'X-1'),
+    jsonb_build_array(pg_temp.ln('x', 1, 1, '5200', 'GSTE', v_cancel, '210'))), 'cancelled');
+
+  -- Reports check permissions in the database too.
+  perform pg_temp.expect_error(format('select public.report_project_costing(%L, %L, null)', pg_temp.p('welder1'), v_job), 'Reports|Projects|access');
+  perform pg_temp.eq(jsonb_array_length(public.report_timesheet_hours(pg_temp.p('welder1'), '2026-08-01', '2026-08-31')), 0, 'no hours for people without access');
 end $$;
 
 -- Lock-down ---------------------------------------------------------------------------------------------

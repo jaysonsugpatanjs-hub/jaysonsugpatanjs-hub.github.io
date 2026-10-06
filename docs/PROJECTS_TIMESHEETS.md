@@ -20,7 +20,10 @@ so nothing is counted twice. Bills and invoices were already in the ledger
   margin against the contract value as you type.
 - Status: Tender → Active → On hold / Completed → Closed (or Cancelled). A
   project can't be closed while timesheets with hours on it are still
-  waiting for approval. Closed and cancelled projects can't take new hours.
+  waiting for approval. Closed projects take no new timesheet hours, but a
+  late bill or final invoice can still be tagged to a completed or closed
+  job (it belongs to that job's costs), and a reopened week keeps hours it
+  already had on it. Cancelled projects take nothing.
 
 ## Cost codes and labour rates
 
@@ -35,7 +38,9 @@ so nothing is counted twice. Bills and invoices were already in the ledger
   **charge-out rate**. They start at $0: Panalo sets its own.
 - Each person who records time is assigned a class. Job costing uses the
   class rate, so **nobody's individual pay appears on a project**. Only people
-  who manage projects see rates and labour costs.
+  who manage projects see the rates and each person's labour cost; job
+  costing (also open to `reports.view`, such as directors and the
+  accountant) shows labour totals by cost code.
 
 ## Timesheets
 
@@ -45,19 +50,26 @@ so nothing is counted twice. Bills and invoices were already in the ledger
   the type of hours (ordinary, overtime ×1.5, overtime ×2, travel time) and
   notes. A finish before the start means the shift ran past midnight.
 - Checks: dates inside the week, no more than 24 hours in a day, hours more
-  than 0, start and finish together or not at all, open projects only, no
-  weeks more than one week ahead.
+  than 0, start and finish together or not at all (and not the same time),
+  **no two entries overlapping in time** (split a shift between projects
+  instead), open projects only, no weeks more than one week ahead.
 - Draft → Submitted → Approved, or Sent back with a reason. A person can
   recall their own week while it is waiting. Supervisors and project managers
   (`time.approve`) can enter a week for a crew member, and approve or send
-  back others' weeks, **never their own**.
+  back others' weeks, **never their own, and never a week they entered and
+  submitted for someone else**. `time.approve` covers everyone in the
+  company, not just a crew; give it only to people who should approve
+  anyone's time.
 - **Approval freezes the cost** of each entry: hours × class rate × the
   overtime factor. A person needs a labour class before their week can be
   approved.
 - An approved week is a time record the employer keeps (Fair Work Act
-  record-keeping). A correction reopens it with a reason; the person is
-  notified, everything is audited, and the cost is worked out again when it
-  is re-approved. Once paid in a pay run (Phase 5), a week can't be reopened;
+  record-keeping). **Every approved version is stored permanently** (who
+  approved it, when, and each entry's day, project, times, hours and type);
+  the database refuses to change or delete these. A correction reopens the
+  week with a reason; the person is notified, everything is audited, and the
+  corrected week becomes a new version when it is re-approved. The week's
+  page lists every approved version. Once paid in a pay run (Phase 5), a week can't be reopened;
   corrections go in the next pay run.
 - **Hours for payroll**: approved hours by person and type for any date
   range, with a CSV export (logged), for the payroll system until pay runs
@@ -82,7 +94,7 @@ For a project, as at any date, by cost code:
 | Budget hours and dollars | The project budget |
 | Actual hours and labour | Approved timesheet entries, at their frozen cost |
 | Other costs | Approved bills less supplier credits tagged to the project, excluding GST |
-| Committed | Approved or issued purchase order lines not yet billed, excluding GST |
+| Committed | Approved or issued purchase order lines not yet billed (by bills dated up to the report date), excluding GST |
 | Remaining | Budget − actual − committed |
 | Invoiced | Approved invoices less credit notes tagged to the project, excluding GST |
 
@@ -113,7 +125,8 @@ a total, with a CSV export (logged) for people with `data.export`.
 
 - Current structure: no projects or timesheets.
 - Change: `cost_codes`, `labour_classes`, `labour_profiles`, `projects`,
-  `project_budgets`, `timesheets`, `timesheet_entries`; project and cost code
+  `project_budgets`, `timesheets`, `timesheet_entries`, `timesheet_versions`
+  (append-only); project and cost code
   columns on quote, invoice, purchase order and bill lines; the timesheet
   workflow and job costing functions; permission `time.submit`; numbering
   kind `project`.

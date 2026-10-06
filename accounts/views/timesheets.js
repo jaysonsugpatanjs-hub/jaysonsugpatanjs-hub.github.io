@@ -78,6 +78,12 @@ async function week(view, ctx) {
           </div>
         </form>
       </section>
+      ${d.versions?.length ? `<section class="panel"><h2>Approved versions</h2>
+        <p class="muted small">Every version of this week that was approved is kept, including any later reopened and corrected.</p>
+        ${d.versions.map(v => `<details class="version"><summary>Version ${v.version} · ${fmtHours(v.totalHours)} h · approved by ${safe(v.approvedBy || "—")} ${dateTime(v.approvedAt)}</summary>
+          <table class="tbl"><thead><tr><th scope="col">Day</th><th scope="col">Project</th><th scope="col">Code</th><th scope="col">Times</th><th scope="col" class="num">Hours</th><th scope="col">Type</th></tr></thead><tbody>
+          ${v.entries.map(e => `<tr><td>${date(e.date)}</td><td>${safe(e.project || "—")}</td><td>${safe(e.costCode || "")}</td><td>${e.start ? `${safe(String(e.start).slice(0, 5))}–${safe(String(e.end).slice(0, 5))}${e.breakMinutes ? ` (${e.breakMinutes} min break)` : ""}` : ""}</td>
+            <td class="num mono">${fmtHours(Number(e.hours))}</td><td>${safe(TYPES.find(t => t[0] === e.hourType)?.[1] || e.hourType)}</td></tr>`).join("")}</tbody></table></details>`).join("")}</section>` : ""}
       ${d.recent.length ? `<section class="panel"><h2>Recent weeks</h2><table class="tbl"><tbody>
         ${d.recent.map(r => `<tr><td><a href="#/timesheets?week=${safe(r.weekStart)}${st.person ? `&person=${safe(st.person)}` : ""}">Week of ${date(r.weekStart)}</a></td><td>${chip(...STATUS[r.status])}</td><td class="num mono">${fmtHours(r.totalHours)} h</td></tr>`).join("")}
       </tbody></table></section>` : ""}
@@ -89,7 +95,8 @@ async function week(view, ctx) {
     const dis = edit ? "" : "disabled";
     const timed = e.start || e.end;
     return `<div class="entry" data-entry="${idx}">
-      <div class="fld wide"><label for="e${idx}-p">Project</label><select id="e${idx}-p" data-f="projectId" ${dis}>${options([["", "No project (workshop / overhead)"], ...setup.projects.map(p => [p.id, `${p.number} ${p.name}`])], e.projectId || "")}</select></div>
+      <div class="fld wide"><label for="e${idx}-p">Project</label><select id="e${idx}-p" data-f="projectId" ${dis}>${options([["", "No project (workshop / overhead)"], ...setup.projects.map(p => [p.id, `${p.number} ${p.name}`]),
+        ...(e.projectId && !setup.projects.some(p => p.id === e.projectId) ? [[e.projectId, "Project now closed"]] : [])], e.projectId || "")}</select></div>
       <div class="fld"><label for="e${idx}-c">Cost code</label><select id="e${idx}-c" data-f="costCodeId" ${dis}>${options([["", "—"], ...labourCodes.map(c => [c.id, `${c.code} ${c.name.replace(/^Labour - /, "")}`])], e.costCodeId || "")}</select></div>
       <div class="fld t"><label for="e${idx}-s">Start</label><input id="e${idx}-s" type="time" data-f="start" value="${safe(e.start)}" ${dis}></div>
       <div class="fld t"><label for="e${idx}-e">Finish</label><input id="e${idx}-e" type="time" data-f="end" value="${safe(e.end)}" ${dis}></div>

@@ -89,7 +89,8 @@ export function documentEditor(view, cfg) {
           ${doc.lines.map((l, i) => `<tr data-line="${i}">
             <td class="desc"><textarea rows="1" aria-label="Description, line ${i + 1}" data-f="description" maxlength="500">${safe(l.description)}</textarea>
               <div class="line-tags"><select aria-label="Type, line ${i + 1}" data-f="kind" class="kind">${options(LINE_KINDS, l.kind)}</select>
-              ${cfg.projects ? `<select aria-label="Project, line ${i + 1}" data-f="projectId" class="kind">${options([["", "No project"], ...cfg.projects.map(p => [p.id, `${p.number} ${p.name}`])], l.projectId || "")}</select>` : ""}
+              ${cfg.projects ? `<select aria-label="Project, line ${i + 1}" data-f="projectId" class="kind">${options([["", "No project"], ...cfg.projects.map(p => [p.id, `${p.number} ${p.name}`]),
+                ...(l.projectId && !cfg.projects.some(p => p.id === l.projectId) ? [[l.projectId, l.projectNumber || "Closed project"]] : [])], l.projectId || "")}</select>` : ""}
               ${cfg.costCodes ? `<select aria-label="Cost code, line ${i + 1}" data-f="costCodeId" class="kind" ${l.projectId ? "" : "disabled"}>${options([["", "Cost code…"], ...cfg.costCodes.map(c => [c.id, `${c.code} ${c.name}`])], l.costCodeId || "")}</select>` : ""}</div>
               ${l.poLineId ? '<small class="muted">From the purchase order</small>' : ""}</td>
             <td><select aria-label="Account, line ${i + 1}" data-f="accountId">${accountOptions(cfg.accounts, l.accountId)}</select></td>

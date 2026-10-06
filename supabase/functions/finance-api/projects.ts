@@ -1,7 +1,9 @@
 // Phase 4: projects, cost codes, labour rates, timesheets and job costing.
 // Writes go through SQL functions that re-check permissions and audit.
-// Labour rates are visible only to people who manage projects; someone who
-// only enters their own time sees projects, cost codes and their own hours.
+// Labour classes' rates and each person's labour cost are shown only to people
+// who manage projects; job costing (projects.manage or reports.view) shows
+// labour totals by cost code. Someone who only enters their own time sees
+// projects, cost codes and their own hours.
 import { httpError, rpc } from "../_shared/http.ts";
 import { cents, dollars, has, names, optDate, optUuid, text, uuid, type Actor, type Client, type Handler } from "./docs.ts";
 import { todaySydney } from "./ledger.ts";
@@ -212,21 +214,28 @@ async function timesheetWeek(admin: Client, actor: Actor, body: any) {
   const profileId = optUuid(body.profileId) || actor.id;
   await canSeeTimesheetOf(admin, actor, profileId);
   const { data: ts } = await admin.from("timesheets").select("*,timesheet_entries(*)").eq("profile_id", profileId).eq("week_start", week).maybeSingle();
-  const [who, recent] = await Promise.all([
+  const [who, recent, versions] = await Promise.all([
     names(admin, [profileId, ts?.decided_by, ts?.created_by].filter(Boolean) as string[]),
-    admin.from("timesheets").select("id,week_start,status,total_hours").eq("profile_id", profileId).order("week_start", { ascending: false }).limit(8)
+    admin.from("timesheets").select("id,week_start,status,total_hours").eq("profile_id", profileId).order("week_start", { ascending: false }).limit(8),
+    ts ? admin.from("timesheet_versions").select("version,approved_at,approved_by,total_hours,entries").eq("timesheet_id", ts.id).order("version", { ascending: false })
+      : Promise.resolve({ data: [] })
   ]);
+  const approvers = await names(admin, ((versions as any).data || []).map((v: any) => v.approved_by));
+  const showCost = has(actor, "projects.manage");
   const editable = !ts || ["draft", "rejected"].includes(ts.status);
   return {
     weekStart: week, profileId, person: who.get(profileId) || "",
     timesheet: ts ? { id: ts.id, status: ts.status, totalHours: Number(ts.total_hours), submittedAt: ts.submitted_at, decidedAt: ts.decided_at,
       decidedBy: who.get(ts.decided_by) || null, comment: ts.decision_comment, enteredBy: ts.created_by !== profileId ? who.get(ts.created_by) || null : null } : null,
-    entries: shapeEntries(ts?.timesheet_entries, has(actor, "projects.manage")),
+    entries: shapeEntries(ts?.timesheet_entries, showCost),
+    // Every approved version, including ones later reopened and corrected.
+    versions: ((versions as any).data || []).map((v: any) => ({ version: v.version, approvedAt: v.approved_at, approvedBy: approvers.get(v.approved_by) || null,
+      totalHours: Number(v.total_hours), entries: (v.entries || []).map((e: any) => showCost ? e : { ...e, costRate: undefined, cost: undefined }) })),
     recent: (recent.data || []).map((r: any) => ({ id: r.id, weekStart: r.week_start, status: r.status, totalHours: Number(r.total_hours) })),
     can: {
       edit: editable && (profileId === actor.id ? (has(actor, "time.submit") || has(actor, "time.approve")) : has(actor, "time.approve")),
       recall: ts?.status === "submitted" && profileId === actor.id,
-      decide: ts?.status === "submitted" && profileId !== actor.id && has(actor, "time.approve"),
+      decide: ts?.status === "submitted" && profileId !== actor.id && ts.submitted_by !== actor.id && has(actor, "time.approve"),
       reopen: ts?.status === "approved" && profileId !== actor.id && has(actor, "time.approve") && !ts.payroll_locked_at
     }
   };
