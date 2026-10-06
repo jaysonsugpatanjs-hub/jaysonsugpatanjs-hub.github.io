@@ -73,3 +73,10 @@ test("timesheet hours match the database", async () => {
   assert.equal(labourCost(2, 65, "overtime_150"), 195);
   assert.equal(labourCost(23.5, 65, "ordinary"), 1527.5);
 });
+
+test("TFN check digits", async () => {
+  const { validTfn } = await import("../lib/validate.js");
+  assert.ok(validTfn("123 456 782"));
+  assert.ok(!validTfn("123 456 789"));
+  assert.ok(!validTfn("12345"));
+});

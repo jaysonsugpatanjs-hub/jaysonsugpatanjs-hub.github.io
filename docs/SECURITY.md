@@ -14,11 +14,16 @@
   change their own roles or approve their own request.
 - **Four-eyes on money movement.** New company bank accounts stay inactive
   until a second person with banking permission approves them. Supplier bank
-  changes use the same engine (`purchases.bank`, Phase 3); employee bank
-  changes will too (Phase 5). Only approved bills can be paid.
+  changes use the same engine (`purchases.bank`, Phase 3), and so do employee
+  bank changes (`employee_bank`, approved by `payroll.approve`; nobody approves
+  a change to their own account). Only approved bills can be paid. Pay runs
+  are approved by someone other than the preparer and anyone paid in the run.
+- **Pay data.** TFNs and bank account numbers are masked in every API response
+  except the logged bank payment list, and are never written to the audit log.
+  Employees see only their own payslips and leave (`payroll.self`).
 - **Append-only audit.** Audit rows cannot be updated or deleted; settings
   changes record old and new values.
-- **Private files.** Logos, HR records and (later) payslips and receipts live
+- **Private files.** Logos, HR records and receipts live
   in private buckets and are opened through two- to ten-minute signed links.
 
 ## Roles

@@ -25,6 +25,9 @@ import { renderBills } from "./views/bills.js";
 import { renderSupplierPayments } from "./views/supplier-payments.js";
 import { renderJobCosting, renderProjects } from "./views/projects.js";
 import { renderTimesheets } from "./views/timesheets.js";
+import { renderEmployees } from "./views/employees.js";
+import { renderPayRuns, renderPayrollReports, renderSuper } from "./views/payruns.js";
+import { renderLeave, renderMyPay } from "./views/leave.js";
 
 const $ = sel => document.querySelector(sel);
 const state = { me: null };
@@ -33,9 +36,10 @@ const can = key => state.me?.permissions.includes(key);
 const LEDGER = ["reports.view", "ledger.manage", "ledger.journal", "ledger.post", "audit.view"];
 const SALES = ["sales.manage", "bank.manage", "reports.view"];
 const PURCHASES = ["purchases.manage", "purchases.raise", "bank.manage", "reports.view"];
+const RUNS = ["payroll.run", "payroll.approve", "payroll.sensitive"];
 /* Menu from the brief (section 80). Items not built yet show the phase that delivers them. */
 const MENU = [
-  { group: null, items: [{ path: "dashboard", label: "Dashboard" }] },
+  { group: null, items: [{ path: "dashboard", label: "Dashboard" }, { path: "my-pay", label: "My pay", perm: "payroll.self" }] },
   { group: "Sales", items: [
     { path: "customers", label: "Customers", any: SALES }, { path: "quotes", label: "Quotes", any: SALES },
     { path: "invoices", label: "Invoices", any: SALES }, { path: "receipts", label: "Payments received", any: SALES }] },
@@ -46,7 +50,13 @@ const MENU = [
     { path: "projects", label: "Projects", any: ["projects.manage", "reports.view"] },
     { path: "job-costing", label: "Job costing", any: ["projects.manage", "reports.view"] },
     { path: "timesheets", label: "Timesheets", any: ["time.submit", "time.approve", "projects.manage", "payroll.run"], count: "timesheets" }] },
-  { group: "Payroll", items: [["employees", "Employees", 5], ["pay-runs", "Pay runs", 5], ["leave", "Leave", 5], ["super", "Super", 5], ["stp", "STP", 8], ["payroll-reports", "Payroll reports", 5]] },
+  { group: "Payroll", items: [
+    { path: "employees", label: "Employees", any: ["payroll.sensitive", "payroll.run", "payroll.approve", "leave.approve"] },
+    { path: "pay-runs", label: "Pay runs", any: RUNS, count: "payRuns" },
+    { path: "leave", label: "Leave", any: ["leave.approve", "payroll.sensitive", "payroll.run"], count: "leave" },
+    { path: "super", label: "Super", any: RUNS },
+    ["stp", "STP", 8],
+    { path: "payroll-reports", label: "Payroll reports", any: RUNS }] },
   { group: "Accounting", items: [
     { path: "reports", label: "Reports", any: LEDGER },
     { path: "journals", label: "Journals", any: LEDGER },
@@ -69,7 +79,8 @@ const VIEWS = {
   journals: renderJournals, periods: renderPeriods, reports: renderReports,
   customers: renderCustomers, quotes: renderQuotes, invoices: renderInvoices, receipts: renderReceipts,
   suppliers: renderSuppliers, "purchase-orders": renderPurchaseOrders, bills: renderBills, "supplier-payments": renderSupplierPayments,
-  projects: renderProjects, "job-costing": renderJobCosting, timesheets: renderTimesheets
+  projects: renderProjects, "job-costing": renderJobCosting, timesheets: renderTimesheets,
+  employees: renderEmployees, "pay-runs": renderPayRuns, leave: renderLeave, super: renderSuper, "payroll-reports": renderPayrollReports, "my-pay": renderMyPay
 };
 const allowed = i => (!i.perm || can(i.perm)) && (!i.any || i.any.some(can));
 
@@ -132,7 +143,7 @@ document.addEventListener("submit", async event => {
 
 /* ---------------- Shell ---------------- */
 
-let counts = { approvals: 0, timesheets: 0 };
+let counts = { approvals: 0, timesheets: 0, payRuns: 0, leave: 0 };
 
 function renderNav() {
   const current = (location.hash.replace(/^#\/?/, "") || "dashboard").split("?")[0].split("/")[0];
@@ -149,6 +160,8 @@ async function refreshCounts() {
   try {
     const [notes, approvals] = await Promise.all([call("notifications_list"), call("approvals_list")]);
     counts.approvals = approvals.toDecide.length;
+    if (can("payroll.approve")) counts.payRuns = (await call("pay_runs_list")).runs.filter(r => r.status === "submitted").length;
+    if (can("leave.approve")) counts.leave = (await call("leave_list", { status: "submitted" })).requests.filter(r => !r.mine).length;
     if (can("time.approve")) counts.timesheets = (await call("timesheets_review", { status: "submitted" })).timesheets.filter(t => !t.mine).length;
     const badge = $("[data-bell-count]");
     badge.textContent = String(notes.unread);

@@ -297,3 +297,14 @@ fieldset.day.empty { border-style: dashed; }
 @media (max-width: 900px) { .week-total { margin-left: 0; align-items: flex-start; } .entry { grid-template-columns: 1fr 1fr; } .entry .fld.wide { grid-column: span 2; } }
 details.version { border-top: 1px solid var(--rule); padding: 8px 0; }
 details.version summary { cursor: pointer; font-weight: 700; }
+
+/* Phase 5: payroll */
+.tbl.payrun tbody.emp > tr:first-child td { border-top: 1px solid var(--border); }
+.tbl.payrun tr.warn-row td:first-child { box-shadow: inset 3px 0 0 var(--warn); }
+.tbl.payrun tr.lines-row > td { background: var(--surface-2); padding: 8px 12px 12px; }
+.tbl.inner { font-size: 13px; }
+.tbl.inner tr.sub td { color: var(--muted); font-size: 12px; }
+.add-line { margin-top: 8px; }
+.add-line .fld.t { min-width: 90px; max-width: 110px; }
+.add-line .fld.wide { min-width: 220px; flex: 1; }
+details summary { cursor: pointer; font-weight: 700; margin: 8px 0; }
