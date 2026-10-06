@@ -73,9 +73,11 @@ export async function ensureLogin(admin: Client, actor: Actor, employee: any, mo
     await rpc(admin, "account_link_employee", { p_actor: actor.id, p_employee: employee.id, p_profile: profileId });
   }
 
+  // A temporary password handed over in person also confirms the email: someone
+  // first invited by email (and who never got it) could otherwise not sign in.
   if (mode === "password" && !created) {
     tempPassword = generateTemporaryPassword();
-    const updated = await admin.auth.admin.updateUserById(profileId, { password: tempPassword });
+    const updated = await admin.auth.admin.updateUserById(profileId, { password: tempPassword, email_confirm: true });
     if (updated.error) throw httpError(500, "The temporary password could not be set.");
   }
   if (tempPassword) await rpc(admin, "account_temp_password_issued", { p_actor: actor.id, p_profile: profileId, p_new_account: created });
@@ -93,7 +95,7 @@ async function accountCreate(admin: Client, actor: Actor, body: any) {
 async function accountResetPassword(admin: Client, actor: Actor, body: any) {
   const profileId = uuid(body.profileId, "Sign-in");
   const tempPassword = generateTemporaryPassword();
-  const updated = await admin.auth.admin.updateUserById(profileId, { password: tempPassword });
+  const updated = await admin.auth.admin.updateUserById(profileId, { password: tempPassword, email_confirm: true });
   if (updated.error) throw httpError(500, "The temporary password could not be set.");
   await rpc(admin, "account_temp_password_issued", { p_actor: actor.id, p_profile: profileId, p_new_account: false });
   return { tempPassword };
