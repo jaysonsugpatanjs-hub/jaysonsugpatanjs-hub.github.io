@@ -142,3 +142,13 @@ export function labourCost(hours, rate, hourType) {
   const r = Math.round(rate * factor * 100) / 100;
   return Math.round(hours * r * 100 + 1e-7) / 100;
 }
+
+/* ---------------- Payroll ---------------- */
+
+/** ATO TFN check digits (mirrors app_valid_tfn). */
+export function validTfn(value) {
+  const d = String(value ?? "").replace(/\s/g, "");
+  const w = d.length === 9 ? [1, 4, 3, 7, 5, 8, 6, 9, 10] : d.length === 8 ? [10, 7, 8, 4, 6, 3, 5, 1] : null;
+  if (!w || !/^\d+$/.test(d)) return false;
+  return [...d].reduce((s, c, i) => s + Number(c) * w[i], 0) % 11 === 0;
+}

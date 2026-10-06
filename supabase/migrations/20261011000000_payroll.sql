@@ -989,6 +989,9 @@ begin
   if not found then raise exception 'Pay run not found.' using errcode = 'P0002'; end if;
   if r.status <> 'draft' then raise exception 'Only a draft pay run can be submitted.' using errcode = '22023'; end if;
   perform public.pay_run_calculate(p_actor, p_run);
+  -- People with nothing to pay this time drop out, so nobody gets an empty payslip.
+  delete from public.pay_run_employees x where x.pay_run_id = p_run and x.gross = 0 and x.reimbursements = 0
+    and not exists (select 1 from public.pay_run_lines l where l.pay_run_employee_id = x.id);
   if not exists (select 1 from public.pay_run_employees where pay_run_id = p_run and gross > 0) then raise exception 'Nobody is being paid in this pay run.' using errcode = '22023'; end if;
   if exists (select 1 from public.pay_run_employees where pay_run_id = p_run and net < 0) then raise exception 'Someone''s net pay is negative. Fix their deductions first.' using errcode = '22023'; end if;
   update public.pay_runs set status = 'submitted', submitted_at = now(), prepared_by = p_actor, updated_at = now() where id = p_run;
