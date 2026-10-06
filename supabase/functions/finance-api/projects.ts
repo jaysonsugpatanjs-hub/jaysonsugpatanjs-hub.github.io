@@ -64,6 +64,11 @@ async function projectsList(admin: Client, actor: Actor, body: any) {
   ]);
   const ex = new Map((extra.data || []).map((p: any) => [p.id, p]));
   const who = await names(admin, (extra.data || []).map((p: any) => p.manager_id));
+  if (body.export === true) {
+    if (!has(actor, "data.export")) throw httpError(403, "Exporting needs the data export permission.");
+    await rpc(admin, "app_audit", { p_actor: actor.id, p_event: "report_exported", p_entity_type: "report", p_entity_id: "job_costing",
+      p_old: null, p_new: null, p_details: { status, format: "csv" }, p_subject: null });
+  }
   const q = String(body.search || "").toLowerCase().slice(0, 60);
   return {
     projects: (rows || []).filter((r: any) => !q || `${r.number} ${r.name}`.toLowerCase().includes(q)).map((r: any) => {

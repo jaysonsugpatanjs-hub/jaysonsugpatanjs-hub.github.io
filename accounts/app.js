@@ -23,6 +23,8 @@ import { renderSuppliers } from "./views/suppliers.js";
 import { renderPurchaseOrders } from "./views/purchase-orders.js";
 import { renderBills } from "./views/bills.js";
 import { renderSupplierPayments } from "./views/supplier-payments.js";
+import { renderJobCosting, renderProjects } from "./views/projects.js";
+import { renderTimesheets } from "./views/timesheets.js";
 
 const $ = sel => document.querySelector(sel);
 const state = { me: null };
@@ -40,7 +42,10 @@ const MENU = [
   { group: "Purchases", items: [
     { path: "suppliers", label: "Suppliers", any: PURCHASES }, { path: "purchase-orders", label: "Purchase orders", any: PURCHASES },
     { path: "bills", label: "Bills", any: ["purchases.manage", "bank.manage", "reports.view"] }, { path: "supplier-payments", label: "Supplier payments", any: ["purchases.manage", "bank.manage", "reports.view"] }] },
-  { group: "Projects", items: [["projects", "Projects", 4], ["job-costing", "Job costing", 4], ["timesheets", "Timesheets", 4]] },
+  { group: "Projects", items: [
+    { path: "projects", label: "Projects", any: ["projects.manage", "reports.view"] },
+    { path: "job-costing", label: "Job costing", any: ["projects.manage", "reports.view"] },
+    { path: "timesheets", label: "Timesheets", any: ["time.submit", "time.approve", "projects.manage", "payroll.run"], count: "timesheets" }] },
   { group: "Payroll", items: [["employees", "Employees", 5], ["pay-runs", "Pay runs", 5], ["leave", "Leave", 5], ["super", "Super", 5], ["stp", "STP", 8], ["payroll-reports", "Payroll reports", 5]] },
   { group: "Accounting", items: [
     { path: "reports", label: "Reports", any: LEDGER },
@@ -63,7 +68,8 @@ const VIEWS = {
   integrations: renderIntegrations, audit: renderAudit, "chart-of-accounts": renderChart, "tax-codes": renderTaxCodes,
   journals: renderJournals, periods: renderPeriods, reports: renderReports,
   customers: renderCustomers, quotes: renderQuotes, invoices: renderInvoices, receipts: renderReceipts,
-  suppliers: renderSuppliers, "purchase-orders": renderPurchaseOrders, bills: renderBills, "supplier-payments": renderSupplierPayments
+  suppliers: renderSuppliers, "purchase-orders": renderPurchaseOrders, bills: renderBills, "supplier-payments": renderSupplierPayments,
+  projects: renderProjects, "job-costing": renderJobCosting, timesheets: renderTimesheets
 };
 const allowed = i => (!i.perm || can(i.perm)) && (!i.any || i.any.some(can));
 
@@ -126,7 +132,7 @@ document.addEventListener("submit", async event => {
 
 /* ---------------- Shell ---------------- */
 
-let counts = { approvals: 0 };
+let counts = { approvals: 0, timesheets: 0 };
 
 function renderNav() {
   const current = (location.hash.replace(/^#\/?/, "") || "dashboard").split("?")[0].split("/")[0];
@@ -143,6 +149,7 @@ async function refreshCounts() {
   try {
     const [notes, approvals] = await Promise.all([call("notifications_list"), call("approvals_list")]);
     counts.approvals = approvals.toDecide.length;
+    if (can("time.approve")) counts.timesheets = (await call("timesheets_review", { status: "submitted" })).timesheets.filter(t => !t.mine).length;
     const badge = $("[data-bell-count]");
     badge.textContent = String(notes.unread);
     badge.classList.toggle("hidden", !notes.unread);

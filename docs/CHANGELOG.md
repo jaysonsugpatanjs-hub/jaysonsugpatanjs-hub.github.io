@@ -1,5 +1,36 @@
 # Changelog
 
+## Panalo Accounts Phase 4 — projects, timesheets and job costing (2026-10-10)
+
+**Database** (`20261010000000_projects_timesheets.sql`)
+
+- Current structure: no projects or timesheets.
+- Change: projects with budgets by cost code, cost codes, labour classes with
+  cost and charge-out rates, weekly timesheets with approval, project and
+  cost code tags on document lines, job costing reports. Details in
+  `PROJECTS_TIMESHEETS.md`.
+- Reason: Phase 4 of the brief.
+- Affected modules: document editors and line calculation (new tags),
+  dashboard; new permission `time.submit`.
+- Migration strategy: additive; no existing rows change.
+
+**API**: projects, budgets, cost codes, labour rates, timesheets (save,
+submit, recall, approve, send back, reopen), hours for payroll, job costing.
+Labour rates and costs are only returned to people who manage projects.
+
+**App**: Projects (list, form with budget, job costing per project), Job
+costing across projects with CSV export, Timesheets (week entry with hours
+worked out from start, finish and break; review; approved hours for payroll),
+cost codes and labour rates, project and cost code on document lines,
+dashboard figures and a badge for timesheets to approve.
+
+**Tests**: database tests with worked figures (hours across midnight,
+overtime factors, costs frozen at approval and unchanged by later rate
+changes, reopen and re-approve, materials net of supplier credits, actual and
+committed subcontract costs, revenue excluding GST, margin and progress,
+permissions); API tests for the timesheet workflow, who sees rates,
+job costing and exports; browser unit tests for hours and costs.
+
 ## Panalo Accounts Phase 3 — sales and purchasing (2026-10-09)
 
 **Database** (`20261009000000_sales_purchasing.sql`)

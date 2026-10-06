@@ -58,10 +58,13 @@ async function editor(view, id) {
     return { acc, tax: s?.taxCodeId || setup.accounts.find(a => a.id === acc)?.defaultTaxCodeId || "" };
   };
   if (!doc.lines.length) { const dft = defaults(setup.suppliers.find(s => s.id === doc.partyId)); doc.lines = [{ accountId: dft.acc, taxCodeId: dft.tax, kind: "materials" }]; }
+  const fromProject = hashParams().get("project");
+  if (fromProject && !id) doc.lines.forEach(l => { if (!l.projectId) l.projectId = fromProject; });
   documentEditor(view, {
     eyebrow: "PURCHASES · PURCHASE ORDERS", title: id ? "Edit draft purchase order" : "New purchase order",
     intro: setup.can.manage ? "Save as a draft, or submit it for approval." : "Submit it when ready; someone with Purchases approves it before it goes to the supplier.",
     partyLabel: "Supplier", parties: setup.suppliers, accounts: setup.accounts, taxCodes: setup.taxCodes, doc,
+    projects: setup.projects, costCodes: setup.costCodes,
     partyNote: s => [s.hasAbn ? "" : "No ABN on file", s.subcontractor ? "Subcontractor" : ""].filter(Boolean).join(" · "),
     defaultAccount: s => defaults(s).acc, defaultTax: s => defaults(s).tax,
     onParty: (d, s) => { const dft = defaults(s); d.lines.forEach(l => { if (!l.accountId) l.accountId = dft.acc; if (!l.taxCodeId) l.taxCodeId = dft.tax; }); },

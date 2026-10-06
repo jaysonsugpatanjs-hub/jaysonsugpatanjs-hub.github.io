@@ -116,3 +116,29 @@ export function noAbnWithholding(subtotal, total, rate, threshold = 75) {
   if (!rate || !(Number(subtotal) > threshold)) return 0;
   return Math.round(Number(total) * rate * 100 + 1e-7) / 100;
 }
+
+/* ---------------- Timesheets ---------------- */
+
+/** Monday of the week containing an ISO date. */
+export function mondayOf(iso) {
+  const d = new Date(`${iso}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 6) % 7));
+  return d.toISOString().slice(0, 10);
+}
+
+/** Hours from start/finish times less a break (mirrors timesheet_save): a finish before the start runs past midnight. */
+export function entryHours(start, end, breakMinutes = 0) {
+  const m = t => { const r = /^(\d{1,2}):(\d{2})$/.exec(String(t || "").trim()); return r && Number(r[1]) < 24 && Number(r[2]) < 60 ? Number(r[1]) * 60 + Number(r[2]) : null; };
+  const a = m(start), b = m(end);
+  if (a == null || b == null) return null;
+  let mins = b - a;
+  if (mins <= 0) mins += 1440;
+  return Math.round(((mins - (Number(breakMinutes) || 0)) / 60) * 100) / 100;
+}
+
+/** Cost of hours at a rate with the overtime factor, as approval freezes it. */
+export function labourCost(hours, rate, hourType) {
+  const factor = hourType === "overtime_150" ? 1.5 : hourType === "overtime_200" ? 2 : 1;
+  const r = Math.round(rate * factor * 100) / 100;
+  return Math.round(hours * r * 100 + 1e-7) / 100;
+}

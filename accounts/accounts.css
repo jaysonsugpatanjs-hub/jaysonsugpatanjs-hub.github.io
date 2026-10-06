@@ -269,3 +269,29 @@ ul.files li { display: flex; gap: 12px; align-items: baseline; padding: 6px 0; b
   .tbl.doc-lines td:nth-child(6) { min-width: 84px; }
 }
 .tbl-wrap { position: relative; } /* keeps visually hidden labels inside the scroller */
+
+/* Phase 4: projects and timesheets */
+a.tab { display: inline-block; color: var(--muted); padding: 8px 12px; font-weight: 700; text-decoration: none; border-bottom: 2px solid transparent; }
+a.tab.on { color: var(--gold); border-bottom-color: var(--gold); }
+.line-tags { display: flex; gap: 4px; flex-wrap: wrap; }
+.line-tags select:disabled { opacity: .5; }
+.head-row { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
+.toolbar.inline { margin: 0; }
+.grid2.align-top { align-items: start; gap: 0 16px; }
+.meter { vertical-align: middle; }
+.meter .bg { fill: var(--raised); } .meter .u { fill: var(--good); } .meter .u.over { fill: var(--bad); } .meter .c { fill: var(--warn); opacity: .7; }
+.week-bar { display: flex; align-items: flex-end; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+.week-bar .fld { margin: 0; }
+.week-total { margin: 0 0 0 auto; display: flex; flex-direction: column; align-items: flex-end; }
+.week-total strong { font-size: 22px; color: var(--heading); }
+fieldset.day { border: 1px solid var(--border); border-radius: var(--radius); padding: 6px 12px 10px; margin: 0 0 10px; }
+fieldset.day legend { display: flex; gap: 12px; padding: 0 6px; font-weight: 700; color: var(--heading); }
+fieldset.day.empty { border-style: dashed; }
+.entry { display: grid; grid-template-columns: 2fr 1.4fr 124px 124px 76px 76px 1.1fr 2fr auto; gap: 0 8px; align-items: end; padding: 8px 0; border-bottom: 1px solid var(--rule); }
+.entry:last-of-type { border-bottom: 0; }
+.entry .fld { margin-bottom: 4px; }
+.entry .fld.wide { min-width: 0; grid-column: auto; }
+.entry .cost { grid-column: 1 / -1; margin: 0; }
+.entry .remove { margin-bottom: 12px; }
+@media (max-width: 1100px) { .entry { grid-template-columns: 1fr 1fr 1fr; } .entry .fld.wide { grid-column: span 3; } .entry .fld.t { min-width: 0; } }
+@media (max-width: 900px) { .week-total { margin-left: 0; align-items: flex-start; } .entry { grid-template-columns: 1fr 1fr; } .entry .fld.wide { grid-column: span 2; } }
