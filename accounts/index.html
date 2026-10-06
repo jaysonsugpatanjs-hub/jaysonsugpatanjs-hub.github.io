@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: https://*.supabase.co; connect-src 'self' https://*.supabase.co; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta name="robots" content="noindex">
+<title>Panalo Accounts</title>
+<link rel="stylesheet" href="./accounts.css">
+<script src="../training/config.js"></script>
+<script type="module" src="./app.js"></script>
+</head>
+<body>
+<header class="top">
+  <a class="brand" href="#/dashboard"><span class="mark">P</span><span><strong>PANALO ACCOUNTS</strong><small data-org>Panalo Pipes &amp; Structurals</small></span></a>
+  <div class="top-actions hidden" data-top>
+    <button type="button" class="icon-btn" data-bell aria-label="Notifications" aria-expanded="false">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9a6 6 0 1 1 12 0c0 6 2.5 7.5 2.5 7.5h-17S6 15 6 9Zm4 10.5a2 2 0 0 0 4 0" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      <span class="badge hidden" data-bell-count>0</span></button>
+    <span class="who" data-who></span>
+    <a class="top-link" href="../training/">Portal</a>
+    <button type="button" class="top-link" data-signout>Sign out</button>
+  </div>
+  <div class="notes hidden" data-notes role="dialog" aria-label="Notifications"></div>
+</header>
+
+<div class="gate" data-gate>
+  <section class="gate-card"><p class="eyebrow">PANALO ACCOUNTS</p><h1 data-gate-title>Checking your access…</h1><div data-gate-body></div></section>
+</div>
+
+<div class="shell hidden" data-shell>
+  <nav class="side" aria-label="Panalo Accounts" data-nav></nav>
+  <main class="main" id="main" tabindex="-1">
+    <p class="msg" id="app-msg" role="status" aria-live="polite"></p>
+    <div data-view></div>
+  </main>
+</div>
+</body>
+</html>

@@ -8,6 +8,7 @@ on:
       - "public/**"
       - "scripts/**"
       - "training/**"
+      - "accounts/**"
       - "supabase/**"
       - ".gitignore"
       - "package.json"
@@ -21,6 +22,7 @@ on:
       - "public/**"
       - "scripts/**"
       - "training/**"
+      - "accounts/**"
       - "supabase/**"
       - ".gitignore"
       - "package.json"
@@ -62,6 +64,9 @@ jobs:
 
       - name: Test controlled training runtime
         run: npm run test:training
+
+      - name: Test Panalo Accounts
+        run: npm run test:accounts
 
       - name: Build and sync GitHub Pages files
         run: npm run build:pages

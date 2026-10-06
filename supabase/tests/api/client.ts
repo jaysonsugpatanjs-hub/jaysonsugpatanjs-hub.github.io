@@ -26,6 +26,11 @@ class Query implements PromiseLike<Result> {
   eq(c: string, v: unknown) { return this.filter(c, "eq", v); }
   neq(c: string, v: unknown) { return this.filter(c, "neq", v); }
   gt(c: string, v: unknown) { return this.filter(c, "gt", v); }
+  gte(c: string, v: unknown) { return this.filter(c, "gte", v); }
+  lte(c: string, v: unknown) { return this.filter(c, "lte", v); }
+  ilike(c: string, v: unknown) { return this.filter(c, "ilike", v); }
+  is(c: string, v: unknown) { return this.filter(c, "is", v === null ? "null" : v); }
+  not(c: string, op: string, v: unknown) { return this.filter(c, `not.${op}`, v === null ? "null" : v); }
   in(c: string, vs: unknown[]) { return this.filter(c, "in", `(${vs.map(v => `"${String(v).replace(/"/g, '\\"')}"`).join(",")})`); }
   order(col: string, opts: { ascending?: boolean } = {}) { this.orders.push(`${col}.${opts.ascending === false ? "desc" : "asc"}`); return this; }
   limit(n: number) { this.params.set("limit", String(n)); return this; }

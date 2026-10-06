@@ -37,7 +37,7 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          if ! deno check --node-modules-dir=auto supabase/functions/training-api/index.ts supabase/functions/admin-api/index.ts supabase/functions/ims-api/index.ts 2>&1 | tee check.log; then
+          if ! deno check --node-modules-dir=auto supabase/functions/training-api/index.ts supabase/functions/admin-api/index.ts supabase/functions/ims-api/index.ts supabase/functions/finance-api/index.ts 2>&1 | tee check.log; then
             sed 's/\x1b\[[0-9;]*m//g' check.log | grep -v '^\s*$' | tail -20 | sed 's/^/::error title=deno check::/'
             exit 1
           fi
@@ -66,11 +66,11 @@ jobs:
           version: 2.119.0
 
       # All functions ship together so the browser and server never drift.
-      - name: Deploy training-api, admin-api and ims-api
+      - name: Deploy training-api, admin-api, ims-api and finance-api
         shell: bash
         run: |
           set -o pipefail
-          for fn in training-api admin-api ims-api; do
+          for fn in training-api admin-api ims-api finance-api; do
             if ! supabase functions deploy "$fn" --project-ref "$SUPABASE_PROJECT_REF" --use-api 2>&1 | tee deploy.log; then
               grep -v '^\s*$' deploy.log | tail -15 | sed "s/^/::error title=deploy $fn::/"
               exit 1

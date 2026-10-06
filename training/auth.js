@@ -6,7 +6,8 @@ export const config = Object.freeze({
   appUrl: String(rawConfig.appUrl || new URL("./", window.location.href)),
   trainingFunction: String(rawConfig.trainingFunction || "training-api"),
   adminFunction: String(rawConfig.adminFunction || "admin-api"),
-  imsFunction: String(rawConfig.imsFunction || "ims-api")
+  imsFunction: String(rawConfig.imsFunction || "ims-api"),
+  financeFunction: String(rawConfig.financeFunction || "finance-api")
 });
 
 const SESSION_KEY = "panalo-training-session-v1";
@@ -194,6 +195,71 @@ export async function api(functionName, body, retry = true) {
     return api(functionName, body, false);
   }
   return parseResponse(response);
+}
+
+/* ---------------- Multi-factor authentication (TOTP) ---------------- */
+
+/** Assurance level of the current session: "aal1" (password) or "aal2" (password + authenticator). */
+export function sessionAal() {
+  const token = sessionCache?.access_token || "";
+  const part = token.split(".")[1];
+  if (!part) return "aal1";
+  try {
+    const payload = JSON.parse(atob(part.replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(part.length / 4) * 4, "=")));
+    return String(payload.aal || "aal1");
+  } catch (_) {
+    return "aal1";
+  }
+}
+
+async function authCall(path, method = "GET", body) {
+  const session = await getSession();
+  if (!session?.access_token) {
+    const error = new Error("Your sign-in has expired. Please sign in again.");
+    error.status = 401;
+    throw error;
+  }
+  const response = await fetch(`${config.supabaseUrl}/auth/v1/${path}`, {
+    method, headers: authHeaders(session.access_token), body: body === undefined ? undefined : JSON.stringify(body)
+  });
+  return parseResponse(response);
+}
+
+/** The signed-in user's authenticator factors. */
+export async function mfaFactors() {
+  const user = await authCall("user");
+  return (user?.factors || []).filter(f => f.factor_type === "totp");
+}
+
+/** Starts authenticator set-up; returns the factor id, QR code (SVG data URL) and secret. */
+export async function mfaEnroll(friendlyName = "Panalo Accounts") {
+  // An abandoned set-up leaves an unverified factor that blocks the same name.
+  for (const f of await mfaFactors()) {
+    if (f.status !== "verified") await authCall(`factors/${encodeURIComponent(f.id)}`, "DELETE").catch(() => null);
+  }
+  const data = await authCall("factors", "POST", { factor_type: "totp", friendly_name: friendlyName });
+  return { id: data.id, qrCode: data.totp?.qr_code, secret: data.totp?.secret };
+}
+
+/** Checks a 6-digit code and upgrades the session to aal2. */
+export async function mfaVerify(factorId, code) {
+  const clean = String(code || "").replace(/\s/g, "");
+  if (!/^\d{6}$/.test(clean)) throw new Error("Enter the 6-digit code from your authenticator app.");
+  const challenge = await authCall(`factors/${encodeURIComponent(factorId)}/challenge`, "POST", {});
+  let data;
+  try {
+    data = await authCall(`factors/${encodeURIComponent(factorId)}/verify`, "POST", { challenge_id: challenge.id, code: clean });
+  } catch (error) {
+    if (error.status === 400 || error.status === 422) throw new Error("That code didn't work. Codes change every 30 seconds; try the current one.");
+    throw error;
+  }
+  saveSession({
+    access_token: data.access_token,
+    refresh_token: data.refresh_token || sessionCache?.refresh_token,
+    expires_at: Math.floor(Date.now() / 1000) + Number(data.expires_in || 3600),
+    token_type: data.token_type || "bearer"
+  });
+  return true;
 }
 
 export function friendlyError(error) {
