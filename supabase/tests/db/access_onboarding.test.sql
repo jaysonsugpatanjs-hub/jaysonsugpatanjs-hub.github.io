@@ -120,13 +120,14 @@ end $$;
 -- Onboarding ------------------------------------------------------------------
 do $$
 declare
-  v_req uuid; v_item uuid; v_opt uuid; v_form uuid; v_emp uuid; v_result jsonb;
+  v_req uuid; v_item uuid; v_opt uuid; v_form uuid; v_file uuid; v_emp uuid; v_result jsonb;
 begin
   v_emp := (select id from public.employees where employee_number = 'A-NEW');
   perform pg_temp.expect_error(format('select public.onboarding_create(%L, %L, %L, null, %L)', pg_temp.a('worker'), v_emp, '{tfn_declaration}', ''), 'HR onboarding');
   perform pg_temp.expect_error(format('select public.hr_document_type_save(%L, %L, %L, %L, true, true)', pg_temp.a('worker'), 'tickets', 'Tickets', ''), 'HR onboarding');
   perform public.hr_document_type_save(pg_temp.a('hr'), 'tickets', 'Licences and tickets', 'Combine into one PDF.', false, true);
   perform pg_temp.expect_error(format('select public.onboarding_create(%L, %L, %L, null, %L)', pg_temp.a('hr'), v_emp, '{nope}', ''), 'Unknown document');
+  perform pg_temp.expect_error(format('select public.onboarding_create(%L, %L, %L, null, %L)', pg_temp.a('hr'), v_emp, '{white_card}', ''), 'Unknown document');
   perform pg_temp.expect_error(format('select public.onboarding_create(%L, %L, %L, current_date - 1, %L)', pg_temp.a('hr'), v_emp, '{tfn_declaration}', ''), 'past');
   v_req := public.onboarding_create(pg_temp.a('hr'), v_emp, '{tfn_declaration,contract,tickets}', current_date + 7, 'Welcome aboard');
   perform pg_temp.expect_error(format('select public.onboarding_create(%L, %L, %L, null, %L)', pg_temp.a('hr'), v_emp, '{photo_id}', ''), 'onboarding_one_open_per_person');
@@ -164,10 +165,22 @@ begin
   perform pg_temp.expect_error(format('select public.onboarding_record_upload(%L, %L, %L, %L)', pg_temp.a('applicant'), v_opt, v_req || '/' || v_opt || '/t.pdf', 't.pdf'), 'closed');
 
   -- HR cannot review their own documents; cancelled requests are closed.
-  v_req := public.onboarding_create(pg_temp.a('boss'), (select id from public.employees where employee_number = 'X-HR'), '{white_card}', null, '');
+  v_req := public.onboarding_create(pg_temp.a('boss'), (select id from public.employees where employee_number = 'X-HR'), '{certificates}', null, '');
   select id into v_item from public.onboarding_items where request_id = v_req;
   perform public.onboarding_record_upload(pg_temp.a('hr'), v_item, v_req || '/' || v_item || '/id.jpg', 'id.jpg');
   perform pg_temp.expect_error(format('select public.onboarding_review(%L, %L, true, null)', pg_temp.a('hr'), v_item), 'your own');
+
+  -- Several named files per item; removing the last one sends it back to "to do".
+  perform pg_temp.expect_error(format('select public.onboarding_add_file(%L, %L, %L, %L, %L, null)', pg_temp.a('hr'), v_item, v_req || '/' || v_item || '/b.jpg', 'b.jpg', ''), 'Say what the file is');
+  v_file := public.onboarding_add_file(pg_temp.a('hr'), v_item, v_req || '/' || v_item || '/fl.jpg', 'fl.jpg', 'Forklift licence', current_date + 300);
+  perform pg_temp.eq((select count(*)::int from public.onboarding_files where item_id = v_item), 2, 'two files on the item');
+  perform pg_temp.expect_error(format('select public.onboarding_remove_file(%L, %L)', pg_temp.a('worker'), v_file), 'not found');
+  perform pg_temp.eq(public.onboarding_remove_file(pg_temp.a('hr'), v_file), v_req || '/' || v_item || '/fl.jpg', 'remove returns the stored path');
+  perform pg_temp.eq((select status from public.onboarding_items where id = v_item), 'uploaded', 'one file left: still waiting for HR');
+  perform public.onboarding_remove_file(pg_temp.a('hr'), (select id from public.onboarding_files where item_id = v_item));
+  perform pg_temp.eq((select status from public.onboarding_items where id = v_item), 'pending', 'no files left: back to to-do');
+  perform pg_temp.eq((select file_path from public.onboarding_items where id = v_item), null::text, 'item path cleared');
+  perform public.onboarding_add_file(pg_temp.a('hr'), v_item, v_req || '/' || v_item || '/wc.jpg', 'wc.jpg', 'White Card', null);
   perform public.onboarding_cancel(pg_temp.a('boss'), v_req, 'Sent in error');
   perform pg_temp.expect_error(format('select public.onboarding_review(%L, %L, true, null)', pg_temp.a('boss'), v_item), 'closed');
 end $$;
@@ -177,7 +190,7 @@ do $$
 declare
   t text;
 begin
-  foreach t in array array['onboarding_items', 'onboarding_requests', 'profile_permissions', 'position_permissions', 'hr_document_types']
+  foreach t in array array['onboarding_files', 'onboarding_items', 'onboarding_requests', 'profile_permissions', 'position_permissions', 'hr_document_types']
   loop
     if has_table_privilege('authenticated', 'public.' || t, 'select') or has_table_privilege('anon', 'public.' || t, 'select') then
       raise exception 'Browser role can read %', t;

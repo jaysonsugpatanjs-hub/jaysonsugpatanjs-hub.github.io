@@ -158,9 +158,10 @@ Deno.test("onboarding: invite, forms and uploads, send back, accept", async () =
   const mine = await ok(trainingApi, applicant, { action: "onboarding_view" });
   if (mine.items.length !== forApplicants.length) throw new Error("applicant sees wrong checklist");
   const tfn = mine.items.find((i: any) => i.docType === "tfn_declaration");
-  const card = mine.items.find((i: any) => i.docType === "white_card");
+  const card = mine.items.find((i: any) => i.docType === "certificates");
+  if (mine.items.some((i: any) => i.docType === "white_card")) throw new Error("retired White Card item still offered");
   if (tfn.kind !== "form" || !tfn.form?.fields?.length) throw new Error("TFN should be a form with fields");
-  if (card.kind !== "upload" || card.form) throw new Error("White Card should be an upload");
+  if (card.kind !== "upload" || card.form) throw new Error("certificates should be an upload");
   if (!mine.items.some((i: any) => i.docType === "personal_details")) throw new Error("personal details missing");
 
   // Forms: typed answers, validated on the server.
@@ -177,7 +178,16 @@ Deno.test("onboarding: invite, forms and uploads, send back, accept", async () =
   // Uploads: certificates and contracts only.
   expectStatus(await call(trainingApi, applicant, { action: "onboarding_prepare_upload", itemId: card.id, fileName: "card.exe", size: 100 }), 400, "bad file type");
   let up = await ok(trainingApi, applicant, { action: "onboarding_prepare_upload", itemId: card.id, fileName: "White card.jpg", size: 100 });
-  await ok(trainingApi, applicant, { action: "onboarding_attach", itemId: card.id, path: up.path, fileName: "White card.jpg" });
+  await ok(trainingApi, applicant, { action: "onboarding_attach", itemId: card.id, path: up.path, fileName: "White card.jpg", label: "White Card" });
+  up = await ok(trainingApi, applicant, { action: "onboarding_prepare_upload", itemId: card.id, fileName: "IMG_2041.jpg", size: 100 });
+  const extra = await ok(trainingApi, applicant, { action: "onboarding_attach", itemId: card.id, path: up.path, fileName: "IMG_2041.jpg", label: "Forklift licence", expiresOn: "2030-05-01" });
+  up = await ok(trainingApi, applicant, { action: "onboarding_prepare_upload", itemId: card.id, fileName: "oops.jpg", size: 100 });
+  const oops = await ok(trainingApi, applicant, { action: "onboarding_attach", itemId: card.id, path: up.path, fileName: "oops.jpg", label: "Wrong photo" });
+  expectStatus(await call(trainingApi, L, { action: "onboarding_remove_file", fileId: oops.fileId }), 404, "someone else's file");
+  await ok(trainingApi, applicant, { action: "onboarding_remove_file", fileId: oops.fileId });
+  if (!storageCalls.some(c => c.startsWith("remove hr-documents/"))) throw new Error("removed file not deleted from storage");
+  const cardNow = (await ok(trainingApi, applicant, { action: "onboarding_view" })).items.find((i: any) => i.id === card.id);
+  if (cardNow.files.map((f: any) => f.label).join("|") !== "White Card|Forklift licence" || cardNow.files[1].expiresOn !== "2030-05-01") throw new Error(`files wrong: ${JSON.stringify(cardNow.files)}`);
 
   const list = await ok(adminApi, HR, { action: "onboarding_list" });
   const req = list.requests.find((r: any) => r.id === sent.requestId);
@@ -187,7 +197,9 @@ Deno.test("onboarding: invite, forms and uploads, send back, accept", async () =
   if (!item.sensitive) throw new Error("TFN not flagged sensitive");
   const tfnRow = item.answers.find((r: any) => r.key === "tfn");
   if (tfnRow?.value !== "123456782" || !tfnRow.sensitive) throw new Error(`HR should see the TFN, flagged sensitive: ${JSON.stringify(item.answers)}`);
-  const view = await ok(adminApi, HR, { action: "onboarding_file", itemId: card.id });
+  const cardRow = detail.items.find((i: any) => i.id === card.id);
+  if (cardRow.files.length !== 2) throw new Error("HR should see both files");
+  const view = await ok(adminApi, HR, { action: "onboarding_file", fileId: extra.fileId });
   if (!view.url) throw new Error("no viewing link");
   expectStatus(await call(adminApi, HR, { action: "onboarding_review", itemId: tfn.id, accept: false, reason: "" }), 409, "reject needs reason");
   await ok(adminApi, HR, { action: "onboarding_review", itemId: tfn.id, accept: false, reason: "Check your residency answer" });

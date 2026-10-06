@@ -101,6 +101,9 @@ const ITEM_STATUS = {
   rejected: ["Needs fixing", "bad"]
 };
 const formItems = new Map();
+// Items where each file gets its own name and optional expiry.
+const CERT_NAMES = `<datalist id="cert-names">${["White Card", "Forklift licence (LF)", "Elevating work platform (WP)", "Dogging (DG)", "Basic rigging (RB)", "Basic scaffolding (SB)", "Working at heights", "Confined space entry", "First aid (HLTAID011)", "Welding certificate", "Trade certificate", "Driver licence (heavy vehicle)"].map(n => `<option value="${n}">`).join("")}</datalist>`;
+const NAMED_UPLOADS = new Set(["certificates", "tickets", "public_liability", "workers_comp"]);
 
 function fieldHtml(itemId, field, answers) {
   const id = `f-${itemId}-${field.key}`;
@@ -158,19 +161,28 @@ function itemHtml(item) {
       ${editable ? formHtml(item, openForm) : ""}
     </article>`;
   }
-  return `<article class="onboarding-item">
-      <div class="onboarding-text">
-        <div class="onboarding-title"><strong>${safe(item.name)}</strong>${chips}<span class="chip">Photo or PDF</span></div>
-        <p class="muted small">${safe(item.guidance)}</p>
-        ${item.fileName ? `<p class="small">Your file: ${safe(item.fileName)}${item.uploadedAt ? ` · ${safe(formatDate(item.uploadedAt))}` : ""}</p>` : ""}
-        ${reject}
-      </div>
-      <div class="onboarding-actions">
-        <span class="chip ${tone}">${label}</span>
-        ${item.status !== "accepted" ? `<label class="upload-button">
-          <input type="file" data-item="${safe(item.id)}" accept=".pdf,.jpg,.jpeg,.png,.webp,.heic,application/pdf,image/*">
-          <span>${item.fileName ? "Replace file" : "Take photo or upload"}</span></label>` : ""}
-      </div>
+  formItems.set(item.id, item);
+  const named = NAMED_UPLOADS.has(item.docType);
+  const files = item.files || [];
+  const editable = item.status !== "accepted";
+  return `<article class="onboarding-item onb-form-item" data-item-card="${safe(item.id)}">
+      <div class="onb-head"><div class="onboarding-text">
+          <div class="onboarding-title"><strong>${safe(item.name)}</strong>${chips}<span class="chip">Photos or PDF</span></div>
+          <p class="muted small">${safe(item.guidance)}</p>${reject}</div>
+        <div class="onboarding-actions"><span class="chip ${tone}">${label}</span></div></div>
+      ${files.length ? `<ul class="file-list">${files.map(f => `<li>
+          <div><strong>${safe(f.label)}</strong><small>${safe(f.fileName)}${f.expiresOn ? ` · expires ${safe(formatDate(f.expiresOn))}` : ""}</small></div>
+          ${editable ? `<button type="button" class="text-button danger" data-remove-file="${safe(f.id)}" aria-label="Remove ${safe(f.label)}">Remove</button>` : ""}</li>`).join("")}</ul>` : ""}
+      ${editable ? `<div class="add-file" data-add-for="${safe(item.id)}">
+        ${named ? `<div class="field onb-field"><label for="lbl-${safe(item.id)}">What is it?</label>
+            <input id="lbl-${safe(item.id)}" data-file-label list="cert-names" maxlength="80" placeholder="e.g. White Card, Forklift licence"></div>
+          <div class="field onb-field"><label for="exp-${safe(item.id)}">Expiry date <span class="muted">(if it has one)</span></label>
+            <input id="exp-${safe(item.id)}" type="date" data-file-expiry></div>` : ""}
+        <label class="upload-button">
+          <input type="file" multiple data-item="${safe(item.id)}" accept=".pdf,.jpg,.jpeg,.png,.webp,.heic,application/pdf,image/*">
+          <span>${files.length ? "Add more" : "Take photo or upload"}</span></label>
+        <p class="form-message" data-file-msg role="status" aria-live="polite"></p>
+      </div>` : ""}
     </article>`;
 }
 
@@ -191,7 +203,7 @@ async function loadOnboarding() {
   formItems.clear();
   // Forms first, then the few uploads.
   const ordered = [...items.filter(i => i.kind === "form"), ...items.filter(i => i.kind !== "form")];
-  $("onboarding-items").innerHTML = ordered.map(itemHtml).join("");
+  $("onboarding-items").innerHTML = ordered.map(itemHtml).join("") + CERT_NAMES;
   ui.onboarding.classList.remove("hidden");
 }
 
@@ -243,27 +255,52 @@ async function submitOnboardingForm(form) {
 }
 
 async function uploadOnboardingFile(input) {
-  const file = input.files?.[0];
-  if (!file) return;
-  const message = $("onboarding-message");
-  if (file.size > 20 * 1024 * 1024) {
-    message.textContent = "That file is over 20 MB. Try a PDF or a smaller photo.";
+  const files = [...(input.files || [])];
+  if (!files.length) return;
+  const box = input.closest("[data-add-for]");
+  const item = formItems.get(input.dataset.item);
+  const message = box.querySelector("[data-file-msg]");
+  const labelInput = box.querySelector("[data-file-label]");
+  const expiry = box.querySelector("[data-file-expiry]")?.value || null;
+  const label = labelInput ? labelInput.value.trim() : item?.name;
+  if (labelInput && label.length < 2) {
+    message.textContent = "Type what it is first, for example \"White Card\", then choose the photo.";
+    input.value = "";
+    labelInput.focus();
+    return;
+  }
+  const big = files.find(f => f.size > 20 * 1024 * 1024);
+  if (big) {
+    message.textContent = `${big.name} is over 20 MB. Try a PDF or a smaller photo.`;
     input.value = "";
     return;
   }
   input.disabled = true;
-  message.textContent = `Uploading ${file.name}…`;
   try {
-    const prepared = await api(config.trainingFunction, { action: "onboarding_prepare_upload", itemId: input.dataset.item, fileName: file.name, size: file.size });
-    const res = await fetch(prepared.signedUrl, { method: "PUT", headers: { "Content-Type": prepared.contentType }, body: file });
-    if (!res.ok) throw new Error(`The upload failed (${res.status}). Please try again.`);
-    await api(config.trainingFunction, { action: "onboarding_attach", itemId: input.dataset.item, path: prepared.path, fileName: file.name });
+    for (const [n, file] of files.entries()) {
+      message.textContent = files.length > 1 ? `Uploading ${n + 1} of ${files.length}…` : `Uploading ${file.name}…`;
+      const prepared = await api(config.trainingFunction, { action: "onboarding_prepare_upload", itemId: input.dataset.item, fileName: file.name, size: file.size });
+      const res = await fetch(prepared.signedUrl, { method: "PUT", headers: { "Content-Type": prepared.contentType }, body: file });
+      if (!res.ok) throw new Error(`The upload of ${file.name} failed (${res.status}). Please try again.`);
+      await api(config.trainingFunction, { action: "onboarding_attach", itemId: input.dataset.item, path: prepared.path, fileName: file.name, label, expiresOn: expiry });
+    }
     await loadOnboarding();
-    message.textContent = `${file.name} uploaded. HR will review it.`;
+    $("onboarding-message").textContent = `${label} uploaded. HR will review it.`;
   } catch (error) {
     message.textContent = friendlyError(error);
     input.disabled = false;
     input.value = "";
+  }
+}
+
+async function removeOnboardingFile(button) {
+  button.disabled = true;
+  try {
+    await api(config.trainingFunction, { action: "onboarding_remove_file", fileId: button.dataset.removeFile });
+    await loadOnboarding();
+  } catch (error) {
+    $("onboarding-message").textContent = friendlyError(error);
+    button.disabled = false;
   }
 }
 
@@ -381,6 +418,8 @@ $("onboarding-items").addEventListener("click", event => {
     form?.querySelector("input,select")?.focus();
   }
   if (event.target.closest("[data-cancel-edit]")) loadOnboarding();
+  const remove = event.target.closest("[data-remove-file]");
+  if (remove) removeOnboardingFile(remove);
 });
 
 ui.signOut.addEventListener("click", async () => {

@@ -15,6 +15,13 @@ function fmt(iso) {
 const ITEM = { pending: ["Not sent yet", ""], uploaded: ["To review", "pending"], accepted: ["Accepted", "good"], rejected: ["Sent back", "bad"] };
 const mask = v => (v.length > 3 ? "•".repeat(Math.min(v.length - 3, 8)) + v.slice(-3) : "•••");
 
+function filesHtml(item) {
+  if (!item.files?.length) return "";
+  return `<ul class="file-list admin-files">${item.files.map(f => `<li><div><strong>${safe(f.label)}</strong>
+      <small>${safe(f.fileName)} · ${fmt(f.uploadedAt)}${f.expiresOn ? ` · <span class="${f.expiresOn < new Date().toISOString().slice(0, 10) ? "reject-note" : ""}">expires ${fmt(f.expiresOn)}</span>` : ""}</small></div>
+      <button type="button" class="secondary-action small" data-view-file="${safe(f.id)}">View</button></li>`).join("")}</ul>`;
+}
+
 function answersHtml(item) {
   if (!item.answers?.length) return "";
   return `<dl class="answer-list">${item.answers.map(a => `<dt>${safe(a.label)}</dt><dd>${a.sensitive
@@ -119,11 +126,11 @@ async function openRequest(root, id) {
             <strong>${safe(i.name)}</strong>${i.required ? "" : " <span class='chip'>Optional</span>"}${i.sensitive ? " <span class='chip info'>Sensitive</span>" : ""}
             <small>${i.kind === "form"
               ? (i.submittedAt ? `Filled in ${fmt(i.submittedAt)}` : "Not filled in yet")
-              : (i.fileName ? `${safe(i.fileName)} · uploaded ${fmt(i.uploadedAt)}` : "Nothing uploaded yet")}${i.kind === "form" && i.fileName ? ` · earlier file: ${safe(i.fileName)}` : ""}${i.reviewer ? ` · reviewed by ${safe(i.reviewer)}` : ""}</small>
+              : (i.files?.length ? `${i.files.length} file${i.files.length === 1 ? "" : "s"} · last added ${fmt(i.uploadedAt)}` : "Nothing uploaded yet")}${i.kind === "form" && i.fileName ? ` · earlier file: ${safe(i.fileName)}` : ""}${i.reviewer ? ` · reviewed by ${safe(i.reviewer)}` : ""}</small>
             ${i.status === "rejected" ? `<small class="reject-note">Sent back: ${safe(i.rejectReason)}</small>` : ""}
-            ${answersHtml(i)}</div>
+            ${answersHtml(i)}${filesHtml(i)}</div>
           <div class="row-actions"><span class="chip ${tone}">${label}</span>
-            ${i.fileName ? `<button type="button" class="secondary-action small" data-view="${safe(i.id)}">View</button>` : ""}
+            ${i.kind === "form" && i.fileName && !i.files?.length ? `<button type="button" class="secondary-action small" data-view="${safe(i.id)}">View earlier file</button>` : ""}
             ${i.status === "uploaded" && request.status === "open" ? `<button type="button" class="primary small" data-accept="${safe(i.id)}">Accept</button><button type="button" class="revoke" data-reject="${safe(i.id)}">Send back</button>` : ""}
           </div></div>`;
       }).join("")}</div>
@@ -168,7 +175,12 @@ export function bindOnboarding(root) {
     const detailMsg = () => root.querySelector("[data-detail-msg]");
     try {
       if (b.dataset.open) await openRequest(root, b.dataset.open);
-      else if (b.dataset.view) {
+      else if (b.dataset.viewFile) {
+        b.disabled = true;
+        const r = await call("onboarding_file", { fileId: b.dataset.viewFile });
+        window.open(r.url, "_blank", "noopener");
+        b.disabled = false;
+      } else if (b.dataset.view) {
         b.disabled = true;
         const r = await call("onboarding_file", { itemId: b.dataset.view });
         window.open(r.url, "_blank", "noopener");

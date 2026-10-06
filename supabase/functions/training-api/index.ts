@@ -431,7 +431,7 @@ async function myOnboardingItem(admin: Client, userId: string, itemId: unknown) 
 
 async function handleOnboardingView(admin: Client, userId: string) {
   const { data, error } = await admin.from("onboarding_requests")
-    .select("id,status,due_on,message,created_at,onboarding_items(id,doc_type,required,status,file_name,uploaded_at,reject_reason,answers,submitted_at)")
+    .select("id,status,due_on,message,created_at,onboarding_items(id,doc_type,required,status,file_name,uploaded_at,reject_reason,answers,submitted_at,onboarding_files(id,label,file_name,expires_on,uploaded_at))")
     .eq("profile_id", userId).in("status", ["open", "complete"]).order("created_at", { ascending: false }).limit(1).maybeSingle();
   if (error) throw httpError(500, "Your onboarding documents could not be loaded.");
   if (!data) return { request: null };
@@ -449,6 +449,9 @@ async function handleOnboardingView(admin: Client, userId: string) {
         // Your own answers come back only while you can still change them.
         answers: i.status === "accepted" ? null : i.answers ?? null,
         submittedAt: i.submitted_at,
+        files: (i.onboarding_files || [])
+          .map((f: any) => ({ id: f.id, label: f.label, fileName: f.file_name, expiresOn: f.expires_on, uploadedAt: f.uploaded_at }))
+          .sort((a: any, b: any) => String(a.uploadedAt).localeCompare(String(b.uploadedAt))),
         required: i.required, status: i.status, fileName: i.file_name, uploadedAt: i.uploaded_at, rejectReason: i.reject_reason
       };
     }).sort((a: any, b: any) => a.sort - b.sort)
@@ -493,8 +496,23 @@ async function handleOnboardingAttach(admin: Client, userId: string, body: any) 
   if (listed.error || !(listed.data || []).some((f: any) => f.name === path.split("/").pop() && Number(f?.metadata?.size ?? 1) > 0)) {
     throw httpError(409, "The upload didn't arrive. Please try again.");
   }
-  await rpc(admin, "onboarding_record_upload", { p_actor: userId, p_item: item.id, p_path: path, p_file_name: String(body.fileName || "").slice(0, 200) });
-  return { uploaded: true };
+  const label = String(body.label || "").trim().replace(/\s+/g, " ").slice(0, 80);
+  const expires = body.expiresOn ? String(body.expiresOn) : null;
+  if (expires && !/^\d{4}-\d{2}-\d{2}$/.test(expires)) throw httpError(400, "The expiry date is not valid.");
+  const fileId = await rpc<string>(admin, "onboarding_add_file", {
+    p_actor: userId, p_item: item.id, p_path: path, p_file_name: String(body.fileName || "").slice(0, 200),
+    p_label: label || String(body.fileName || "Document").replace(/\.[^.]+$/, "").slice(0, 80), p_expires: expires
+  });
+  return { uploaded: true, fileId };
+}
+
+async function handleOnboardingRemoveFile(admin: Client, userId: string, body: any) {
+  const id = String(body.fileId || "");
+  if (!/^[0-9a-f-]{36}$/i.test(id)) throw httpError(400, "That file is not valid.");
+  const path = await rpc<string>(admin, "onboarding_remove_file", { p_actor: userId, p_file: id });
+  // The record is gone; tidy the stored file too (best effort).
+  if (path) await admin.storage.from(HR_BUCKET).remove([path]).catch(() => null);
+  return { removed: true };
 }
 
 export default {
@@ -519,6 +537,7 @@ export default {
         case "change_password": result = await handleChangePassword(context.supabaseAdmin, userId, body); break;
         case "onboarding_view": result = await handleOnboardingView(context.supabaseAdmin, userId); break;
         case "onboarding_submit_form": result = await handleOnboardingSubmitForm(context.supabaseAdmin, userId, body); break;
+        case "onboarding_remove_file": result = await handleOnboardingRemoveFile(context.supabaseAdmin, userId, body); break;
         case "onboarding_prepare_upload": result = await handleOnboardingPrepare(context.supabaseAdmin, userId, body); break;
         case "onboarding_attach": result = await handleOnboardingAttach(context.supabaseAdmin, userId, body); break;
         case "module": result = await handleModule(context.supabaseAdmin, userId, body); break;
