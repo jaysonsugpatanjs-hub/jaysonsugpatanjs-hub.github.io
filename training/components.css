@@ -178,3 +178,22 @@ code.secret { font-size: 20px; letter-spacing: .06em; color: var(--gold); backgr
 .add-file .onb-field { flex: 1 1 220px; margin-bottom: 10px; }
 .add-file .upload-button { margin-bottom: 10px; min-height: 44px; }
 .add-file .form-message { flex-basis: 100%; margin: 0; min-height: 0; }
+
+/* HR files */
+.hr-folders { display: flex; flex-direction: column; gap: 8px; margin: 14px 0 20px; }
+.hr-folder { border: 1px solid var(--border); border-radius: 12px; background: var(--surface-2); }
+.hr-folder > summary { display: flex; align-items: center; gap: 12px; padding: 12px 14px; cursor: pointer; list-style: none; }
+.hr-folder > summary::-webkit-details-marker { display: none; }
+.hr-folder > summary svg { width: 22px; height: 22px; flex: none; color: var(--gold); }
+.hr-folder > summary > span:first-of-type { flex: 1; min-width: 0; }
+.hr-folder > summary strong { display: block; font-size: 14px; }
+.hr-folder > summary small { display: block; color: var(--muted); font-size: 12px; margin-top: 2px; }
+.hr-folder[open] > summary { border-bottom: 1px solid var(--border); }
+.hr-folder .file-list { margin: 0; padding: 10px; }
+.hr-folder .file-list li { background: var(--surface); }
+.hr-folder .file-list li.archived { opacity: .6; }
+.hr-folder .empty-folder { margin: 0; padding: 10px 14px; }
+.hr-add { margin-top: 8px; padding-top: 16px; border-top: 1px solid var(--border); }
+.inline-check { display: inline-flex; gap: 8px; align-items: center; background: none; border: 0; font-size: 13px; }
+.personnel-tile { text-decoration: none; color: inherit; border-color: var(--gold) !important; }
+.hr-layout .people-side .table-wrap { max-height: 70vh; overflow: auto; }

@@ -1,6 +1,7 @@
 // End-to-end API tests: the real Edge Function handlers, running against
 // PostgREST over a database with every migration applied (see run.sh).
 // Only Supabase Auth and Storage are stubbed.
+import { pdfText } from "./pdf-lib-stub.ts";
 import { storageCalls } from "./client.ts";
 
 const BASE = Deno.env.get("POSTGREST_URL") || "http://127.0.0.1:3999";
@@ -207,8 +208,31 @@ Deno.test("onboarding: invite, forms and uploads, send back, accept", async () =
   const back = again.items.find((i: any) => i.id === tfn.id);
   if (back.rejectReason !== "Check your residency answer" || back.answers?.tfn !== "123456782") throw new Error("sent-back form should keep reason and answers");
   await ok(trainingApi, applicant, { action: "onboarding_submit_form", itemId: tfn.id, answers: { ...answers, residency: "A working holiday maker" } });
-  await ok(adminApi, HR, { action: "onboarding_review", itemId: tfn.id, accept: true });
-  await ok(adminApi, HR, { action: "onboarding_review", itemId: card.id, accept: true });
+  const accTfn = await ok(adminApi, HR, { action: "onboarding_review", itemId: tfn.id, accept: true });
+  if (accTfn.filed !== 1) throw new Error(`accepted TFN should be filed as one record: ${JSON.stringify(accTfn)}`);
+  const accCard = await ok(adminApi, HR, { action: "onboarding_review", itemId: card.id, accept: true });
+  if (accCard.filed !== 2) throw new Error("each certificate should be filed");
+
+  // HR file: filed by category, generated record holds the answers, nothing duplicated.
+  if (!storageCalls.some(c => c.startsWith(`store hr-documents/personnel/${emp.id}/tax/`))) throw new Error("TFN record not stored in the tax folder");
+  if (!pdfText.includes("123456782") || !pdfText.some(t => t.includes("Tax file number declaration"))) throw new Error("record PDF missing the answers");
+  expectStatus(await call(adminApi, L, { action: "personnel_view", employeeId: emp.id }), 403, "learner cannot open HR files");
+  const file = await ok(adminApi, HR, { action: "personnel_view", employeeId: emp.id });
+  if (file.filedNow !== 0) throw new Error("nothing should be filed twice");
+  const cat = (k: string) => file.categories.find((c: any) => c.key === k).documents;
+  if (cat("tax").length !== 1 || cat("tax")[0].source !== "onboarding_form") throw new Error("tax folder wrong");
+  if (cat("licences").map((d: any) => d.title).sort().join("|") !== "Forklift licence|White Card") throw new Error(`licences folder wrong: ${JSON.stringify(cat("licences"))}`);
+  if (cat("licences").find((d: any) => d.title === "Forklift licence").expiresOn !== "2030-05-01") throw new Error("expiry not carried into the HR file");
+  const opened = await ok(adminApi, HR, { action: "personnel_open", documentId: cat("tax")[0].id });
+  if (!opened.url) throw new Error("no link to the filed record");
+  // HR adds a document directly, then archives it with a reason (never deleted).
+  const prep = await ok(adminApi, HR, { action: "personnel_prepare_upload", employeeId: emp.id, category: "performance", fileName: "Probation review.pdf", size: 100 });
+  const added = await ok(adminApi, HR, { action: "personnel_add", employeeId: emp.id, category: "performance", path: prep.path, fileName: "Probation review.pdf", title: "3-month probation review" });
+  expectStatus(await call(adminApi, HR, { action: "personnel_add", employeeId: emp.id, category: "performance", path: `personnel/${emp.id}/tax/x.pdf`, title: "Wrong folder" }), 400, "path must match the folder");
+  expectStatus(await call(adminApi, HR, { action: "personnel_archive", documentId: added.documentId, reason: "" }), 409, "archive needs a reason");
+  await ok(adminApi, HR, { action: "personnel_archive", documentId: added.documentId, reason: "Uploaded to the wrong person" });
+  const people = await ok(adminApi, HR, { action: "personnel_people" });
+  if (people.people.find((p: any) => p.id === emp.id).documents !== 3) throw new Error("archived documents should not count");
   expectStatus(await call(trainingApi, applicant, { action: "onboarding_submit_form", itemId: tfn.id, answers }), 409, "accepted is final");
   expectStatus(await call(trainingApi, applicant, { action: "onboarding_prepare_upload", itemId: card.id, fileName: "x.pdf", size: 100 }), 409, "accepted upload is final");
   const after = await ok(trainingApi, applicant, { action: "onboarding_view" });

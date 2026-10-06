@@ -2,6 +2,7 @@ import { withSupabase } from "npm:@supabase/server@^1";
 import { corsHeaders, errorJson, httpError, json, rpc } from "../_shared/http.ts";
 import { peopleActions } from "./people.ts";
 import { accountActions, type Actor } from "./accounts.ts";
+import { personnelActions } from "./personnel.ts";
 import { generateTemporaryPassword } from "../_shared/accounts.ts";
 import { expectedModuleAssets, moduleSlug, validateAuthoringManifest } from "../_shared/module-authoring.ts";
 
@@ -566,6 +567,9 @@ export default {
       } else if (accountActions[action]) {
         requirePermission(administrator, accountActions[action].perm);
         result = await accountActions[action].run(admin, administrator, body);
+      } else if (personnelActions[action]) {
+        requirePermission(administrator, personnelActions[action].perm);
+        result = await personnelActions[action].run(admin, administrator, body);
       } else {
         const needed = ACTION_PERMISSIONS[action];
         if (!needed) throw httpError(400, "Unknown administration action.");

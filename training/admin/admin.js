@@ -3,6 +3,7 @@ import { defaultContentVersion, endOfSydneyDayIso, moduleAuthoringTemplate, sort
 import { bindMatrix, bindPeople, loadMatrix, loadPeople, setPermissions } from "./people.js";
 import { bindOnboarding, loadOnboarding, showTemporaryPassword } from "./onboarding.js";
 import { mountIms } from "../ims/ims.js";
+import { bindPersonnel, loadPersonnel } from "./personnel.js";
 
 const ui = {
   gate: document.getElementById("admin-gate"),
@@ -329,6 +330,7 @@ async function loadView(selected) {
   try {
     if (selected === "people-management") await loadPeople(document.getElementById(selected));
     if (selected === "onboarding-management") await loadOnboarding(document.getElementById(selected), { canIssuePasswords: can("access.manage") });
+    if (selected === "hr-files") await loadPersonnel(document.getElementById(selected));
     if (selected === "competency-matrix") await loadMatrix(document.getElementById(selected));
     if (selected === "ims-documents") { ims = ims || mountIms(document.getElementById(selected)); await ims.open(); }
   } catch (error) {
@@ -394,6 +396,7 @@ document.getElementById("load-more").addEventListener("click", () => loadDashboa
 bindPeople(document.getElementById("people-management"));
 bindMatrix(document.getElementById("competency-matrix"));
 bindOnboarding(document.getElementById("onboarding-management"));
+bindPersonnel(document.getElementById("hr-files"));
 document.getElementById("refresh-modules").addEventListener("click", () => loadModules().catch(error => { ui.moduleRegisterMessage.textContent = friendlyError(error); }));
 document.getElementById("download-module-template").addEventListener("click", downloadAuthoringTemplate);
 document.querySelectorAll(".admin-tab").forEach(tab => tab.addEventListener("click", switchAdminView));
@@ -443,7 +446,10 @@ async function init() {
     ui.gate.classList.add("hidden");
     ui.app.classList.remove("hidden");
     const first = tabs.find(tab => !tab.classList.contains("hidden"));
-    if (first && !training) first.click();
+    // ?view=hr-files (for example, from the HR folder in IMS documents) opens that area.
+    const wanted = tabs.find(tab => tab.dataset.adminView === new URLSearchParams(location.search).get("view") && !tab.classList.contains("hidden"));
+    if (wanted) wanted.click();
+    else if (first && !training) first.click();
   } catch (error) {
     document.getElementById("gate-title").textContent = error?.status === 403 ? "No administration access" : "Administration unavailable";
     document.getElementById("gate-message").textContent = error?.code === "password_change_required"

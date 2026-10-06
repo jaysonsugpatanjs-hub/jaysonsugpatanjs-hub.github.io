@@ -4,6 +4,7 @@
 import { generateTemporaryPassword } from "../_shared/accounts.ts";
 import { describeAnswers } from "../_shared/onboarding-forms.ts";
 import { httpError, rpc } from "../_shared/http.ts";
+import { fileAcceptedOnboarding } from "./personnel.ts";
 
 type Client = any;
 export type Actor = { id: string; email: string; full_name: string; role: string; permissions: string[] };
@@ -249,9 +250,22 @@ async function onboardingCreate(admin: Client, actor: Actor, body: any) {
 }
 
 async function onboardingReview(admin: Client, actor: Actor, body: any) {
-  return await rpc(admin, "onboarding_review", {
-    p_actor: actor.id, p_item: uuid(body.itemId, "Document"), p_accept: body.accept === true, p_reason: String(body.reason || "").slice(0, 500)
+  const itemId = uuid(body.itemId, "Document");
+  const result: any = await rpc(admin, "onboarding_review", {
+    p_actor: actor.id, p_item: itemId, p_accept: body.accept === true, p_reason: String(body.reason || "").slice(0, 500)
   });
+  if (body.accept !== true) return result;
+  // File it in the person's HR folder straight away. If that fails the
+  // acceptance still stands; opening their HR file retries the filing.
+  try {
+    const item = await admin.from("onboarding_items").select("onboarding_requests(employee_id)").eq("id", itemId).maybeSingle();
+    const employeeId = item.data?.onboarding_requests?.employee_id;
+    const filed = employeeId ? await fileAcceptedOnboarding(admin, actor, employeeId) : 0;
+    return { ...result, filed };
+  } catch (error) {
+    console.error("personnel filing", error);
+    return { ...result, filed: 0, filingDeferred: true };
+  }
 }
 
 async function onboardingCancel(admin: Client, actor: Actor, body: any) {

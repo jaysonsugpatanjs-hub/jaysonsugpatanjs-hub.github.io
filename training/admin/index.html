@@ -27,6 +27,7 @@
       <button class="admin-tab" type="button" data-admin-view="module-management" data-perm="training.manage" aria-pressed="false">Module management</button>
       <button class="admin-tab" type="button" data-admin-view="people-management" data-perm="people.view people.manage access.manage hr.manage" aria-pressed="false">People</button>
       <button class="admin-tab" type="button" data-admin-view="onboarding-management" data-perm="hr.manage" aria-pressed="false">Onboarding</button>
+      <button class="admin-tab" type="button" data-admin-view="hr-files" data-perm="hr.manage" aria-pressed="false">HR files</button>
       <button class="admin-tab" type="button" data-admin-view="competency-matrix" data-perm="competency.all competency.team" aria-pressed="false">Competency matrix</button>
       <button class="admin-tab" type="button" data-admin-view="ims-documents" data-perm="*" aria-pressed="false">IMS documents</button>
     </nav>
@@ -113,6 +114,22 @@
         </section>
         <div class="people-side">
           <section class="portal-card"><form data-onb-form class="admin-form"></form></section>
+        </div>
+      </div>
+    </section>
+
+    <section id="hr-files" class="admin-view hidden">
+      <div class="people-layout hr-layout">
+        <section class="portal-card register-card" data-hr-file>
+          <p class="eyebrow">HR · PERSONNEL FILES</p><h2>Choose a person</h2>
+          <p class="muted">Each person's HR file is sorted into folders: personal details, identity and right to work, tax, super, bank, contract, licences, contractor insurance, training and performance. Accepted onboarding items are filed here automatically.</p>
+        </section>
+        <div class="people-side">
+          <section class="portal-card">
+            <div class="field"><label for="hr-search">Find a person</label><input id="hr-search" data-hr-search type="search" placeholder="Name, number or type"></div>
+            <div class="table-wrap"><table><thead><tr><th>Person</th><th>Documents</th></tr></thead><tbody data-hr-people></tbody></table></div>
+            <p class="form-message" data-hr-msg></p>
+          </section>
         </div>
       </div>
     </section>
