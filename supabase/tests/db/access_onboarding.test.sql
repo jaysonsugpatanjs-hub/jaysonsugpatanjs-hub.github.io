@@ -185,12 +185,36 @@ begin
   perform pg_temp.expect_error(format('select public.onboarding_review(%L, %L, true, null)', pg_temp.a('boss'), v_item), 'closed');
 end $$;
 
+-- Personnel files ------------------------------------------------------------------
+do $$
+declare
+  v_emp uuid := (select id from public.employees where employee_number = 'A-NEW');
+  v_item uuid; v_doc uuid; v_again uuid;
+begin
+  select i.id into v_item from public.onboarding_items i join public.onboarding_requests r on r.id = i.request_id
+  where r.employee_id = v_emp and i.doc_type = 'tfn_declaration' and i.status = 'accepted';
+  perform pg_temp.eq((select personnel_category from public.hr_document_types where key = 'tfn_declaration'), 'tax', 'TFN files under tax');
+  perform pg_temp.expect_error(format('select public.personnel_file_document(%L, %L, %L, %L, %L, %L, %L, %L, null, null)',
+    pg_temp.a('worker'), v_emp, 'tax', 'TFN', 'personnel/' || v_emp || '/tax/a.pdf', 'a.pdf', 'onboarding_form', v_item), 'HR onboarding');
+  perform pg_temp.expect_error(format('select public.personnel_file_document(%L, %L, %L, %L, %L, %L, %L, null, null, null)',
+    pg_temp.a('hr'), v_emp, 'tax', 'Note', 'personnel/' || v_emp || '/banking/a.pdf', 'a.pdf', 'hr_upload'), 'Invalid upload path');
+  perform pg_temp.expect_error(format('select public.personnel_file_document(%L, %L, %L, %L, %L, %L, %L, null, null, null)',
+    pg_temp.a('hr'), v_emp, 'nope', 'Note', 'personnel/' || v_emp || '/nope/a.pdf', 'a.pdf', 'hr_upload'), 'Unknown HR folder');
+  v_doc := public.personnel_file_document(pg_temp.a('hr'), v_emp, 'tax', 'Tax file number declaration', 'personnel/' || v_emp || '/tax/tfn.pdf', 'tfn.pdf', 'onboarding_form', v_item, null, null);
+  v_again := public.personnel_file_document(pg_temp.a('hr'), v_emp, 'tax', 'Tax file number declaration', 'personnel/' || v_emp || '/tax/tfn-2.pdf', 'tfn-2.pdf', 'onboarding_form', v_item, null, null);
+  perform pg_temp.eq(v_again, v_doc, 'filing the same form twice returns the first record');
+  perform pg_temp.expect_error(format('select public.personnel_archive_document(%L, %L, %L)', pg_temp.a('hr'), v_doc, ''), 'reason');
+  perform public.personnel_archive_document(pg_temp.a('hr'), v_doc, 'Superseded by new declaration');
+  perform pg_temp.expect_error(format('select public.personnel_archive_document(%L, %L, %L)', pg_temp.a('hr'), v_doc, 'again'), 'already archived');
+  perform pg_temp.eq((select count(*)::int from public.personnel_documents where id = v_doc), 1, 'archived, not deleted');
+end $$;
+
 -- Browser roles stay locked out -------------------------------------------------
 do $$
 declare
   t text;
 begin
-  foreach t in array array['onboarding_files', 'onboarding_items', 'onboarding_requests', 'profile_permissions', 'position_permissions', 'hr_document_types']
+  foreach t in array array['personnel_documents', 'personnel_categories', 'onboarding_files', 'onboarding_items', 'onboarding_requests', 'profile_permissions', 'position_permissions', 'hr_document_types']
   loop
     if has_table_privilege('authenticated', 'public.' || t, 'select') or has_table_privilege('anon', 'public.' || t, 'select') then
       raise exception 'Browser role can read %', t;

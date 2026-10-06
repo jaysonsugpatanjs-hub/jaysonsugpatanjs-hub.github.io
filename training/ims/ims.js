@@ -98,10 +98,13 @@ export function mountIms(root) {
         <td>${safe(d.currentRevision || "—")}${d.pending ? `<small>${safe(d.pending.revision)} in approval (${d.pending.approved}/${d.pending.required})</small>` : ""}</td>
         <td>${d.status === "approved" ? '<span class="chip good">Approved</span>' : '<span class="chip pending">Draft</span>'}</td>
         <td>${reviewChip(d.reviewDue)}</td></tr>`).join("");
+    const hrTile = v.personnelFiles ? `<a class="folder-tile personnel-tile" href="${new URL("../admin/?view=hr-files", import.meta.url).href}" data-hr-files>
+        ${FOLDER_ICON}<span class="tile-text"><strong>Personnel files</strong><small>Each person's HR file, sorted by category · HR only</small></span>
+        <span class="chip info">HR</span></a>` : "";
     $("[data-folder-body]").innerHTML = `
-      ${tiles ? `<div class="folder-grid">${tiles}</div>` : ""}
+      ${tiles || hrTile ? `<div class="folder-grid">${hrTile}${tiles}</div>` : ""}
       ${docs ? `<div class="table-wrap"><table><thead><tr><th>Document</th><th>Type</th><th>Revision</th><th>Status</th><th>Review due</th></tr></thead><tbody>${docs}</tbody></table></div>` : ""}
-      ${!tiles && !docs ? '<p class="empty-note">This folder is empty.</p>' : ""}
+      ${!tiles && !docs && !hrTile ? '<p class="empty-note">This folder is empty.</p>' : ""}
       ${v.hiddenDrafts ? `<p class="muted small">${v.hiddenDrafts} draft${v.hiddenDrafts === 1 ? " is" : "s are"} hidden: viewers see approved revisions only.</p>` : ""}
       ${canEdit || v.folder.level === "owner" ? `<details class="add-ref"><summary>Add to this folder</summary>
         ${v.folder.level === "owner" ? `<form data-new-folder class="inline-form"><div class="field"><label for="nf-name">New folder name</label><input id="nf-name" name="name" required maxlength="120"></div><button class="secondary-action" type="submit">Create folder</button></form>` : ""}
@@ -199,6 +202,9 @@ export function mountIms(root) {
   }
 
   root.addEventListener("click", event => {
+    const hr = event.target.closest("[data-hr-files]");
+    const tab = document.querySelector('.admin-tab[data-admin-view="hr-files"]');
+    if (hr && tab) { event.preventDefault(); tab.click(); return; }
     const b = event.target.closest("button");
     if (!b) return;
     if (b.dataset.folder) act(() => { s.documentId = null; root.querySelector("[data-doc-panel]").innerHTML = '<h2>Document</h2><p class="muted">Pick a document to see its revisions and approvals.</p>'; return openFolder(b.dataset.folder); }, b);

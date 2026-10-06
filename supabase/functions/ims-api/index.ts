@@ -97,10 +97,15 @@ async function folderView(admin: Client, me: any, body: any) {
     documentCount: f.level ? countFor(f.id) : null
   }));
 
+  // The HR folder (for example "08. LABOUR HIRE & HR") also leads to the
+  // personnel files, for people who manage HR.
+  const isHrFolder = /(^|[^A-Za-z])HR([^A-Za-z]|$)|human resources/i.test(folder.name);
+  const personnelFiles = isHrFolder && folder.level >= 1 && await rpc<boolean>(admin, "app_has", { p_profile: me.id, p_key: "hr.manage" }).catch(() => false);
   const base = {
     folder: { id: folder.id, name: folder.name, level: LEVELS[folder.level], inherits: folder.inherits, isRoot: !folder.parentId },
     path,
-    children
+    children,
+    personnelFiles: Boolean(personnelFiles)
   };
   if (folder.level < 1) {
     const owners: any[] = await rpc(admin, "ims_effective_grants", { p_folder: folder.id });
