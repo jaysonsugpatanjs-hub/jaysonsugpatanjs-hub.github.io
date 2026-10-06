@@ -27,6 +27,13 @@ export async function renderDashboard(view, { can }) {
       <section class="card"><h2>GST owed (estimate)</h2><p class="big mono">${money(d.ledger.gstOwed)}</p><p class="muted small">Balance of the GST account; bracketed means a refund is due</p></section>
       <section class="card ${d.ledger.draftJournals ? "attention" : ""}"><h2>Draft journals</h2><p class="big">${d.ledger.draftJournals}</p><p class="muted small">Not in the ledger until posted</p><a class="link" href="#/journals?status=draft">Review drafts</a></section>
     </div>` : ""}
+    ${d.sales || d.purchases ? `<div class="cards figures">
+      ${d.sales ? `<section class="card"><h2>Customers owe</h2><p class="big mono">${money(d.sales.owed)}</p><p class="muted small">${d.sales.overdue ? `${money(d.sales.overdue)} overdue` : "Nothing overdue"}</p><a class="link" href="#/reports?type=ar">Aged receivables</a></section>
+      <section class="card ${d.sales.draftInvoices ? "attention" : ""}"><h2>Draft invoices</h2><p class="big">${d.sales.draftInvoices}</p><p class="muted small">Not sent or posted until approved</p><a class="link" href="#/invoices?view=draft">Review</a></section>` : ""}
+      ${d.purchases ? `<section class="card"><h2>Panalo owes suppliers</h2><p class="big mono">${money(d.purchases.owing)}</p><p class="muted small">${d.purchases.overdue ? `${money(d.purchases.overdue)} overdue` : "Nothing overdue"}</p><a class="link" href="#/reports?type=ap">Aged payables</a></section>
+      <section class="card ${d.purchases.billsToReview || d.purchases.ordersToApprove ? "attention" : ""}"><h2>Waiting on purchasing</h2><p class="big">${d.purchases.billsToReview + d.purchases.ordersToApprove}</p>
+        <p class="muted small">${d.purchases.billsToReview} bill${d.purchases.billsToReview === 1 ? "" : "s"} to review · ${d.purchases.ordersToApprove} order${d.purchases.ordersToApprove === 1 ? "" : "s"} to approve</p><a class="link" href="#/bills?view=draft">Bills</a> · <a class="link" href="#/purchase-orders">Orders</a></section>` : ""}
+    </div>` : ""}
     <div class="cards">
       <section class="card ${setupDone ? "" : "attention"}">
         <h2>Company setup</h2>
@@ -51,7 +58,7 @@ export async function renderDashboard(view, { can }) {
       <h2>What's being built</h2>
       <p class="muted">Panalo Accounts is delivered in phases, each tested before the next starts. Menu items marked with a phase arrive then.</p>
       <table class="tbl"><thead><tr><th scope="col">Phase</th><th scope="col">Module</th><th scope="col">Includes</th><th scope="col">Status</th></tr></thead><tbody>
-        ${ROADMAP.map(([n, name, inc]) => `<tr><td>${n}</td><td><strong>${safe(name)}</strong></td><td class="muted">${safe(inc)}</td><td>${n <= 2 ? '<span class="chip good">Live</span>' : n === 3 ? '<span class="chip info">Next</span>' : '<span class="chip">Planned</span>'}</td></tr>`).join("")}
+        ${ROADMAP.map(([n, name, inc]) => `<tr><td>${n}</td><td><strong>${safe(name)}</strong></td><td class="muted">${safe(inc)}</td><td>${n <= 3 ? '<span class="chip good">Live</span>' : n === 4 ? '<span class="chip info">Next</span>' : '<span class="chip">Planned</span>'}</td></tr>`).join("")}
       </tbody></table>
     </section>
     ${can("audit.view") ? '<p class="muted small">Every change in Panalo Accounts is recorded in the <a href="#/audit">audit log</a>.</p>' : ""}`;

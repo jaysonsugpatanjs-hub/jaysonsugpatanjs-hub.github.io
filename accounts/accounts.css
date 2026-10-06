@@ -228,3 +228,44 @@ input.num { text-align: right; }
 .wide { grid-column: span 2; }
 @media (max-width: 900px) { .wide { grid-column: auto; } }
 .btn { white-space: nowrap; }
+
+/* Phase 3: sales and purchasing */
+.bad-text { color: var(--bad) !important; }
+.warn-text { color: var(--warn) !important; }
+.prewrap { white-space: pre-wrap; }
+.actions.tight { margin-top: 0; justify-content: flex-end; }
+fieldset.addr { border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 14px 2px; margin: 0 0 14px; }
+fieldset.addr legend { padding: 0 4px; }
+.addr-grid { grid-template-columns: 2fr 1.2fr 90px 100px; }
+.tbl.doc-lines td { padding: 4px 5px; }
+.tbl.doc-lines td:first-child { min-width: 230px; width: 34%; }
+.tbl.doc-lines td:nth-child(2) { min-width: 170px; }
+.tbl.doc-lines td:nth-child(3) { width: 70px; }
+.tbl.doc-lines td:nth-child(4) { width: 110px; }
+.tbl.doc-lines td:nth-child(5) { width: 64px; }
+.tbl.doc-lines td:nth-child(6) { width: 84px; }
+.tbl.doc-lines td:nth-child(7), .tbl.doc-lines td:nth-child(8) { width: 96px; padding-top: 12px; }
+.tbl.doc-lines textarea { min-height: 34px; resize: vertical; padding: 6px 8px; }
+.tbl.doc-lines select.kind { margin-top: 4px; min-height: 28px; padding: 2px 6px; font-size: 12px; width: auto; color: var(--muted); }
+.doc-foot { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-top: 10px; flex-wrap: wrap; }
+dl.totals { display: grid; grid-template-columns: auto auto; gap: 4px 24px; margin: 10px 0 0 auto; min-width: 260px; font-size: 13.5px; width: max-content; }
+dl.totals dt { color: var(--muted); }
+dl.totals dd { margin: 0; text-align: right; }
+dl.totals .grand { color: var(--heading); font-weight: 800; border-top: 1px solid var(--border); padding-top: 4px; }
+dl.totals dt.bad { color: var(--bad); font-weight: 700; }
+input.apply { width: 120px; min-height: 32px; padding: 5px 8px; }
+ul.files { list-style: none; padding: 0; margin: 0 0 10px; }
+ul.files li { display: flex; gap: 12px; align-items: baseline; padding: 6px 0; border-bottom: 1px solid var(--rule); flex-wrap: wrap; }
+.muted-link { color: var(--muted); font-weight: 600; }
+@media (max-width: 900px) {
+  .addr-grid { grid-template-columns: 1fr 1fr; }
+  .page-head { flex-wrap: wrap; }
+  .actions.tight { justify-content: flex-start; }
+  dl.totals { margin-left: 0; width: 100%; }
+}
+@media (max-width: 900px) {
+  /* Let wide tables scroll inside their own box instead of widening the page. */
+  .shell { grid-template-columns: minmax(0, 1fr); }
+  .tbl.doc-lines td:nth-child(6) { min-width: 84px; }
+}
+.tbl-wrap { position: relative; } /* keeps visually hidden labels inside the scroller */

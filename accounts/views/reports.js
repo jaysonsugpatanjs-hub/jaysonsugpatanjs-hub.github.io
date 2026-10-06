@@ -1,9 +1,10 @@
 // Financial reports: profit and loss, balance sheet, trial balance and
-// account transactions, with drill-down and logged CSV export.
-// Route: #/reports?type=pl|bs|tb|account&...
+// account transactions, aged receivables and payables, with drill-down and
+// logged CSV export. Route: #/reports?type=pl|bs|tb|account|ar|ap&...
 import { addMonths, call, date, downloadCsv, endOfMonth, flash, friendlyError, hashParams, money, options, safe, today, TYPE_LABEL, TYPE_ORDER } from "../lib/ui.js";
 
-const TABS = [["pl", "Profit and loss"], ["bs", "Balance sheet"], ["tb", "Trial balance"], ["account", "Account transactions"]];
+const TABS = [["pl", "Profit and loss"], ["bs", "Balance sheet"], ["tb", "Trial balance"], ["account", "Account transactions"], ["ar", "Aged receivables"], ["ap", "Aged payables"]];
+const BUCKETS = [["current", "Current"], ["days30", "1–30 days"], ["days60", "31–60 days"], ["days90", "61–90 days"], ["over90", "Over 90 days"], ["credits", "Credits"], ["total", "Total"]];
 
 export async function renderReports(view) {
   const setup = await call("ledger_setup");
@@ -34,6 +35,8 @@ export async function renderReports(view) {
   const params = () => state.type === "pl" ? { kind: "profit_loss", from: state.from, to: state.to }
     : state.type === "bs" ? { kind: "balance_sheet", asAt: state.asAt }
     : state.type === "tb" ? { kind: "trial_balance", asAt: state.asAt }
+    : state.type === "ar" ? { kind: "aged_receivables", asAt: state.asAt }
+    : state.type === "ap" ? { kind: "aged_payables", asAt: state.asAt }
     : { kind: "account_transactions", accountId: state.account, from: state.from, to: state.to };
 
   const acctLink = (r, label) => `<a href="#/reports?type=account&account=${safe(r.accountId)}&from=${safe(state.type === "pl" ? state.from : fyStart)}&to=${safe(state.type === "pl" ? state.to : state.asAt)}">${label}</a>`;
@@ -69,6 +72,15 @@ export async function renderReports(view) {
         <tr class="grand"><th scope="row">Total equity</th><td class="num mono">${money(s.equity)}</td></tr></tbody></table>
         <p class="balance ${s.balanced ? "good" : "bad"}">${s.balanced ? "Balanced: net assets equal total equity." : "Out of balance: tell your administrator."}</p>`;
     }
+    if (state.type === "ar" || state.type === "ap") {
+      const ar = state.type === "ar";
+      return `<table class="tbl report"><thead><tr><th scope="col">${ar ? "Customer" : "Supplier"}</th>${BUCKETS.map(([, l]) => `<th scope="col" class="num">${l}</th>`).join("")}</tr></thead><tbody>
+        ${data.rows.map(r => `<tr><td><a href="#/${ar ? "customers" : "suppliers"}/${safe(ar ? r.customerId : r.supplierId)}">${safe(r.name)}</a></td>
+          ${BUCKETS.map(([k]) => `<td class="num mono ${["days60", "days90", "over90"].includes(k) && Number(r[k]) > 0 ? "bad-text" : ""}">${money(r[k], { blankZero: k !== "total" })}</td>`).join("")}</tr>`).join("")
+          || `<tr><td colspan="8" class="muted">Nothing ${ar ? "owed to Panalo" : "owing to suppliers"} at this date.</td></tr>`}
+        </tbody><tfoot><tr class="grand"><th scope="row">Total</th>${BUCKETS.map(([k]) => `<td class="num mono">${money(data.totals[k])}</td>`).join("")}</tr></tfoot></table>
+        <p class="muted small">Days past the due date. ${ar ? "Credits are unapplied credit notes and payments." : "Credits are unapplied supplier credits."} The total agrees with the ${ar ? "Accounts Receivable (1100)" : "Accounts Payable (2000)"} balance at the same date.</p>`;
+    }
     if (state.type === "tb") {
       return `<table class="tbl report"><thead><tr><th scope="col">Account</th><th scope="col">Type</th><th scope="col" class="num">Debit</th><th scope="col" class="num">Credit</th></tr></thead><tbody>
         ${data.rows.map(r => `<tr><td>${acctLink(r, `<span class="mono">${safe(r.code)}</span> ${safe(r.name)}`)}</td><td class="muted">${safe(TYPE_LABEL[r.type])}</td>
@@ -93,6 +105,7 @@ export async function renderReports(view) {
     if (state.type === "bs") return [["Account code", "Account", "Type", "Amount"], ...data.rows.map(r => [r.code, r.name, TYPE_LABEL[r.type], r.amount]),
       ["", "Retained earnings (prior years)", "Equity", data.retainedEarningsPriorYears], ["", "Current year earnings", "Equity", data.currentYearEarnings],
       [], ["", "Total assets", "", data.totals.assets], ["", "Total liabilities", "", data.totals.liabilities], ["", "Total equity", "", data.totals.equity]];
+    if (state.type === "ar" || state.type === "ap") return [[state.type === "ar" ? "Customer" : "Supplier", ...BUCKETS.map(b => b[1])], ...data.rows.map(r => [r.name, ...BUCKETS.map(([k]) => r[k])]), ["Total", ...BUCKETS.map(([k]) => data.totals[k])]];
     if (state.type === "tb") return [["Account code", "Account", "Type", "Debit", "Credit"], ...data.rows.map(r => [r.code, r.name, TYPE_LABEL[r.type], r.debit, r.credit]), ["", "Total", "", data.totalDebit, data.totalCredit]];
     return [["Date", "Journal", "Details", "Tax", "Debit", "Credit"], ["", "", "Opening balance", "", "", data.openingBalance], ...data.rows.map(r => [r.date, r.number, r.description || r.memo, r.taxCode || "", r.debit, r.credit])];
   };

@@ -1,4 +1,4 @@
-// Panalo Accounts API (Phase 1: foundation).
+// Panalo Accounts API (foundation, ledger, sales and purchasing).
 // Every request: verified session -> active profile -> effective permissions
 // -> MFA (aal2) for anyone holding a privileged key -> the action's permission.
 // Every write then goes through a security-definer SQL function that checks
@@ -6,6 +6,9 @@
 import { withSupabase } from "npm:@supabase/server@^1";
 import { corsHeaders, errorJson, httpError, json, rpc } from "../_shared/http.ts";
 import { ledgerActions, ledgerHeadlines } from "./ledger.ts";
+import { salesActions, salesHeadlines } from "./sales.ts";
+import { purchasesActions, purchasesHeadlines } from "./purchases.ts";
+import { attachmentArchive, attachmentAttach, attachmentOpen, attachmentPrepare } from "./docs.ts";
 
 type Client = any;
 type Actor = { id: string; email: string; full_name: string; role: string; organization_id: string; permissions: string[] };
@@ -208,13 +211,17 @@ async function approvalsList(admin: Client, actor: Actor) {
     .eq("organization_id", actor.organization_id).order("requested_at", { ascending: false }).limit(200);
   if (error) throw httpError(500, "Approvals could not be loaded.");
   const who = await names(admin, data.flatMap((a: any) => [a.requested_by, a.decided_by]));
-  const shape = (a: any) => ({
-    id: a.id, kind: a.kind, title: a.title, status: a.status, requestedAt: a.requested_at, requestedBy: who.get(a.requested_by) || "Unknown",
-    decidedAt: a.decided_at, decidedBy: a.decided_by ? who.get(a.decided_by) || "Unknown" : null, comment: a.comment,
-    newValue: a.kind === "company_bank_account" && a.new_value ? { ...a.new_value, accountNumber: a.new_value.accountNumber } : a.new_value,
-    mine: a.requested_by === actor.id
-  });
   const canDecide = (a: any) => a.status === "pending" && a.requested_by !== actor.id && has(actor, a.required_permission);
+  // Full account numbers only for the approver (to check them) and the requester.
+  const shape = (a: any) => {
+    const full = canDecide(a) || a.requested_by === actor.id;
+    const v = a.new_value && !full && a.new_value.accountNumber ? { ...a.new_value, accountNumber: maskAccount(String(a.new_value.accountNumber)) } : a.new_value;
+    return {
+      id: a.id, kind: a.kind, title: a.title, status: a.status, requestedAt: a.requested_at, requestedBy: who.get(a.requested_by) || "Unknown",
+      decidedAt: a.decided_at, decidedBy: a.decided_by ? who.get(a.decided_by) || "Unknown" : null, comment: a.comment,
+      newValue: v, previousValue: full ? a.previous_value : null, mine: a.requested_by === actor.id
+    };
+  };
   return {
     toDecide: data.filter(canDecide).map(shape),
     mine: data.filter((a: any) => a.requested_by === actor.id).slice(0, 50).map(shape),
@@ -317,13 +324,16 @@ async function auditList(admin: Client, actor: Actor, body: any) {
 /* ---------------- Dashboard ---------------- */
 
 async function dashboard(admin: Client, actor: Actor) {
-  const [company, approvals, notes, ledger] = await Promise.all([companyGet(admin, actor), approvalsList(admin, actor), notificationsList(admin, actor), ledgerHeadlines(admin, actor)]);
+  const [company, approvals, notes, ledger, sales, purchases] = await Promise.all([companyGet(admin, actor), approvalsList(admin, actor), notificationsList(admin, actor),
+    ledgerHeadlines(admin, actor), salesHeadlines(admin, actor), purchasesHeadlines(admin, actor)]);
   return {
     setup: { complete: Boolean(company.settings?.setup_completed_at), missing: company.missing, canEdit: company.canEdit },
     approvalsWaiting: approvals.toDecide.length,
     myPending: approvals.mine.filter((a: any) => a.status === "pending").length,
     unread: notes.unread,
     ledger,
+    sales,
+    purchases,
     company: { legalName: company.settings?.legal_name, tradingName: company.settings?.trading_name, abn: company.settings?.abn, logoUrl: company.logoUrl }
   };
 }
@@ -349,7 +359,13 @@ const ACTIONS: Record<string, { perm: string[] | null; run: Handler }> = {
   users_list: { perm: ["access.manage"], run: usersList },
   role_set: { perm: ["access.manage"], run: roleSet },
   audit_list: { perm: ["audit.view"], run: auditList },
-  ...ledgerActions
+  ...ledgerActions,
+  ...salesActions,
+  ...purchasesActions,
+  attachment_prepare_upload: { perm: ["sales.manage", "purchases.manage", "purchases.raise"], run: attachmentPrepare },
+  attachment_attach: { perm: ["sales.manage", "purchases.manage", "purchases.raise"], run: attachmentAttach },
+  attachment_open: { perm: ["sales.manage", "purchases.manage", "purchases.raise", "reports.view"], run: attachmentOpen },
+  attachment_archive: { perm: ["sales.manage", "purchases.manage"], run: attachmentArchive }
 };
 
 export default {

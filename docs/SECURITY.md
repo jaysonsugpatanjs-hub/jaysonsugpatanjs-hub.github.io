@@ -13,8 +13,9 @@
   `payroll.sensitive` (pay rates, TFNs, bank and super details). Nobody can
   change their own roles or approve their own request.
 - **Four-eyes on money movement.** New company bank accounts stay inactive
-  until a second person with banking permission approves them. Supplier and
-  employee bank changes will use the same engine (Phases 3 and 5).
+  until a second person with banking permission approves them. Supplier bank
+  changes use the same engine (`purchases.bank`, Phase 3); employee bank
+  changes will too (Phase 5). Only approved bills can be paid.
 - **Append-only audit.** Audit rows cannot be updated or deleted; settings
   changes record old and new values.
 - **Private files.** Logos, HR records and (later) payslips and receipts live
