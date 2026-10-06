@@ -1,4 +1,4 @@
-// Panalo Accounts API (foundation, ledger, sales and purchasing, projects and timesheets).
+// Panalo Accounts API (foundation, ledger, sales and purchasing, projects and timesheets, payroll).
 // Every request: verified session -> active profile -> effective permissions
 // -> MFA (aal2) for anyone holding a privileged key -> the action's permission.
 // Every write then goes through a security-definer SQL function that checks
@@ -9,6 +9,7 @@ import { ledgerActions, ledgerHeadlines } from "./ledger.ts";
 import { salesActions, salesHeadlines } from "./sales.ts";
 import { purchasesActions, purchasesHeadlines } from "./purchases.ts";
 import { projectsActions, projectsHeadlines } from "./projects.ts";
+import { payrollActions, payrollHeadlines } from "./payroll.ts";
 import { attachmentArchive, attachmentAttach, attachmentOpen, attachmentPrepare } from "./docs.ts";
 
 type Client = any;
@@ -325,8 +326,8 @@ async function auditList(admin: Client, actor: Actor, body: any) {
 /* ---------------- Dashboard ---------------- */
 
 async function dashboard(admin: Client, actor: Actor) {
-  const [company, approvals, notes, ledger, sales, purchases, projects] = await Promise.all([companyGet(admin, actor), approvalsList(admin, actor), notificationsList(admin, actor),
-    ledgerHeadlines(admin, actor), salesHeadlines(admin, actor), purchasesHeadlines(admin, actor), projectsHeadlines(admin, actor)]);
+  const [company, approvals, notes, ledger, sales, purchases, projects, payroll] = await Promise.all([companyGet(admin, actor), approvalsList(admin, actor), notificationsList(admin, actor),
+    ledgerHeadlines(admin, actor), salesHeadlines(admin, actor), purchasesHeadlines(admin, actor), projectsHeadlines(admin, actor), payrollHeadlines(admin, actor)]);
   return {
     setup: { complete: Boolean(company.settings?.setup_completed_at), missing: company.missing, canEdit: company.canEdit },
     approvalsWaiting: approvals.toDecide.length,
@@ -336,6 +337,7 @@ async function dashboard(admin: Client, actor: Actor) {
     sales,
     purchases,
     projects,
+    payroll,
     company: { legalName: company.settings?.legal_name, tradingName: company.settings?.trading_name, abn: company.settings?.abn, logoUrl: company.logoUrl }
   };
 }
@@ -365,6 +367,7 @@ const ACTIONS: Record<string, { perm: string[] | null; run: Handler }> = {
   ...salesActions,
   ...purchasesActions,
   ...projectsActions,
+  ...payrollActions,
   attachment_prepare_upload: { perm: ["sales.manage", "purchases.manage", "purchases.raise"], run: attachmentPrepare },
   attachment_attach: { perm: ["sales.manage", "purchases.manage", "purchases.raise"], run: attachmentAttach },
   attachment_open: { perm: ["sales.manage", "purchases.manage", "purchases.raise", "reports.view"], run: attachmentOpen },
