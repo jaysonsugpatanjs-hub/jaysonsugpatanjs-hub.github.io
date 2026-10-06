@@ -9,5 +9,6 @@ window.PANALO_TRAINING_CONFIG = Object.freeze({
   appUrl: "https://jaysonsugpatanjs-hub.github.io/training/",
   trainingFunction: "training-api",
   adminFunction: "admin-api",
-  imsFunction: "ims-api"
+  imsFunction: "ims-api",
+  financeFunction: "finance-api"
 });

@@ -4,5 +4,5 @@ import { createClient } from "./client.ts";
 
 export function withSupabase(_opts: unknown, handler: (request: Request, context: any) => Promise<Response>) {
   const client = createClient();
-  return (request: Request) => handler(request, { userClaims: { sub: request.headers.get("x-test-user") }, supabaseAdmin: client });
+  return (request: Request) => handler(request, { userClaims: { sub: request.headers.get("x-test-user"), aal: request.headers.get("x-test-aal") || "aal1" }, supabaseAdmin: client });
 }

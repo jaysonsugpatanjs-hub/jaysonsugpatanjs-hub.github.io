@@ -344,6 +344,7 @@ ui.form.addEventListener("submit", async event => {
     await signInWithPassword($("email").value, $("password").value);
     ui.form.reset();
     ui.authMessage.textContent = "";
+    if (goNext()) return;
     await loadDashboard();
   } catch (error) {
     ui.authMessage.textContent = friendlyError(error);
@@ -427,6 +428,14 @@ ui.signOut.addEventListener("click", async () => {
   show("signIn");
 });
 
+// ?next=/accounts/ returns to another Panalo page on this site after sign-in.
+function goNext() {
+  const next = new URLSearchParams(location.search).get("next") || "";
+  if (!/^\/(accounts|training)\/[A-Za-z0-9/_#.-]*$/.test(next)) return false;
+  location.assign(next);
+  return true;
+}
+
 async function init() {
   const callback = completeAuthRedirect();
   if (!isConfigured()) {
@@ -438,8 +447,10 @@ async function init() {
     askForPassword(callback.type);
     return;
   }
-  if (await getSession()) await loadDashboard();
-  else show("signIn");
+  if (await getSession()) {
+    if (goNext()) return;
+    await loadDashboard();
+  } else show("signIn");
 }
 
 init();

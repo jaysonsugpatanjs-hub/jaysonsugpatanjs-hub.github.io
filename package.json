@@ -13,6 +13,7 @@
     "build:pages": "npm run build && node scripts/sync-pages-build.mjs",
     "preview": "vite preview",
     "test:training": "node --test training/tests/*.test.mjs && node --experimental-strip-types --test training/tests/*.test.ts",
+    "test:accounts": "node scripts/check-js-syntax.mjs accounts training && node --test accounts/tests/*.test.mjs",
     "test:db": "bash supabase/tests/db/run.sh",
     "test:api": "bash supabase/tests/api/run.sh",
     "validate:training-private": "node training/scripts/provision-supabase-module.mjs --dry-run training/ppt/pp-trn-wld-001",
