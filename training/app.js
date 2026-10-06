@@ -95,11 +95,84 @@ function renderAssignments(assignments) {
 /* ---------------- Onboarding documents ---------------- */
 
 const ITEM_STATUS = {
-  pending: ["To upload", "pending"],
-  uploaded: ["Uploaded · waiting for HR", "info"],
+  pending: ["To do", "pending"],
+  uploaded: ["Sent · waiting for HR", "info"],
   accepted: ["Accepted", "good"],
-  rejected: ["Needs another upload", "bad"]
+  rejected: ["Needs fixing", "bad"]
 };
+const formItems = new Map();
+
+function fieldHtml(itemId, field, answers) {
+  const id = `f-${itemId}-${field.key}`;
+  const value = answers?.[field.key];
+  const hidden = field.when && !field.when.in.includes(String(answers?.[field.when.field] ?? "")) ? " hidden" : "";
+  const when = field.when ? ` data-when="${safe(field.when.field)}" data-when-in="${safe(JSON.stringify(field.when.in))}"` : "";
+  const help = field.help ? `<small>${safe(field.help)}</small>` : "";
+  const error = `<small class="field-error" data-error-for="${safe(field.key)}"></small>`;
+  const label = `${safe(field.label)}${field.optional ? ' <span class="muted">(optional)</span>' : ""}`;
+  const common = `name="${safe(field.key)}" id="${id}"${field.autocomplete ? ` autocomplete="${safe(field.autocomplete)}"` : ""}`;
+  if (field.type === "confirm") {
+    return `<div class="field onb-field${hidden}"${when}><label class="check-field"><input type="checkbox" ${common} ${value === true ? "checked" : ""}><span>${safe(field.label)}</span></label>${error}</div>`;
+  }
+  if (field.type === "yesno") {
+    return `<fieldset class="field onb-field yesno${hidden}"${when}><legend>${label}</legend>
+      ${["Yes", "No"].map(v => `<label><input type="radio" name="${safe(field.key)}" value="${v}" ${value === v ? "checked" : ""}> ${v}</label>`).join("")}${help}${error}</fieldset>`;
+  }
+  let control;
+  if (field.type === "select") {
+    control = `<select ${common}><option value="">Choose…</option>${field.options.map(o => `<option ${value === o ? "selected" : ""}>${safe(o)}</option>`).join("")}</select>`;
+  } else {
+    const type = field.type === "date" ? "date" : field.type === "tel" ? "tel" : "text";
+    const mode = ["tfn", "abn", "bsb", "account", "postcode"].includes(field.format) ? ' inputmode="numeric"' : "";
+    control = `<input type="${type}" ${common}${mode} value="${safe(value ?? "")}"${field.placeholder ? ` placeholder="${safe(field.placeholder)}"` : ""}${field.maxLength ? ` maxlength="${field.maxLength}"` : ""}>`;
+  }
+  return `<div class="field onb-field${hidden}"${when}><label for="${id}">${label}</label>${control}${help}${error}</div>`;
+}
+
+function formHtml(item, open) {
+  const form = item.form;
+  return `<form class="onb-form${open ? "" : " hidden"}" data-form-item="${safe(item.id)}" novalidate>
+    ${form.intro ? `<p class="muted small">${safe(form.intro)}</p>` : ""}
+    ${form.link ? `<p class="small"><a href="${safe(form.link.href)}" target="_blank" rel="noopener">${safe(form.link.label)} ↗</a></p>` : ""}
+    <div class="onb-fields">${form.fields.map(f => fieldHtml(item.id, f, item.answers)).join("")}</div>
+    <div class="form-actions"><button class="primary" type="submit">${item.status === "pending" ? "Send to HR" : "Send changes"}</button>
+      ${item.status === "uploaded" ? '<button type="button" class="text-button" data-cancel-edit>Cancel</button>' : ""}</div>
+    <p class="form-message" data-form-msg role="status" aria-live="polite"></p>
+  </form>`;
+}
+
+function itemHtml(item) {
+  const [label, tone] = ITEM_STATUS[item.status] || [item.status, ""];
+  const chips = `${item.required ? "" : '<span class="chip">Optional</span>'}${item.sensitive ? '<span class="chip info">Restricted to HR</span>' : ""}`;
+  const reject = item.status === "rejected" && item.rejectReason ? `<p class="reject-note">HR says: ${safe(item.rejectReason)}</p>` : "";
+  if (item.kind === "form" && item.form) {
+    formItems.set(item.id, item);
+    const editable = item.status !== "accepted";
+    const openForm = item.status === "pending" || item.status === "rejected";
+    return `<article class="onboarding-item onb-form-item" data-item-card="${safe(item.id)}">
+      <div class="onb-head"><div class="onboarding-text">
+          <div class="onboarding-title"><strong>${safe(item.name)}</strong>${chips}</div>
+          <p class="muted small">${safe(item.guidance)}</p>${reject}</div>
+        <div class="onboarding-actions"><span class="chip ${tone}">${label}</span>
+          ${item.status === "uploaded" ? `<button type="button" class="secondary-action small" data-edit="${safe(item.id)}">Edit answers</button>` : ""}</div></div>
+      ${editable ? formHtml(item, openForm) : ""}
+    </article>`;
+  }
+  return `<article class="onboarding-item">
+      <div class="onboarding-text">
+        <div class="onboarding-title"><strong>${safe(item.name)}</strong>${chips}<span class="chip">Photo or PDF</span></div>
+        <p class="muted small">${safe(item.guidance)}</p>
+        ${item.fileName ? `<p class="small">Your file: ${safe(item.fileName)}${item.uploadedAt ? ` · ${safe(formatDate(item.uploadedAt))}` : ""}</p>` : ""}
+        ${reject}
+      </div>
+      <div class="onboarding-actions">
+        <span class="chip ${tone}">${label}</span>
+        ${item.status !== "accepted" ? `<label class="upload-button">
+          <input type="file" data-item="${safe(item.id)}" accept=".pdf,.jpg,.jpeg,.png,.webp,.heic,application/pdf,image/*">
+          <span>${item.fileName ? "Replace file" : "Take photo or upload"}</span></label>` : ""}
+      </div>
+    </article>`;
+}
 
 async function loadOnboarding() {
   const data = await api(config.trainingFunction, { action: "onboarding_view" });
@@ -109,33 +182,64 @@ async function loadOnboarding() {
   }
   const items = data.items || [];
   const required = items.filter(i => i.required);
-  const done = required.filter(i => i.status === "accepted").length;
-  $("onboarding-progress").textContent = `${done} of ${required.length} required documents accepted`;
+  const done = required.filter(i => i.status === "accepted" || i.status === "uploaded").length;
+  $("onboarding-progress").textContent = `${done} of ${required.length} required items sent`;
   $("onboarding-intro").textContent = [
     data.request.message,
     data.request.dueOn ? `Due by ${formatDate(data.request.dueOn)}.` : ""
-  ].filter(Boolean).join(" ") || "Please upload each document below. A clear phone photo or a PDF is fine.";
-  $("onboarding-items").innerHTML = items.map(item => {
-    const [label, tone] = ITEM_STATUS[item.status] || [item.status, ""];
-    const canUpload = item.status !== "accepted";
-    return `<article class="onboarding-item">
-      <div class="onboarding-text">
-        <div class="onboarding-title"><strong>${safe(item.name)}</strong>
-          ${item.required ? "" : '<span class="chip">Optional</span>'}
-          ${item.sensitive ? '<span class="chip info">Restricted to HR</span>' : ""}</div>
-        <p class="muted small">${safe(item.guidance)}</p>
-        ${item.fileName ? `<p class="small">Your file: ${safe(item.fileName)}${item.uploadedAt ? ` · ${safe(formatDate(item.uploadedAt))}` : ""}</p>` : ""}
-        ${item.status === "rejected" && item.rejectReason ? `<p class="reject-note">HR says: ${safe(item.rejectReason)}</p>` : ""}
-      </div>
-      <div class="onboarding-actions">
-        <span class="chip ${tone}">${label}</span>
-        ${canUpload ? `<label class="upload-button">
-          <input type="file" data-item="${safe(item.id)}" accept=".pdf,.jpg,.jpeg,.png,.webp,.heic,application/pdf,image/*">
-          <span>${item.fileName ? "Replace file" : "Upload"}</span></label>` : ""}
-      </div>
-    </article>`;
-  }).join("");
+  ].filter(Boolean).join(" ") || "Fill in each item below. Only certificates and your signed contract need a photo or PDF.";
+  formItems.clear();
+  // Forms first, then the few uploads.
+  const ordered = [...items.filter(i => i.kind === "form"), ...items.filter(i => i.kind !== "form")];
+  $("onboarding-items").innerHTML = ordered.map(itemHtml).join("");
   ui.onboarding.classList.remove("hidden");
+}
+
+function collectAnswers(form, item) {
+  const answers = {};
+  for (const field of item.form.fields) {
+    if (field.type === "confirm") answers[field.key] = form.elements[field.key].checked;
+    else if (field.type === "yesno") answers[field.key] = form.querySelector(`input[name="${field.key}"]:checked`)?.value || "";
+    else answers[field.key] = form.elements[field.key].value;
+  }
+  return answers;
+}
+
+function refreshConditions(form) {
+  form.querySelectorAll("[data-when]").forEach(el => {
+    const control = form.elements[el.dataset.when];
+    const current = control?.value ?? "";
+    el.classList.toggle("hidden", !JSON.parse(el.dataset.whenIn).includes(current));
+  });
+}
+
+async function submitOnboardingForm(form) {
+  const item = formItems.get(form.dataset.formItem);
+  if (!item) return;
+  const msg = form.querySelector("[data-form-msg]");
+  const button = form.querySelector('button[type="submit"]');
+  form.querySelectorAll("[data-error-for]").forEach(e => { e.textContent = ""; });
+  form.querySelectorAll(".invalid").forEach(e => e.classList.remove("invalid"));
+  button.disabled = true;
+  msg.textContent = "Sending…";
+  try {
+    await api(config.trainingFunction, { action: "onboarding_submit_form", itemId: item.id, answers: collectAnswers(form, item) });
+    await loadOnboarding();
+    $("onboarding-message").textContent = `${item.name} sent to HR.`;
+  } catch (error) {
+    msg.textContent = friendlyError(error);
+    const key = String(error.code || "").startsWith("field:") ? error.code.slice(6) : "";
+    const slot = key && form.querySelector(`[data-error-for="${CSS.escape(key)}"]`);
+    if (slot) {
+      slot.textContent = error.message;
+      msg.textContent = "Check the highlighted answer.";
+      const control = form.elements[key];
+      const el = control instanceof RadioNodeList ? control[0] : control;
+      el?.closest(".onb-field")?.classList.add("invalid");
+      el?.focus();
+    }
+    button.disabled = false;
+  }
 }
 
 async function uploadOnboardingFile(input) {
@@ -261,6 +365,22 @@ ui.passwordForm.addEventListener("submit", async event => {
 
 $("onboarding-items").addEventListener("change", event => {
   if (event.target.matches("input[type=file][data-item]")) uploadOnboardingFile(event.target);
+  else if (event.target.closest(".onb-form")) refreshConditions(event.target.closest(".onb-form"));
+});
+$("onboarding-items").addEventListener("submit", event => {
+  if (!event.target.matches(".onb-form")) return;
+  event.preventDefault();
+  submitOnboardingForm(event.target);
+});
+$("onboarding-items").addEventListener("click", event => {
+  const edit = event.target.closest("[data-edit]");
+  if (edit) {
+    const form = document.querySelector(`[data-form-item="${CSS.escape(edit.dataset.edit)}"]`);
+    form?.classList.remove("hidden");
+    edit.classList.add("hidden");
+    form?.querySelector("input,select")?.focus();
+  }
+  if (event.target.closest("[data-cancel-edit]")) loadOnboarding();
 });
 
 ui.signOut.addEventListener("click", async () => {

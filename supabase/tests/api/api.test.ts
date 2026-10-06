@@ -145,7 +145,7 @@ Deno.test("permissions: position defaults and personal overrides", async () => {
   expectStatus(await call(adminApi, HR, { action: "permission_set", profileId: worker, key: "hr.manage", state: "allow" }), 403, "HR cannot grant");
 });
 
-Deno.test("onboarding: invite, upload, reject, re-upload, accept", async () => {
+Deno.test("onboarding: invite, forms and uploads, send back, accept", async () => {
   const emp = await ok(adminApi, A, { action: "employee_save", employeeNumber: "A-9001", fullName: "Applicant Nine", email: "applicant.nine@panalo.test", employmentType: "applicant", status: "applicant" });
   const types = await ok(adminApi, HR, { action: "onboarding_types" });
   const forApplicants = types.types.filter((t: any) => t.appliesTo.includes("applicant") && t.active).map((t: any) => t.key);
@@ -157,31 +157,53 @@ Deno.test("onboarding: invite, upload, reject, re-upload, accept", async () => {
 
   const mine = await ok(trainingApi, applicant, { action: "onboarding_view" });
   if (mine.items.length !== forApplicants.length) throw new Error("applicant sees wrong checklist");
-  const tfn = mine.items.find((i: any) => i.name.includes("Tax file"));
-  expectStatus(await call(trainingApi, applicant, { action: "onboarding_prepare_upload", itemId: tfn.id, fileName: "tfn.exe", size: 100 }), 400, "bad file type");
-  expectStatus(await call(trainingApi, L, { action: "onboarding_prepare_upload", itemId: tfn.id, fileName: "tfn.pdf", size: 100 }), 404, "someone else's item");
-  let up = await ok(trainingApi, applicant, { action: "onboarding_prepare_upload", itemId: tfn.id, fileName: "My TFN.pdf", size: 100 });
-  await ok(trainingApi, applicant, { action: "onboarding_attach", itemId: tfn.id, path: up.path, fileName: "My TFN.pdf" });
+  const tfn = mine.items.find((i: any) => i.docType === "tfn_declaration");
+  const card = mine.items.find((i: any) => i.docType === "white_card");
+  if (tfn.kind !== "form" || !tfn.form?.fields?.length) throw new Error("TFN should be a form with fields");
+  if (card.kind !== "upload" || card.form) throw new Error("White Card should be an upload");
+  if (!mine.items.some((i: any) => i.docType === "personal_details")) throw new Error("personal details missing");
+
+  // Forms: typed answers, validated on the server.
+  const answers = { tfn_option: "I'll provide my TFN", tfn: "123 456 782", pay_basis: "Casual", residency: "An Australian resident", tax_free_threshold: "Yes", study_loan: "No", declaration: true, signature: "Applicant Nine" };
+  const bad = await call(trainingApi, applicant, { action: "onboarding_submit_form", itemId: tfn.id, answers: { ...answers, tfn: "123456789" } });
+  expectStatus(bad, 400, "invalid TFN");
+  expectStatus(await call(trainingApi, applicant, { action: "onboarding_prepare_upload", itemId: tfn.id, fileName: "tfn.pdf", size: 100 }), 400, "forms take no files");
+  expectStatus(await call(trainingApi, applicant, { action: "onboarding_submit_form", itemId: card.id, answers: {} }), 400, "uploads take no answers");
+  expectStatus(await call(trainingApi, L, { action: "onboarding_submit_form", itemId: tfn.id, answers }), 404, "someone else's item");
+  await ok(trainingApi, applicant, { action: "onboarding_submit_form", itemId: tfn.id, answers });
+  const audit = await rest(`training_audit_events?select=details&event_type=in.(onboarding_form_submitted,onboarding_answers_viewed)`);
+  if (!audit.length || JSON.stringify(audit).includes("123456782")) throw new Error("form submission not audited, or TFN leaked into the audit log");
+
+  // Uploads: certificates and contracts only.
+  expectStatus(await call(trainingApi, applicant, { action: "onboarding_prepare_upload", itemId: card.id, fileName: "card.exe", size: 100 }), 400, "bad file type");
+  let up = await ok(trainingApi, applicant, { action: "onboarding_prepare_upload", itemId: card.id, fileName: "White card.jpg", size: 100 });
+  await ok(trainingApi, applicant, { action: "onboarding_attach", itemId: card.id, path: up.path, fileName: "White card.jpg" });
 
   const list = await ok(adminApi, HR, { action: "onboarding_list" });
   const req = list.requests.find((r: any) => r.id === sent.requestId);
-  if (req.counts.toReview !== 1) throw new Error("upload not waiting for review");
+  if (req.counts.toReview !== 2) throw new Error("form and upload not waiting for review");
   const detail = await ok(adminApi, HR, { action: "onboarding_detail", requestId: sent.requestId });
   const item = detail.items.find((i: any) => i.id === tfn.id);
   if (!item.sensitive) throw new Error("TFN not flagged sensitive");
-  const view = await ok(adminApi, HR, { action: "onboarding_file", itemId: tfn.id });
+  const tfnRow = item.answers.find((r: any) => r.key === "tfn");
+  if (tfnRow?.value !== "123456782" || !tfnRow.sensitive) throw new Error(`HR should see the TFN, flagged sensitive: ${JSON.stringify(item.answers)}`);
+  const view = await ok(adminApi, HR, { action: "onboarding_file", itemId: card.id });
   if (!view.url) throw new Error("no viewing link");
   expectStatus(await call(adminApi, HR, { action: "onboarding_review", itemId: tfn.id, accept: false, reason: "" }), 409, "reject needs reason");
-  await ok(adminApi, HR, { action: "onboarding_review", itemId: tfn.id, accept: false, reason: "Please sign page 2" });
+  await ok(adminApi, HR, { action: "onboarding_review", itemId: tfn.id, accept: false, reason: "Check your residency answer" });
   const again = await ok(trainingApi, applicant, { action: "onboarding_view" });
-  if (again.items.find((i: any) => i.id === tfn.id).rejectReason !== "Please sign page 2") throw new Error("reason not shown to applicant");
-  up = await ok(trainingApi, applicant, { action: "onboarding_prepare_upload", itemId: tfn.id, fileName: "tfn-signed.jpg", size: 100 });
-  await ok(trainingApi, applicant, { action: "onboarding_attach", itemId: tfn.id, path: up.path, fileName: "tfn-signed.jpg" });
+  const back = again.items.find((i: any) => i.id === tfn.id);
+  if (back.rejectReason !== "Check your residency answer" || back.answers?.tfn !== "123456782") throw new Error("sent-back form should keep reason and answers");
+  await ok(trainingApi, applicant, { action: "onboarding_submit_form", itemId: tfn.id, answers: { ...answers, residency: "A working holiday maker" } });
   await ok(adminApi, HR, { action: "onboarding_review", itemId: tfn.id, accept: true });
-  expectStatus(await call(trainingApi, applicant, { action: "onboarding_prepare_upload", itemId: tfn.id, fileName: "x.pdf", size: 100 }), 409, "accepted is final");
+  await ok(adminApi, HR, { action: "onboarding_review", itemId: card.id, accept: true });
+  expectStatus(await call(trainingApi, applicant, { action: "onboarding_submit_form", itemId: tfn.id, answers }), 409, "accepted is final");
+  expectStatus(await call(trainingApi, applicant, { action: "onboarding_prepare_upload", itemId: card.id, fileName: "x.pdf", size: 100 }), 409, "accepted upload is final");
+  const after = await ok(trainingApi, applicant, { action: "onboarding_view" });
+  if (after.items.find((i: any) => i.id === tfn.id).answers !== null) throw new Error("accepted answers should not be sent back to the browser");
   const boot = await ok(trainingApi, applicant, { action: "bootstrap" });
   const requiredCount = types.types.filter((t: any) => forApplicants.includes(t.key) && t.required).length;
-  if (boot.onboarding?.outstanding !== requiredCount - 1) throw new Error(`outstanding count wrong: ${JSON.stringify(boot.onboarding)}`);
+  if (boot.onboarding?.outstanding !== requiredCount - 2) throw new Error(`outstanding count wrong: ${JSON.stringify(boot.onboarding)}`);
   await ok(adminApi, HR, { action: "onboarding_type_save", key: "tickets", name: "Licences and tickets", guidance: "One PDF please.", required: false, active: true });
   await ok(adminApi, HR, { action: "onboarding_cancel", requestId: sent.requestId, reason: "Test complete" });
   if (!storageCalls.some(c => c.startsWith("upload hr-documents/"))) throw new Error("uploads did not go to the HR bucket");

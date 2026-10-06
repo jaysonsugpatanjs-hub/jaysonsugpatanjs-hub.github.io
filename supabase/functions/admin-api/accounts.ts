@@ -2,6 +2,7 @@
 // Passwords go only to Supabase Auth; temporary ones are returned once to the
 // administrator who issued them and never stored or logged here.
 import { generateTemporaryPassword } from "../_shared/accounts.ts";
+import { describeAnswers } from "../_shared/onboarding-forms.ts";
 import { httpError, rpc } from "../_shared/http.ts";
 
 type Client = any;
@@ -157,9 +158,9 @@ async function accessCatalogue(admin: Client) {
 /* ---------------- Onboarding ---------------- */
 
 async function onboardingTypes(admin: Client) {
-  const { data, error } = await admin.from("hr_document_types").select("key,name,guidance,required,applies_to,sensitive,sort,active").order("sort");
+  const { data, error } = await admin.from("hr_document_types").select("key,name,guidance,required,applies_to,sensitive,sort,active,kind").order("sort");
   if (error) throw httpError(500, "Document types could not be loaded.");
-  return { types: data.map((t: any) => ({ key: t.key, name: t.name, guidance: t.guidance, required: t.required, appliesTo: t.applies_to, sensitive: t.sensitive, active: t.active })) };
+  return { types: data.map((t: any) => ({ key: t.key, name: t.name, guidance: t.guidance, required: t.required, appliesTo: t.applies_to, sensitive: t.sensitive, active: t.active, kind: t.kind })) };
 }
 
 async function onboardingTypeSave(admin: Client, actor: Actor, body: any) {
@@ -194,10 +195,10 @@ async function onboardingList(admin: Client) {
   };
 }
 
-async function onboardingDetail(admin: Client, _actor: Actor, body: any) {
+async function onboardingDetail(admin: Client, actor: Actor, body: any) {
   const requestId = uuid(body.requestId, "Request");
   const { data, error } = await admin.from("onboarding_requests")
-    .select("id,status,due_on,message,created_at,completed_at,cancelled_reason,employees(full_name,employee_number,employment_type,email),onboarding_items(id,doc_type,required,status,file_name,uploaded_at,reviewed_at,reject_reason,reviewed_by)")
+    .select("id,profile_id,status,due_on,message,created_at,completed_at,cancelled_reason,employees(full_name,employee_number,employment_type,email),onboarding_items(id,doc_type,required,status,file_name,uploaded_at,reviewed_at,reject_reason,reviewed_by,answers,submitted_at)")
     .eq("id", requestId).maybeSingle();
   if (error) throw httpError(500, "The onboarding request could not be loaded.");
   if (!data) throw httpError(404, "Onboarding request not found.");
@@ -206,6 +207,13 @@ async function onboardingDetail(admin: Client, _actor: Actor, body: any) {
   const reviewerIds = [...new Set((data.onboarding_items || []).map((i: any) => i.reviewed_by).filter(Boolean))];
   const reviewers = reviewerIds.length ? await admin.from("training_profiles").select("id,full_name,email").in("id", reviewerIds) : { data: [], error: null };
   const names = new Map((reviewers.data || []).map((p: any) => [p.id, p.full_name || p.email]));
+  const withAnswers = (data.onboarding_items || []).filter((i: any) => i.answers);
+  if (withAnswers.length) {
+    await rpc(admin, "ims_audit", {
+      p_actor: actor.id, p_event: "onboarding_answers_viewed",
+      p_details: { requestId, docTypes: withAnswers.map((i: any) => i.doc_type) }, p_subject: data.profile_id
+    });
+  }
   return {
     request: {
       id: data.id, status: data.status, dueOn: data.due_on, message: data.message, createdAt: data.created_at, completedAt: data.completed_at,
@@ -216,6 +224,7 @@ async function onboardingDetail(admin: Client, _actor: Actor, body: any) {
       .map((i: any) => ({
         id: i.id, docType: i.doc_type, name: (typeMap.get(i.doc_type) as any)?.name || i.doc_type,
         sensitive: Boolean((typeMap.get(i.doc_type) as any)?.sensitive), required: i.required, status: i.status,
+        kind: (typeMap.get(i.doc_type) as any)?.kind || "upload", answers: describeAnswers(i.doc_type, i.answers), submittedAt: i.submitted_at,
         fileName: i.file_name, uploadedAt: i.uploaded_at, reviewedAt: i.reviewed_at, reviewer: names.get(i.reviewed_by) || null,
         rejectReason: i.reject_reason, sort: (typeMap.get(i.doc_type) as any) ? types.types.findIndex((t: any) => t.key === i.doc_type) : 999
       }))
