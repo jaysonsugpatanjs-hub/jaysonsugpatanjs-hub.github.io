@@ -98,6 +98,10 @@ export function createClient() {
           return { data: { signedUrl: `https://storage.test/${bucket}/${path}` }, error: null };
         },
         createSignedUrl: async (path: string) => { storageCalls.push(`sign ${bucket}/${path}`); return { data: { signedUrl: `https://storage.test/${path}` }, error: null }; },
+        remove: async (paths: string[]) => {
+          for (const path of paths) { storageCalls.push(`remove ${bucket}/${path}`); uploaded.delete(`${bucket}/${path}`); }
+          return { data: paths.map(name => ({ name })), error: null };
+        },
         download: async () => ({ data: null, error: { message: "not in test" } })
       })
     },

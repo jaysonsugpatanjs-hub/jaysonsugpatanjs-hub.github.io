@@ -165,3 +165,16 @@ code.secret { font-size: 20px; letter-spacing: .06em; color: var(--gold); backgr
 .onb-form .form-actions .primary { width: auto; padding: 12px 22px; background: var(--gold); color: #0d0d0e; }
 .onb-form .form-message { margin: 8px 0 0; min-height: 0; }
 .answer-list .text-button { min-height: 0; padding: 0 0 0 6px; }
+
+/* Multi-file uploads */
+.file-list { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.file-list li { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 14px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-2); }
+.file-list li > div { min-width: 0; }
+.file-list strong { display: block; font-size: 14px; }
+.file-list small { display: block; color: var(--muted); font-size: 12px; margin-top: 2px; overflow-wrap: anywhere; }
+.file-list .danger { color: var(--red); min-height: 0; padding: 4px 0; }
+.admin-files { margin-top: 8px; }
+.add-file { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 0 14px; margin-top: 12px; }
+.add-file .onb-field { flex: 1 1 220px; margin-bottom: 10px; }
+.add-file .upload-button { margin-bottom: 10px; min-height: 44px; }
+.add-file .form-message { flex-basis: 100%; margin: 0; min-height: 0; }

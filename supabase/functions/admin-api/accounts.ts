@@ -198,7 +198,7 @@ async function onboardingList(admin: Client) {
 async function onboardingDetail(admin: Client, actor: Actor, body: any) {
   const requestId = uuid(body.requestId, "Request");
   const { data, error } = await admin.from("onboarding_requests")
-    .select("id,profile_id,status,due_on,message,created_at,completed_at,cancelled_reason,employees(full_name,employee_number,employment_type,email),onboarding_items(id,doc_type,required,status,file_name,uploaded_at,reviewed_at,reject_reason,reviewed_by,answers,submitted_at)")
+    .select("id,profile_id,status,due_on,message,created_at,completed_at,cancelled_reason,employees(full_name,employee_number,employment_type,email),onboarding_items(id,doc_type,required,status,file_name,uploaded_at,reviewed_at,reject_reason,reviewed_by,answers,submitted_at,onboarding_files(id,label,file_name,expires_on,uploaded_at))")
     .eq("id", requestId).maybeSingle();
   if (error) throw httpError(500, "The onboarding request could not be loaded.");
   if (!data) throw httpError(404, "Onboarding request not found.");
@@ -225,6 +225,9 @@ async function onboardingDetail(admin: Client, actor: Actor, body: any) {
         id: i.id, docType: i.doc_type, name: (typeMap.get(i.doc_type) as any)?.name || i.doc_type,
         sensitive: Boolean((typeMap.get(i.doc_type) as any)?.sensitive), required: i.required, status: i.status,
         kind: (typeMap.get(i.doc_type) as any)?.kind || "upload", answers: describeAnswers(i.doc_type, i.answers), submittedAt: i.submitted_at,
+        files: (i.onboarding_files || [])
+          .map((f: any) => ({ id: f.id, label: f.label, fileName: f.file_name, expiresOn: f.expires_on, uploadedAt: f.uploaded_at }))
+          .sort((a: any, b: any) => String(a.uploadedAt).localeCompare(String(b.uploadedAt))),
         fileName: i.file_name, uploadedAt: i.uploaded_at, reviewedAt: i.reviewed_at, reviewer: names.get(i.reviewed_by) || null,
         rejectReason: i.reject_reason, sort: (typeMap.get(i.doc_type) as any) ? types.types.findIndex((t: any) => t.key === i.doc_type) : 999
       }))
@@ -257,15 +260,25 @@ async function onboardingCancel(admin: Client, actor: Actor, body: any) {
 }
 
 async function onboardingFile(admin: Client, actor: Actor, body: any) {
-  const itemId = uuid(body.itemId, "Document");
-  const { data, error } = await admin.from("onboarding_items").select("id,file_path,doc_type,request_id,onboarding_requests(profile_id)").eq("id", itemId).maybeSingle();
-  if (error) throw httpError(500, "The document could not be found.");
-  if (!data?.file_path) throw httpError(404, "Nothing has been uploaded for this document yet.");
-  const signed = await admin.storage.from(HR_BUCKET).createSignedUrl(data.file_path, 120);
+  // By file (current) or by item (its latest file, for older links).
+  let row: any;
+  if (body.fileId) {
+    const { data, error } = await admin.from("onboarding_files")
+      .select("id,path,label,item_id,onboarding_items(doc_type,request_id,onboarding_requests(profile_id))").eq("id", uuid(body.fileId, "File")).maybeSingle();
+    if (error) throw httpError(500, "The file could not be found.");
+    if (data) row = { path: data.path, label: data.label, itemId: data.item_id, docType: data.onboarding_items?.doc_type, requestId: data.onboarding_items?.request_id, subject: data.onboarding_items?.onboarding_requests?.profile_id };
+  } else {
+    const itemId = uuid(body.itemId, "Document");
+    const { data, error } = await admin.from("onboarding_items").select("id,file_path,doc_type,request_id,onboarding_requests(profile_id)").eq("id", itemId).maybeSingle();
+    if (error) throw httpError(500, "The document could not be found.");
+    if (data?.file_path) row = { path: data.file_path, label: null, itemId, docType: data.doc_type, requestId: data.request_id, subject: data.onboarding_requests?.profile_id };
+  }
+  if (!row) throw httpError(404, "Nothing has been uploaded for this document yet.");
+  const signed = await admin.storage.from(HR_BUCKET).createSignedUrl(row.path, 120);
   if (signed.error || !signed.data?.signedUrl) throw httpError(500, "A viewing link could not be created.");
   await rpc(admin, "ims_audit", {
     p_actor: actor.id, p_event: "onboarding_document_viewed",
-    p_details: { itemId, docType: data.doc_type, requestId: data.request_id }, p_subject: data.onboarding_requests?.profile_id ?? null
+    p_details: { itemId: row.itemId, fileId: body.fileId ?? null, label: row.label, docType: row.docType, requestId: row.requestId }, p_subject: row.subject ?? null
   });
   return { url: signed.data.signedUrl, expiresIn: 120 };
 }
