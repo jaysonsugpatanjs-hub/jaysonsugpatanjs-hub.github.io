@@ -71,7 +71,7 @@ export function addressLines(a: any): string[] {
 
 function wrap(text: string, font: any, size: number, width: number) {
   const out: string[] = [];
-  for (const para of latin(text).split("\n")) {
+  for (const para of String(text ?? "").split("\n").map(latin)) {
     let line = "";
     for (const word of para.split(/\s+/)) {
       const next = line ? `${line} ${word}` : word;
@@ -187,34 +187,35 @@ export async function createFinanceDocumentPdf(d: DocInput): Promise<Uint8Array>
 
   // Lines table.
   const tax = d.amountsAre !== "no_tax";
-  const cols = { desc: M + 4, qty: M + 290, price: M + 352, disc: M + 408, gst: M + 446, amount: W - M - 4 };
+  // Right edges of the number columns.
+  const cols = { desc: M + 4, qty: M + 292, price: M + 357, disc: M + 392, gst: M + 440, amount: W - M - 4 };
   const amountLabel = d.amountsAre === "inclusive" ? "Amount inc GST" : tax ? "Amount ex GST" : "Amount";
   const head = () => {
     page.drawRectangle({ x: M, y: y - 4, width: W - 2 * M, height: 16, color: C.band });
     const r = (t: string, x: number) => page.drawText(t, { x: x - bold.widthOfTextAtSize(t, 8), y, size: 8, font: bold, color: C.grey });
     page.drawText("Description", { x: cols.desc, y, size: 8, font: bold, color: C.grey });
-    r("Qty", cols.qty + 30); r("Unit price", cols.price + 44); r("Disc", cols.disc + 26);
-    if (tax) r("GST", cols.gst + 40);
+    r("Qty", cols.qty); r("Unit price", cols.price); r("Disc", cols.disc);
+    if (tax) r("GST", cols.gst);
     r(amountLabel, cols.amount);
     y -= 18;
   };
   head();
   let untaxed = false;
   for (const l of d.lines) {
-    const descLines = wrap(l.description, regular, 9, (cols.qty - 20) - cols.desc);
+    const descLines = wrap(l.description, regular, 9, cols.qty - 60 - cols.desc);
     const h = descLines.length * 11 + 6;
     if (y - h < 150) { page = pdf.addPage([W, H]); y = H - 50; head(); }
     const free = tax && Number(l.gst) === 0;
     if (free) untaxed = true;
     descLines.forEach((t, i) => page.drawText(t + (i === 0 && free ? " *" : ""), { x: cols.desc, y: y - i * 11, size: 9, font: regular, color: C.ink }));
     const r = (t: string, x: number) => page.drawText(latin(t), { x: x - regular.widthOfTextAtSize(latin(t), 9), y, size: 9, font: regular, color: C.ink });
-    r(`${qty(l.quantity)}${l.unit ? ` ${l.unit}` : ""}`, cols.qty + 30);
-    r(money(l.unitPrice), cols.price + 44);
-    r(l.discountPercent ? `${qty(l.discountPercent)}%` : "", cols.disc + 26);
-    if (tax) r(money(l.gst), cols.gst + 40);
+    r(`${qty(l.quantity)}${l.unit ? ` ${l.unit}` : ""}`, cols.qty);
+    r(money(l.unitPrice), cols.price);
+    r(l.discountPercent ? `${qty(l.discountPercent)}%` : "", cols.disc);
+    if (tax) r(money(l.gst), cols.gst);
     r(money(l.amount), cols.amount);
     y -= h;
-    page.drawLine({ start: { x: M, y: y + 3 }, end: { x: W - M, y: y + 3 }, thickness: 0.4, color: C.line });
+    page.drawLine({ start: { x: M, y: y + 11 }, end: { x: W - M, y: y + 11 }, thickness: 0.4, color: C.line });
   }
 
   // Totals.
