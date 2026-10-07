@@ -136,8 +136,11 @@ const ATTACH_TYPES: Record<string, string> = { pdf: "application/pdf", png: "ima
 /** Signed upload for an attachment (supplier invoice, remittance, signed PO). */
 export async function attachmentPrepare(admin: Client, actor: Actor, body: any) {
   const entityType = String(body.entityType || "");
-  if (!["bill", "purchase_order", "supplier", "invoice", "quote", "customer"].includes(entityType)) throw httpError(400, "Attachments are not available here.");
-  if (["bill", "purchase_order", "supplier"].includes(entityType) ? !(has(actor, "purchases.manage") || (entityType === "purchase_order" && has(actor, "purchases.raise"))) : !has(actor, "sales.manage")) {
+  if (!["bill", "purchase_order", "supplier", "invoice", "quote", "customer", "asset"].includes(entityType)) throw httpError(400, "Attachments are not available here.");
+  const allowed = entityType === "asset" ? has(actor, "assets.manage")
+    : ["bill", "purchase_order", "supplier"].includes(entityType) ? (has(actor, "purchases.manage") || (entityType === "purchase_order" && has(actor, "purchases.raise")))
+    : has(actor, "sales.manage");
+  if (!allowed) {
     throw httpError(403, "Your access doesn't include this area. Ask an administrator if you need it.");
   }
   const id = uuid(body.entityId, "Record");
@@ -183,7 +186,9 @@ export async function attachmentOpen(admin: Client, actor: Actor, body: any) {
     .eq("category", "attachment").is("archived_at", null).maybeSingle();
   if (!data) throw httpError(404, "Attachment not found.");
   const sales = ["invoice", "quote", "customer"].includes(data.entity_type);
-  if (sales ? !(has(actor, "sales.manage") || has(actor, "reports.view")) : !(has(actor, "purchases.manage") || has(actor, "purchases.raise") || has(actor, "reports.view"))) {
+  const ok = has(actor, "reports.view") || (data.entity_type === "asset" ? has(actor, "assets.manage")
+    : sales ? has(actor, "sales.manage") : (has(actor, "purchases.manage") || has(actor, "purchases.raise")));
+  if (!ok) {
     throw httpError(403, "Your access doesn't include this area. Ask an administrator if you need it.");
   }
   const signed = await admin.storage.from(BUCKET).createSignedUrl(data.path, 120);

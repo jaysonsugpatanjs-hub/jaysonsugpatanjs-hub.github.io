@@ -3,8 +3,9 @@
 Employees' pay, tax declarations, super and bank details; leave; pay runs that
 work out PAYG withholding, study and training loan repayments, super and leave
 accruals; payslips; and posting to the ledger. Single Touch Payroll (STP)
-reporting to the ATO is Phase 8: until then keep lodging STP from the current
-payroll product, and treat this as a parallel run until the two agree.
+Phase 2 information is prepared and checked in Phase 8 (`STP_ROADMAP.md`), but
+nothing is sent to the ATO: keep lodging STP from the current payroll product,
+and treat this as a parallel run until the two agree.
 
 ## The rules it uses (dated, with sources)
 

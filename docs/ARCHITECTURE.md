@@ -11,7 +11,7 @@ schema plan) is the "Panalo Accounts — Phase 0 Architecture" document.
 | --- | --- | --- |
 | Accounts web app | `accounts/` → `/accounts/` | Static ES modules, no build step; served by GitHub Pages |
 | Portal | `training/` → `/training/` | Sign-in, onboarding, HR files, IMS, training; also the shared `auth.js` |
-| Finance API | `supabase/functions/finance-api` | Edge Function: session → permissions → MFA → action. Modules: `index.ts` (foundation), `ledger.ts`, `sales.ts`, `purchases.ts`, `projects.ts`, `payroll.ts`, `banking.ts`, `tax.ts`, `docs.ts` (shared helpers); PDFs in `_shared/finance-pdf.ts` and `_shared/payslip-pdf.ts`, `_shared/bas-pdf.ts`; ABA bank files in `_shared/aba.ts`; statement files are read in the browser by `accounts/lib/bank-file.js` |
+| Finance API | `supabase/functions/finance-api` | Edge Function: session → permissions → MFA → action. Modules: `index.ts` (foundation), `ledger.ts`, `sales.ts`, `purchases.ts`, `projects.ts`, `payroll.ts`, `banking.ts`, `tax.ts`, `stp.ts`, `assets.ts`, `docs.ts` (shared helpers); PDFs in `_shared/finance-pdf.ts` and `_shared/payslip-pdf.ts`, `_shared/bas-pdf.ts`; ABA bank files in `_shared/aba.ts`; statement files are read in the browser by `accounts/lib/bank-file.js` |
 | Database | `supabase/migrations` | Postgres; every write through a security-definer function |
 | Files | Storage buckets `finance-documents`, `hr-documents` | Private; short-lived signed links only |
 
@@ -28,7 +28,8 @@ schema plan) is the "Panalo Accounts — Phase 0 Architecture" document.
 
 Sales and purchasing (Phase 3) are described in `SALES_PURCHASING.md`; projects,
 timesheets and job costing (Phase 4) in `PROJECTS_TIMESHEETS.md`; payroll
-(Phase 5) in `PAYROLL.md`; banking (Phase 6) in `BANKING.md`; BAS and TPAR (Phase 7) in `BAS.md`; the
+(Phase 5) in `PAYROLL.md`; banking (Phase 6) in `BANKING.md`; BAS and TPAR (Phase 7) in `BAS.md`; STP information (Phase 8) in
+`STP_ROADMAP.md`; fixed assets (Phase 8) in `ASSETS.md`; the
 ledger and its posting engine in `ACCOUNTING_ENGINE.md`.
 
 ## Phase 1 data model

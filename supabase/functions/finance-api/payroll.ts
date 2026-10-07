@@ -110,7 +110,10 @@ async function employeeGet(admin: Client, actor: Actor, body: any) {
       medicareExemption: p.medicare_exemption, extraWithholding: Number(p.extra_withholding),
       fundName: p.super_fund_name, fundUsi: p.super_fund_usi, fundAbn: p.super_fund_abn, memberNumber: p.super_member_number, salarySacrifice: Number(p.salary_sacrifice),
       bank: p.bank_bsb ? { accountName: p.bank_account_name, bsb: fmtBsb(p.bank_bsb), accountNumber: maskAcct(p.bank_account_number), changedAt: p.bank_changed_at } : null,
-      bankChangePending: Boolean(pending.data), notes: p.notes } : null,
+      bankChangePending: Boolean(pending.data), notes: p.notes,
+      // STP Phase 2 details (names default from the register until entered).
+      stp: { familyName: p.family_name, givenNames: p.given_names, homeAddress: p.home_address || {}, incomeType: p.stp_income_type, country: p.stp_country,
+        cessationType: p.cessation_type } } : null,
     inPayroll: Boolean(p),
     problems: problems(p),
     leave: (types.data || []).map((t: any) => ({ id: t.id, code: t.code, name: t.name, paid: t.paid, balance: Math.round((balances.get(t.id) || 0) * 100) / 100 })),
@@ -202,7 +205,8 @@ async function importOnboarding(admin: Client, actor: Actor, body: any) {
         basis: /part/i.test(tfn.pay_basis || "") ? "part_time" : /casual/i.test(tfn.pay_basis || "") ? "casual" : /full/i.test(tfn.pay_basis || "") ? "full_time" : null
       } : {}),
       ...(latest.has("super_choice") ? { fundName: sup.fund_name || null, fundUsi: sup.usi || null, memberNumber: sup.member_number || null, defaultFund: !sup.fund_name } : {}),
-      ...(latest.has("personal_details") ? { dateOfBirth: per.date_of_birth || null } : {}),
+      ...(latest.has("personal_details") ? { dateOfBirth: per.date_of_birth || null,
+        homeAddress: per.street ? { street: String(per.street || ""), suburb: String(per.suburb || ""), state: String(per.state || ""), postcode: String(per.postcode || "") } : null } : {}),
       ...(bank ? { bank: { accountName: bank.accountName, bsb: bank.bsb, accountNumber: maskAcct(bank.accountNumber), fromOnboarding: true } } : {})
     }
   };

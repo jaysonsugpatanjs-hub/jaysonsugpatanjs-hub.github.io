@@ -78,7 +78,7 @@ export async function renderDashboard(view, { can }) {
       <h2>What's being built</h2>
       <p class="muted">Panalo Accounts is delivered in phases, each tested before the next starts. Menu items marked with a phase arrive then.</p>
       <table class="tbl"><thead><tr><th scope="col">Phase</th><th scope="col">Module</th><th scope="col">Includes</th><th scope="col">Status</th></tr></thead><tbody>
-        ${ROADMAP.map(([n, name, inc]) => `<tr><td>${n}</td><td><strong>${safe(name)}</strong></td><td class="muted">${safe(inc)}</td><td>${n <= 7 ? '<span class="chip good">Live</span>' : n === 8 ? '<span class="chip info">Next</span>' : '<span class="chip">Planned</span>'}</td></tr>`).join("")}
+        ${ROADMAP.map(([n, name, inc]) => `<tr><td>${n}</td><td><strong>${safe(name)}</strong></td><td class="muted">${safe(inc)}</td><td>${n <= 8 ? '<span class="chip good">Live</span>' : n === 9 ? '<span class="chip info">Next</span>' : '<span class="chip">Planned</span>'}</td></tr>`).join("")}
       </tbody></table>
     </section>
     ${can("audit.view") ? '<p class="muted small">Every change in Panalo Accounts is recorded in the <a href="#/audit">audit log</a>.</p>' : ""}`;

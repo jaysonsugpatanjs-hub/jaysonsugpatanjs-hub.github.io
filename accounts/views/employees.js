@@ -4,6 +4,7 @@
 // to a second person for approval.
 import { call, chip, clearErrors, date, field, fieldError, flash, friendlyError, money, options, safe, today } from "../lib/ui.js";
 import { formatBsb, validAccountNumber, validBsb, validTfn } from "../lib/validate.js";
+import { readStpDetails, stpDetailsForm } from "./stp.js";
 
 export const BASIS = { full_time: "Full-time", part_time: "Part-time", casual: "Casual" };
 const FREQ = [["weekly", "Weekly"], ["fortnightly", "Fortnightly"], ["monthly", "Monthly"]];
@@ -63,7 +64,7 @@ async function detail(view, id, ctx) {
       ${sens ? `
       <form class="panel" data-pay novalidate>
         <div class="head-row"><h2>Pay</h2><button type="button" class="btn" data-import>Fill in from onboarding</button></div>
-        ${suggested ? `<p class="note small">Filled in from their accepted onboarding forms (${safe(suggested._found)}). Check, then save. ${suggested.bank ? "Bank details from onboarding go to approval separately, below." : ""}</p>` : ""}
+        ${suggested?._found ? `<p class="note small">Filled in from their accepted onboarding forms (${safe(suggested._found)}). Check, then save. ${suggested.bank ? "Bank details from onboarding go to approval separately, below." : ""}</p>` : ""}
         <div class="grid3">
           <div class="fld"><label for="py-basis">Employment</label><select id="py-basis">${options(Object.entries(BASIS), v("basis", "full_time"))}</select></div>
           <div class="fld"><label for="py-paybasis">Paid by</label><select id="py-paybasis">${options([["hourly", "Hourly rate (hours from timesheets)"], ["salary", "Annual salary"]], v("payBasis", "hourly"))}</select></div>
@@ -105,6 +106,7 @@ async function detail(view, id, ctx) {
         <label class="check"><input type="checkbox" id="py-term" ${p.status === "terminated" ? "checked" : ""}> Finished: no longer paid</label>
         <div class="actions"><button class="btn primary" type="submit">${d.inPayroll ? "Save pay details" : "Set up in payroll"}</button></div>
       </form>
+      ${d.inPayroll && sens ? stpDetailsForm({ ...p, stp: { ...(p.stp || {}), homeAddress: s.homeAddress && !(p.stp?.homeAddress?.street) ? s.homeAddress : p.stp?.homeAddress } }, sens) : ""}
       ${d.inPayroll ? `<section class="panel"><h2>Bank account</h2>
         ${p.bank ? `<p class="mono">${safe(p.bank.accountName || "")} · BSB ${safe(p.bank.bsb)} · ${safe(p.bank.accountNumber)}</p><p class="muted small">Approved ${date(p.bank.changedAt)}</p>` : '<p class="muted">No bank account yet.</p>'}
         ${p.bankChangePending ? `<p>${chip("Change waiting for approval", "pending")}</p>` : `
@@ -161,10 +163,14 @@ async function detail(view, id, ctx) {
           taxFreeThreshold: v("py-tft") === "yes", studyLoan: v("py-stsl") === "yes", medicareExemption: v("py-med"), extraWithholding: v("py-extra"),
           fundName: v("py-fund"), fundUsi: v("py-usi"), fundAbn: v("py-fundabn"), memberNumber: v("py-member"), salarySacrifice: v("py-ss"), notes: v("py-notes"),
           status: view.querySelector("#py-term").checked ? "terminated" : "active" });
-        const bank = suggested?.bank;
-        suggested = bank ? { bank } : null;
+        const { bank, homeAddress } = suggested || {};
+        suggested = bank || homeAddress ? { ...(bank ? { bank } : {}), ...(homeAddress ? { homeAddress } : {}) } : null;
         await load();
         flash(view, "Pay details saved.", "good");
+      } else if (e.target.matches("[data-stp]")) {
+        await call("payroll_employee_stp_save", { id, ...readStpDetails(view) });
+        await load();
+        flash(view, "STP details saved.", "good");
       } else if (e.target.matches("[data-bank]")) {
         if (!validBsb(v("bk-bsb"))) return fieldError(view, "bk-bsb", "A BSB is 6 digits, like 062-000.");
         const fromOnboarding = Boolean(suggested?.bank?.fromOnboarding) && !v("bk-acct");

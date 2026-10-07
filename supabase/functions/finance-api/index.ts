@@ -12,6 +12,8 @@ import { projectsActions, projectsHeadlines } from "./projects.ts";
 import { payrollActions, payrollHeadlines } from "./payroll.ts";
 import { bankingActions, bankingHeadlines } from "./banking.ts";
 import { taxActions, taxHeadlines } from "./tax.ts";
+import { stpActions } from "./stp.ts";
+import { assetActions } from "./assets.ts";
 import { attachmentArchive, attachmentAttach, attachmentOpen, attachmentPrepare } from "./docs.ts";
 
 type Client = any;
@@ -375,10 +377,12 @@ const ACTIONS: Record<string, { perm: string[] | null; run: Handler }> = {
   ...payrollActions,
   ...bankingActions,
   ...taxActions,
-  attachment_prepare_upload: { perm: ["sales.manage", "purchases.manage", "purchases.raise"], run: attachmentPrepare },
-  attachment_attach: { perm: ["sales.manage", "purchases.manage", "purchases.raise"], run: attachmentAttach },
-  attachment_open: { perm: ["sales.manage", "purchases.manage", "purchases.raise", "reports.view"], run: attachmentOpen },
-  attachment_archive: { perm: ["sales.manage", "purchases.manage"], run: attachmentArchive }
+  ...stpActions,
+  ...assetActions,
+  attachment_prepare_upload: { perm: ["sales.manage", "purchases.manage", "purchases.raise", "assets.manage"], run: attachmentPrepare },
+  attachment_attach: { perm: ["sales.manage", "purchases.manage", "purchases.raise", "assets.manage"], run: attachmentAttach },
+  attachment_open: { perm: ["sales.manage", "purchases.manage", "purchases.raise", "reports.view", "assets.manage"], run: attachmentOpen },
+  attachment_archive: { perm: ["sales.manage", "purchases.manage", "assets.manage"], run: attachmentArchive }
 };
 
 export default {
