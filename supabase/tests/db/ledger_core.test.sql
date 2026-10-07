@@ -35,7 +35,8 @@ create temporary table lj (k text primary key, v uuid);
 -- Seeded chart, tax codes and periods ---------------------------------------------
 do $$
 begin
-  perform pg_temp.eq((select count(*)::int from public.accounts where organization_id = '00000000-0000-4000-8000-000000000001'), 63, 'brief chart seeded');
+  -- 63 from the brief, plus the 4 BAS accounts added in Phase 7 (2350, 1450, 4850, 7950).
+  perform pg_temp.eq((select count(*)::int from public.accounts where organization_id = '00000000-0000-4000-8000-000000000001'), 67, 'brief chart seeded');
   perform pg_temp.eq((select count(*)::int from public.tax_codes where is_system), 10, 'GST codes seeded');
   perform pg_temp.eq((select count(*)::int from public.accounting_periods p join public.financial_years y on y.id = p.financial_year_id where y.name = 'FY2026-27'), 12, '12 periods');
   perform pg_temp.eq((select start_date from public.financial_years where name = 'FY2026-27'), date '2026-07-01', 'FY starts 1 July');
