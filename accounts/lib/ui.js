@@ -103,7 +103,9 @@ export function hashParams() {
 /** Downloads rows as a CSV file (Excel-compatible, with a BOM). */
 export function downloadCsv(filename, rows) {
   const cell = v => {
-    const s = v === null || v === undefined ? "" : String(v);
+    let s = v === null || v === undefined ? "" : String(v);
+    // Text a spreadsheet would run as a formula is kept as text (numbers are left alone).
+    if (/^[=+\-@\t\r]/.test(s) && !/^[+-]?\d+(\.\d+)?$/.test(s)) s = `'${s}`;
     return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
   };
   const text = "﻿" + rows.map(r => r.map(cell).join(",")).join("\r\n");

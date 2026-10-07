@@ -32,7 +32,8 @@ depreciation accounts can't change once assets use it.
   purchase reaches the ledger through its bill, or a journal for opening
   balances.
 - **Brought in from another system.** Enter the opening depreciation and the
-  date it is at. Depreciation runs from the day after.
+  date it is at (required with an opening figure). Depreciation runs from the
+  day after.
 
 Numbers are FA-0001 onwards. Once an asset has been depreciated, its cost,
 category, in-service date and opening depreciation are fixed (undo the runs
@@ -50,8 +51,10 @@ Runs go to a month end, month by month. One run posts one journal, with an
 expense line and an accumulated depreciation line for each category, coded
 NG (no GST) so the BAS checks leave them alone. Only the latest run can be
 undone; its journal is reversed on its own date. The journal can't be
-reversed any other way. The period must be open (a soft-locked period needs
-`ledger.reopen`).
+reversed any other way. The period must exist and be open (a soft-locked
+period needs `ledger.reopen`): that, not the register, limits how far ahead a
+run or disposal can be dated. Runs, undo and disposals take the same lock, so
+they can't overlap.
 
 ## Disposal
 
@@ -68,7 +71,9 @@ disposal date and posted with it. The journal:
 | 4950 Proceeds from Sale of Assets | | Proceeds (with the tax code) |
 | GST collected | | GST |
 
-A taxable sale's GST goes to the BAS (G1 and 1A). The profit or loss is
+Proceeds go to a bank or other account that takes manual entries, never a
+control account (receivables, payables, GST). A taxable sale's GST goes to
+the BAS (G1 and 1A). The profit or loss is
 4950 less 7810. Disposals can't be undone from the register; a correcting
 journal would be needed.
 

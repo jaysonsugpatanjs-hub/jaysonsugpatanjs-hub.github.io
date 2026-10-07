@@ -53,7 +53,9 @@ alter table public.pay_items
 -- the descriptors of "other allowances" (OD). Check these with the accountant.
 update public.pay_items set stp_category = 'gross', stp_code = null where code in ('ORD', 'TRAVEL', 'SALARY');
 update public.pay_items set stp_category = 'overtime', stp_code = null where code in ('OT150', 'OT200');
-update public.pay_items set stp_category = 'paid_leave', stp_code = 'O' where code in ('AL', 'LL', 'PL', 'LSL', 'PH');
+update public.pay_items set stp_category = 'paid_leave', stp_code = 'O' where code in ('AL', 'LL', 'PL', 'LSL');
+-- A public holiday not worked is reported as if worked (gross).
+update public.pay_items set stp_category = 'gross', stp_code = null where code = 'PH';
 update public.pay_items set stp_category = 'bonus', stp_code = null where code = 'BONUS';
 update public.pay_items set stp_category = 'allowance', stp_code = 'TD' where code = 'TOOL';
 update public.pay_items set stp_category = 'allowance', stp_code = 'MD' where code = 'MEAL';
@@ -129,10 +131,11 @@ stable
 set search_path = ''
 as $$
   select case
-    when p.residency = 'working_holiday' then case when p.tfn_status = 'not_provided' then 'HF' else 'HR' end || 'XXXX'
+    when p.residency = 'working_holiday' then case when p.tfn_status = 'not_provided'
+        or (p.tfn_status = 'applied' and coalesce(p.tfn_applied_on, p.start_date, p_date) < p_date - 28) then 'HF' else 'HR' end || 'XXXX'
     when p.tfn_status = 'not_provided' or (p.tfn_status = 'applied' and coalesce(p.tfn_applied_on, p.start_date, p_date) < p_date - 28)
       then case when p.residency = 'foreign' then 'NF' else 'NA' end || 'XXXX'
-    when p.residency = 'foreign' then 'FFXXXX'
+    when p.residency = 'foreign' then 'FF' || case when p.study_loan then 'S' else 'X' end || 'XXX'
     else case when p.tax_free_threshold then 'RT' else 'RN' end
       || case when p.study_loan then 'S' else 'X' end
       || 'X'
@@ -184,6 +187,7 @@ begin
     join public.pay_items pi on pi.id = l.pay_item_id
     where r.organization_id = p_org and x.employee_id = p_employee and r.status in ('approved', 'paid') and r.payment_date between p_from and p_to
       and pi.stp_category <> 'not_reported' and pi.kind in ('earning', 'allowance', 'deduction')
+      and ((pi.kind = 'deduction') = (pi.stp_category = 'deduction'))
     group by 1
   ) s;
   v_gross := coalesce((v_lines->>'gross')::numeric, 0) - t.ss;
@@ -343,6 +347,10 @@ begin
   perform public.app_require(p_actor, 'payroll.sensitive');
   select * into v from public.pay_items where id = p_item and organization_id = public.app_org_of(p_actor) for update;
   if not found then raise exception 'Pay item not found.' using errcode = 'P0002'; end if;
+  if p_category <> 'not_reported' and ((v.kind = 'deduction') <> (p_category = 'deduction') or v.kind = 'reimbursement') then
+    raise exception '%', case when v.kind = 'deduction' then 'A deduction is reported as a deduction, or not reported.'
+      when v.kind = 'reimbursement' then 'Reimbursements aren''t reported.' else 'Earnings and allowances can''t be reported as deductions.' end using errcode = '22023';
+  end if;
   begin
     update public.pay_items set stp_category = p_category, stp_code = nullif(btrim(coalesce(p_code, '')), '') where id = p_item;
   exception when check_violation then
@@ -377,7 +385,7 @@ begin
     raise exception 'Choose the state.' using errcode = '22023';
   end if;
   select jsonb_build_object('family_name', family_name, 'given_names', given_names, 'stp_income_type', stp_income_type, 'stp_country', stp_country,
-    'cessation_type', cessation_type) into v_old from public.payroll_employees where employee_id = p_employee;
+    'cessation_type', cessation_type, 'address', home_address) into v_old from public.payroll_employees where employee_id = p_employee;
   begin
     update public.payroll_employees set
       family_name = nullif(left(btrim(coalesce(p->>'family_name', '')), 40), ''),
@@ -393,9 +401,10 @@ begin
     raise exception 'Check the income type, country (two letters) and cessation type.' using errcode = '22023';
   end;
   -- The address is personal information: the audit says it changed, not what it is.
-  perform public.app_audit(p_actor, 'payroll_employee_stp_saved', 'payroll_employee', p_employee::text, v_old,
+  perform public.app_audit(p_actor, 'payroll_employee_stp_saved', 'payroll_employee', p_employee::text, v_old - 'address',
     jsonb_build_object('family_name', p->>'family_name', 'given_names', p->>'given_names', 'stp_income_type', p->>'stp_income_type',
-      'stp_country', p->>'stp_country', 'cessation_type', p->>'cessation_type', 'addressChanged', true),
+      'stp_country', p->>'stp_country', 'cessation_type', p->>'cessation_type',
+      'addressChanged', (select home_address from public.payroll_employees where employee_id = p_employee) is distinct from v_old->'address'),
     null, (select profile_id from public.employees where id = p_employee));
 end;
 $$;
@@ -463,6 +472,12 @@ begin
     if cardinality(v_emps) = 0 then raise exception 'Nobody''s year-to-date figures have changed since the last STP event.' using errcode = '22023'; end if;
   elsif cardinality(v_emps) = 0 then
     raise exception 'Nobody was paid in this financial year.' using errcode = '22023';
+  elsif exists (select 1 from public.pay_runs r where r.organization_id = v_org and r.status in ('approved', 'paid') and r.payment_date between p_year_start and v_as_at
+                and not exists (select 1 from public.stp_events e where e.pay_run_id = r.id and e.status not in ('draft', 'validated'))) then
+    raise exception 'Some pay runs in this year have no STP pay event marked ready (%). Prepare those first.',
+      (select string_agg(r.number, ', ' order by r.payment_date) from public.pay_runs r where r.organization_id = v_org and r.status in ('approved', 'paid')
+        and r.payment_date between p_year_start and v_as_at and not exists (select 1 from public.stp_events e where e.pay_run_id = r.id and e.status not in ('draft', 'validated')))
+      using errcode = '22023';
   end if;
   insert into public.stp_events (organization_id, kind, year_start, as_at, created_by)
   values (v_org, p_kind, p_year_start, v_as_at, p_actor) returning id into v_id;
@@ -503,16 +518,21 @@ set search_path = ''
 as $$
 declare
   v record;
+  v_before jsonb;
 begin
   perform public.app_require(p_actor, 'payroll.approve');
   select * into v from public.stp_events where id = p_id and organization_id = public.app_org_of(p_actor) for update;
   if not found then raise exception 'STP event not found.' using errcode = 'P0002'; end if;
   if v.status <> 'validated' then raise exception 'Only a checked event with no errors can be marked ready.' using errcode = '22023'; end if;
   if v.created_by = p_actor then raise exception 'Someone other than the person who prepared it must mark it ready.' using errcode = '42501'; end if;
-  -- The figures must still be what was checked.
-  if exists (select 1 from public.stp_employee_records r where r.event_id = p_id
-             and public.stp_ytd(v.organization_id, r.employee_id, v.year_start, v.as_at) is distinct from r.ytd) then
-    raise exception 'Pay has changed since this event was checked. Check it again.' using errcode = '22023';
+  -- Everything must still be what was checked: rebuild and compare (an
+  -- exception rolls the rebuild back).
+  v_before := (select jsonb_agg(jsonb_build_array(r.employee_id, r.payee, r.ytd, r.errors) order by r.employee_id) from public.stp_employee_records r where r.event_id = p_id);
+  perform public.stp_build(p_id, array(select employee_id from public.stp_employee_records where event_id = p_id),
+    coalesce((select bool_or(final) from public.stp_employee_records where event_id = p_id), v.kind = 'finalisation'));
+  if (select jsonb_agg(jsonb_build_array(r.employee_id, r.payee, r.ytd, r.errors) order by r.employee_id) from public.stp_employee_records r where r.event_id = p_id) is distinct from v_before
+     or (select status from public.stp_events where id = p_id) <> 'validated' then
+    raise exception 'Pay or employee details have changed since this event was checked. Check it again.' using errcode = '22023';
   end if;
   update public.stp_events set status = 'ready', ready_by = p_actor, ready_at = now() where id = p_id;
   perform public.app_audit(p_actor, 'stp_event_ready', 'stp_event', p_id::text, jsonb_build_object('status', 'validated'), jsonb_build_object('status', 'ready'));

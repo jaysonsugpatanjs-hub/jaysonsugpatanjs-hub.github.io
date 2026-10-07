@@ -53,12 +53,18 @@ async function eventGet(admin: Client, actor: Actor, body: any) {
   const { data: recs } = await admin.from("stp_employee_records").select("employee_id,payee,ytd,final,errors,warnings,payroll_employees(employees(full_name,employee_number))")
     .eq("event_id", id);
   const who = await names(admin, [e.created_by, e.ready_by]);
+  // Dates of birth, addresses and TFN digits are for payroll.sensitive only.
+  const sensitive = has(actor, "payroll.sensitive");
+  const limited = (p: any) => {
+    const { dateOfBirth: _d, address: _a, homeAddress: _h, tfn: _t, ...rest } = p || {};
+    return { ...rest, hidden: true };
+  };
   return {
     event: { id: e.id, kind: e.kind, status: e.status, asAt: e.as_at, yearStart: e.year_start, employer: e.employer, errors: e.errors, totals: e.totals,
       payRun: e.pay_runs ? { id: e.pay_run_id, number: e.pay_runs.number, from: e.pay_runs.period_start, to: e.pay_runs.period_end } : null,
       createdBy: who.get(e.created_by) || null, createdAt: e.created_at, readyBy: who.get(e.ready_by) || null, readyAt: e.ready_at },
     records: (recs || []).map((r: any) => ({ employeeId: r.employee_id, name: r.payroll_employees?.employees?.full_name, number: r.payroll_employees?.employees?.employee_number,
-      payee: r.payee, ytd: r.ytd, final: r.final, errors: r.errors || [], warnings: r.warnings || [] }))
+      payee: sensitive ? r.payee : limited(r.payee), ytd: r.ytd, final: r.final, errors: r.errors || [], warnings: r.warnings || [] }))
       .sort((a: any, b: any) => (b.errors.length - a.errors.length) || String(a.name).localeCompare(String(b.name))),
     can: {
       check: ["draft", "validated"].includes(e.status) && has(actor, "payroll.run"),
@@ -115,7 +121,7 @@ async function employeeStpSave(admin: Client, actor: Actor, body: any) {
   if (state && !STATES.includes(state)) throw httpError(400, "Choose the state.");
   await rpc(admin, "payroll_employee_stp_save", { p_actor: actor.id, p_employee: uuid(body.id, "Employee"), p: {
     family_name: text(body.familyName, 40), given_names: text(body.givenNames, 80),
-    home_address: { street: text(a.street, 120), street2: text(a.street2, 120), suburb: text(a.suburb, 60), state, postcode: text(a.postcode, 4) },
+    home_address: { street: text(a.street, 120), street2: text(a.street2, 120), suburb: text(a.suburb, 60), state, postcode: String(a.postcode ?? "").trim() },
     stp_income_type: text(body.incomeType, 3).toUpperCase(), stp_country: text(body.country, 2).toLowerCase(), cessation_type: text(body.cessationType, 1).toUpperCase()
   } });
   return { saved: true };

@@ -292,6 +292,7 @@ declare
   v record;
 begin
   perform public.app_require(p_actor, 'assets.manage');
+  perform 1 from public.company_settings where organization_id = public.app_org_of(p_actor) for update; -- one depreciation change at a time
   select * into v from public.asset_depreciation_runs where id = p_run and organization_id = public.app_org_of(p_actor) for update;
   if not found or v.status <> 'posted' then raise exception 'Depreciation run not found.' using errcode = 'P0002'; end if;
   if exists (select 1 from public.asset_depreciation_runs where organization_id = v.organization_id and status = 'posted' and period_end > v.period_end) then
@@ -338,7 +339,7 @@ begin
   if nullif(p->>'bill_id', '') is not null and not exists (select 1 from public.bills where id = (p->>'bill_id')::uuid and organization_id = v_org and status = 'approved') then
     raise exception 'Bill not found.' using errcode = '22023';
   end if;
-  if nullif(p->>'custodian_id', '') is not null and not exists (select 1 from public.employees where id = (p->>'custodian_id')::uuid) then
+  if nullif(p->>'custodian_id', '') is not null and not exists (select 1 from public.employees where id = (p->>'custodian_id')::uuid and organization_id = v_org) then
     raise exception 'Custodian not found.' using errcode = '22023';
   end if;
   if nullif(p->>'project_id', '') is not null and not exists (select 1 from public.projects where id = (p->>'project_id')::uuid and organization_id = v_org) then
@@ -353,9 +354,16 @@ begin
     -- Once depreciated, what the depreciation was worked out from stays put.
     if v_depr and (nullif(p->>'cost', '')::numeric is distinct from v_old.cost
        or coalesce(nullif(p->>'in_service_date', ''), nullif(p->>'purchase_date', ''))::date is distinct from v_old.in_service_date
-       or coalesce(nullif(p->>'opening_accumulated', '')::numeric, 0) is distinct from v_old.opening_accumulated or nullif(p->>'category_id', '')::uuid is distinct from v_old.category_id) then
+       or coalesce(nullif(p->>'opening_accumulated', '')::numeric, 0) is distinct from v_old.opening_accumulated or nullif(p->>'category_id', '')::uuid is distinct from v_old.category_id
+       or nullif(p->>'opening_date', '')::date is distinct from v_old.opening_date) then
       raise exception 'This asset has been depreciated: its cost, category, in-service date and opening depreciation can''t change. Undo the depreciation runs first.' using errcode = '22023';
     end if;
+  end if;
+  -- Opening depreciation is at a date: depreciation here runs from the day after.
+  if coalesce(nullif(p->>'opening_accumulated', '')::numeric, 0) > 0 and (nullif(p->>'opening_date', '') is null
+     or (p->>'opening_date')::date < coalesce(nullif(p->>'in_service_date', ''), p->>'purchase_date')::date
+) then
+    raise exception 'Give the date the opening depreciation is at (on or after the in-service date).' using errcode = '22023';
   end if;
   begin
     if p_id is null then
@@ -384,7 +392,7 @@ begin
     end if;
   exception
     when check_violation then raise exception 'Check the asset: cost above the residual value, in service on or after purchase, a useful life to depreciate, opening depreciation no more than cost less residual.' using errcode = '22023';
-    when not_null_violation or invalid_text_representation or invalid_datetime_format then raise exception 'Enter the name, purchase date and cost.' using errcode = '22023';
+    when not_null_violation or invalid_text_representation or invalid_datetime_format or numeric_value_out_of_range then raise exception 'Enter the name, purchase date and cost as numbers and dates (useful life in whole months).' using errcode = '22023';
   end;
   perform public.app_audit(p_actor, case when p_id is null then 'asset_created' else 'asset_updated' end, 'asset', v_id::text,
     case when p_id is null then null else to_jsonb(v_old) - 'created_at' - 'updated_at' end,
@@ -438,7 +446,8 @@ begin
     end if;
   exception
     when unique_violation then raise exception 'There is already a category with that name.' using errcode = '22023';
-    when check_violation or not_null_violation then raise exception 'Give the category a name and a useful life of 1 to 1,200 months.' using errcode = '22023';
+    when check_violation or not_null_violation or invalid_text_representation or numeric_value_out_of_range then
+      raise exception 'Give the category a name and a useful life of 1 to 1,200 months.' using errcode = '22023';
   end;
   perform public.app_audit(p_actor, case when p_id is null then 'asset_category_created' else 'asset_category_updated' end, 'asset_category', v_id::text, v_old,
     (select to_jsonb(c) from public.asset_categories c where id = v_id));
@@ -472,12 +481,13 @@ declare
   v_ng uuid := (select id from public.tax_codes where organization_id = public.app_org_of(p_actor) and kind = 'no_gst' and active order by is_system desc, sort limit 1);
 begin
   perform public.app_require(p_actor, 'assets.manage');
+  perform 1 from public.company_settings where organization_id = v_org for update; -- not alongside a depreciation run
   select * into a from public.assets where id = p_id and organization_id = v_org for update;
   if not found then raise exception 'Asset not found.' using errcode = 'P0002'; end if;
   if a.status <> 'active' then raise exception 'This asset has already been disposed of.' using errcode = '22023'; end if;
   if p_date is null or p_date < a.in_service_date then raise exception 'Enter the disposal date (after it went into service).' using errcode = '22023'; end if;
   if exists (select 1 from public.asset_depreciation d join public.asset_depreciation_runs r on r.id = d.run_id
-             where d.asset_id = p_id and r.status = 'posted' and d.period_end >= p_date) then
+             where d.asset_id = p_id and r.status = 'posted' and d.period_end > p_date) then
     raise exception 'Depreciation has already been run past this date. Undo the later runs, or use a later date.' using errcode = '22023';
   end if;
   if coalesce(p_proceeds, 0) < 0 or coalesce(p_proceeds, 0) <> round(coalesce(p_proceeds, 0), 2) then raise exception 'Enter the proceeds before GST (0 if written off).' using errcode = '22023'; end if;
@@ -487,7 +497,8 @@ begin
   select id into v_bv from public.accounts where organization_id = v_org and code = '7810' and is_system;
   if v_proc is null or v_bv is null then raise exception 'The disposal accounts (4950 and 7810) are missing.' using errcode = '22023'; end if;
   if coalesce(p_proceeds, 0) > 0 then
-    if not exists (select 1 from public.accounts where id = p_received_into and organization_id = v_org and status = 'active' and type in ('asset', 'liability')) then
+    if not exists (select 1 from public.accounts where id = p_received_into and organization_id = v_org and status = 'active' and type in ('asset', 'liability')
+                   and allow_manual and subtype not in ('receivable', 'payable', 'gst', 'fixed_asset', 'accumulated_depreciation')) then
       raise exception 'Choose where the proceeds went (a bank account, or a clearing account if invoiced).' using errcode = '22023';
     end if;
     select rate into v_rate from public.tax_codes where id = p_tax_code and organization_id = v_org and active and applies_to in ('sales', 'both');
@@ -503,8 +514,10 @@ begin
   v_book := a.cost - v_acc;
 
   v_lines := jsonb_build_array(
-    jsonb_build_object('accountId', c.accumulated_account_id, 'description', a.number || ' accumulated depreciation', 'debit', v_acc, 'credit', 0, 'taxCodeId', null),
     jsonb_build_object('accountId', c.asset_account_id, 'description', a.number || ' at cost', 'debit', 0, 'credit', a.cost, 'taxCodeId', v_ng));
+  if v_acc > 0 then
+    v_lines := v_lines || jsonb_build_object('accountId', c.accumulated_account_id, 'description', a.number || ' accumulated depreciation', 'debit', v_acc, 'credit', 0, 'taxCodeId', null);
+  end if;
   if v_part > 0 then
     v_lines := v_lines || jsonb_build_array(
       jsonb_build_object('accountId', c.expense_account_id, 'description', a.number || ' depreciation to disposal', 'debit', v_part, 'credit', 0, 'taxCodeId', v_ng),

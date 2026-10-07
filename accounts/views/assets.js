@@ -213,7 +213,7 @@ async function assetView(view, ctx, id) {
       if (e.target.closest("[data-dispose]")) {
         opts = opts || (await call("assets_list")).options;
         const gst = opts.taxCodes.find(t => t.code === "GST");
-        const into = opts.accounts.filter(a => a.type === "asset" && !["fixed_asset", "accumulated_depreciation"].includes(a.subtype));
+        const into = opts.accounts.filter(a => ["asset", "liability"].includes(a.type) && a.allowManual && !["receivable", "payable", "gst", "fixed_asset", "accumulated_depreciation"].includes(a.subtype));
         view.querySelector("[data-dispose-form]").innerHTML = `<form class="panel" data-dispose-save><h2>Sell or write off</h2>
           <p class="muted small">Depreciation is worked out to the disposal date and posted with the disposal. The cost and its depreciation come off the register; the book value goes to
             7810 Book Value of Assets Disposed and the proceeds to 4950 Proceeds from Sale of Assets. A taxable sale's GST goes to the BAS.</p><div class="grid3">

@@ -61,6 +61,8 @@ Deno.test("STP: pay event, checks, ready, export; sending stays off", async () =
 
   const exp = await ok(PAYROLL, { action: "stp_event_export", id });
   assert(exp.json.includes("123456782") && exp.csv.length === 5 && exp.csv[0][0] === "Payroll ID", "export has the TFN and a row each");
+  const dv = await ok(DIRECTOR, { action: "stp_event_get", id });
+  assert(dv.records.every((r: any) => r.payee.hidden && !("dateOfBirth" in r.payee) && !("address" in r.payee) && !("tfn" in r.payee)), "approvers don't see personal details");
   expectStatus(await call(DIRECTOR, { action: "stp_event_submit", id }), 409, "sending is off");
   expectStatus(await call(PAYROLL, { action: "stp_event_ready", id }), 403, "payroll officer can't mark ready");
   await ok(PAYROLL, { action: "stp_event_delete", id });

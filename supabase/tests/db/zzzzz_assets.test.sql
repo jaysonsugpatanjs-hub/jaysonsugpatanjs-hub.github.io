@@ -91,6 +91,27 @@ begin
   -- Register against the ledger: vehicles accumulated 1,000.00 + 979.17.
   v_ret := (select x from jsonb_array_elements(public.asset_reconciliation('00000000-0000-4000-8000-000000000001', '2027-09-30')) x where x->>'category' = 'Vehicles');
   perform pg_temp.eq((v_ret->>'registerCost', v_ret->>'registerAccumulated', v_ret->>'ledgerAccumulated')::text, '(48000.00,1979.17,1979.17)', 'vehicles reconcile (accumulated)');
+
+  -- Review fixes: a never-depreciated asset can be written off; proceeds can't
+  -- go to a control account; opening depreciation needs its date; a sale on
+  -- a depreciated month end is fine.
+  v_t := public.asset_save(pg_temp.p('finance'), null, jsonb_build_object('name', 'Laptop', 'category_id', pg_temp.cat('Office equipment'), 'purchase_date', '2027-10-02',
+    'cost', 1200, 'method', 'none'));
+  v_j := public.asset_dispose(pg_temp.p('finance'), v_t, '2027-10-05', 0, null, null, 'Stolen from the site office');
+  perform pg_temp.eq((pg_temp.cr(v_j, '1800'), pg_temp.dr(v_j, '7810'), (select count(*)::int from public.journal_lines where journal_id = v_j))::text, '(1200.00,1200.00,2)', 'write-off with no depreciation');
+  v_t := public.asset_save(pg_temp.p('finance'), null, jsonb_build_object('name', 'Printer', 'category_id', pg_temp.cat('Office equipment'), 'purchase_date', '2027-08-01', 'cost', 3600));
+  perform pg_temp.expect_error(format('select public.asset_dispose(%L, %L, %L, 100, %L, %L, %L)', pg_temp.p('finance'), v_t, '2027-09-30',
+    (select id from public.tax_codes where code = 'GST'), pg_temp.acc('1100'), 'Sold'), 'Choose where the proceeds went');
+  v_j := public.asset_dispose(pg_temp.p('finance'), v_t, '2027-09-30', 0, null, null, 'Scrapped at month end');
+  perform pg_temp.eq(pg_temp.dr(v_j, '7810'), 3400.00::numeric, 'disposal depreciates the months not yet run');
+  v_j := public.asset_dispose(pg_temp.p('finance'), v_v, '2027-09-30', 0, null, null, 'Written off after an accident');
+  perform pg_temp.eq((pg_temp.dr(v_j, '1610'), pg_temp.dr(v_j, '7810'), (select count(*)::int from public.asset_depreciation where journal_id = v_j))::text,
+    '(1979.17,46020.83,0)', 'disposal on a month end already depreciated');
+  perform pg_temp.expect_error(format('select public.asset_save(%L, null, %L)', pg_temp.p('finance'),
+    jsonb_build_object('name', 'Old drill', 'category_id', pg_temp.cat('Tools and equipment'), 'purchase_date', '2025-07-01', 'cost', 900, 'opening_accumulated', 300)), 'date the opening depreciation');
+  perform pg_temp.expect_error(format('select public.asset_save(%L, null, %L)', pg_temp.p('finance'),
+    jsonb_build_object('name', 'Grinder', 'category_id', pg_temp.cat('Tools and equipment'), 'purchase_date', '2027-07-01', 'cost', 900,
+      'custodian_id', '00000000-0000-4000-8000-0000000000aa')), 'Custodian not found');
 end $$;
 
 select 'assets tests passed' as result;

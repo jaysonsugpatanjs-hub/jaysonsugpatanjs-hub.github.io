@@ -148,7 +148,7 @@ async function eventView(view, ctx, id) {
           const other = [y.overtime ? `Overtime ${money(y.overtime)}` : "", y.bonus ? `Bonuses ${money(y.bonus)}` : "", pairs(y.paidLeave) ? `Paid leave ${pairs(y.paidLeave)}` : "",
             pairs(y.allowances) ? `Allowances ${pairs(y.allowances)}` : "", pairs(y.deductions) ? `Deductions ${pairs(y.deductions)}` : "",
             Number(y.salarySacrifice?.S) ? `Salary sacrifice S ${money(y.salarySacrifice.S)}` : ""].filter(Boolean);
-          return `<tr><td><a href="#/employees/${safe(r.employeeId)}">${safe(r.name || "")}</a><small>${safe(p.familyName || "")}, ${safe(p.givenNames || "")} · ${safe(r.number || "")} · TFN ${safe(p.tfn || "")}</small>
+          return `<tr><td><a href="#/employees/${safe(r.employeeId)}">${safe(r.name || "")}</a><small>${safe(p.familyName || "")}, ${safe(p.givenNames || "")} · ${safe(r.number || "")} ${p.hidden ? "" : ` · TFN ${safe(p.tfn || "")}`}</small>
               ${r.final ? "<small>Final</small>" : ""}${r.errors.map(x => `<small class="bad-text">${safe(x)}</small>`).join("")}${r.warnings.map(x => `<small class="muted">Note: ${safe(x)}</small>`).join("")}</td>
             <td class="mono small">${safe(p.employmentBasis || "?")} · ${safe(p.taxTreatment)} · ${safe(p.incomeType)}${p.cessationType ? ` · ceased ${safe(p.cessationType)}` : ""}</td>
             <td class="num mono">${money(y.gross)}</td><td class="small">${other.map(safe).join("<br>") || '<span class="muted">—</span>'}</td><td class="num mono">${money(y.payg)}</td>

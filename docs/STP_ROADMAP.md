@@ -18,15 +18,17 @@ product register.
 | Part | Notes |
 | --- | --- |
 | Employer settings | ABN from company settings, branch (usually 001), contact, and a generated software ID (BMS ID) |
-| Pay item mapping | Each pay item has an STP Phase 2 category (gross, overtime, bonus, directors' fees, paid leave, allowance, deduction, not reported) and type code (leave O/C/U/P/W/A; allowances CD, AD, LD, MD, RD, TD, KN, QN, OD with G1/H1/ND/T1/U1/V1; deductions F/W/G/D). Seeded for the standard items; check with the accountant |
+| Pay item mapping | Each pay item has an STP Phase 2 category (gross, overtime, bonus, directors' fees, paid leave, allowance, deduction, not reported) and type code (leave O/C/U/P/W/A; allowances CD, AD, LD, MD, RD, TD, KN, QN, OD with G1/H1/ND/T1/U1/V1; deductions F/W/G/D). Seeded for the standard items (public holidays not worked are gross, as if worked); a deduction item can only be a deduction or not reported, and earnings can't be deductions. Check with the accountant |
 | Employee STP details | Family and given names, home address, income type (SAW, CHP, IAA, WHM, SWP, FEI, JPD, VOL, LAB, OSP), country for working holiday makers and foreign residents, cessation type (V, I, D, R, F, C, T) |
 | Tax treatment code | Six characters worked out from the pay settings: category and option (for example RT regular, RN no tax-free threshold, NA no TFN, plus the other categories), then study and training loan, Medicare levy surcharge, exemption and reduction. Example: `RTXXXX` |
 | TFN codes | Quoted TFN, or 000000000 (not quoted), 111111111 (applied for), 333333333 (under 18), 444444444 (pensioner) |
 | Year-to-date figures | By employee for the financial year: gross after salary sacrifice, overtime, bonuses, directors' fees, paid leave by type, allowances by type, deductions by type, salary sacrifice (S), PAYG withheld, super liability, ordinary time earnings and reportable employer super |
 | Events | Pay event for each paid pay run; update events (only employees whose figures changed since the last ready event); finalisation for the year |
 | Checks | Employer: ABN, branch, contact, software ID. Employee: names, address, date of birth, TFN code, income type, tax treatment, cessation when finished, figures not negative. Errors stop an event becoming ready; warnings don't |
-| Ready | A second person with `payroll.approve` (not the preparer) marks an error-free event ready; the figures are re-checked first |
-| Export | JSON and CSV by employee for a person with `payroll.sensitive`. Full TFNs appear only in the export, which is logged. Elsewhere TFNs are masked |
+| Ready | A second person with `payroll.approve` (not the preparer) marks an error-free event ready; the event is rebuilt first and refused if any figure or detail changed |
+| Finalisation | Refused until every approved pay run in the year has a pay event marked ready |
+| Who sees what | Payroll officers and approvers see the figures; dates of birth, addresses and TFN digits only with `payroll.sensitive` |
+| Export | JSON and CSV by employee for a person with `payroll.sensitive`. Full TFNs appear only in the export, which is logged. Elsewhere TFNs are masked. Spreadsheets drop leading zeros from codes like 000000000; use the JSON to compare exactly |
 | Send to the ATO | Shown and disabled. Always refused |
 
 Screens: Payroll › STP (events, pay item mapping, settings) and an STP

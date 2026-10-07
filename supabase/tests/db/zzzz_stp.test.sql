@@ -43,6 +43,14 @@ begin
     (select id from public.pay_items where code = 'TOOL'), 'allowance', 'ZZ'), 'don''t go together');
   perform pg_temp.expect_error(format('select public.stp_pay_item_map(%L, %L, %L, %L)', pg_temp.p('staff'),
     (select id from public.pay_items where code = 'TOOL'), 'allowance', 'TD'), 'Payroll');
+  perform pg_temp.expect_error(format('select public.stp_pay_item_map(%L, %L, %L, %L)', pg_temp.p('payroll'),
+    (select id from public.pay_items where code = 'UNION'), 'gross', ''), 'reported as a deduction');
+  perform pg_temp.expect_error(format('select public.stp_pay_item_map(%L, %L, %L, %L)', pg_temp.p('payroll'),
+    (select id from public.pay_items where code = 'ORD'), 'deduction', 'F'), 'can''t be reported as deductions');
+  perform pg_temp.eq((select stp_category from public.pay_items where code = 'PH'), 'gross', 'a public holiday not worked is gross');
+  -- A working holiday maker whose TFN application is over 28 days old.
+  perform pg_temp.eq(public.stp_tax_treatment(jsonb_populate_record((select pe from public.payroll_employees pe where employee_id = pg_temp.emp('PAY-001')),
+    '{"residency": "working_holiday", "tfn_status": "applied", "tfn_applied_on": "2026-07-01"}'), '2026-10-14'), 'HFXXXX', 'working holiday maker, no TFN after 28 days');
 
   -- The pay event: everyone in the run, year to date.
   perform pg_temp.expect_error(format('select public.stp_event_pay(%L, %L)', pg_temp.p('staff'), v_run), 'Prepare pay runs');

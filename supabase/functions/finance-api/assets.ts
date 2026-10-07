@@ -14,6 +14,20 @@ const nextMonthEnd = (iso: string) => {
   return new Date(Date.UTC(y, m + 1, 0)).toISOString().slice(0, 10);
 };
 
+/** Useful life in whole months (1 to 1,200), or "" for the default. */
+function months(v: unknown) {
+  if (v === "" || v == null) return "";
+  const n = Number(v);
+  if (!Number.isInteger(n) || n < 1 || n > 1200) throw httpError(400, "Useful life is a whole number of months from 1 to 1,200.");
+  return String(n);
+}
+/** Tax effective life in years (above 0, up to 100), or "". */
+function years(v: unknown) {
+  if (v === "" || v == null) return "";
+  const n = Number(v);
+  if (!Number.isFinite(n) || n <= 0 || n > 100) throw httpError(400, "The tax effective life is a number of years above 0.");
+  return String(Math.round(n * 100) / 100);
+}
 const dayAfter = (iso: string) => new Date(Date.parse(`${iso}T00:00:00Z`) + 86_400_000).toISOString().slice(0, 10);
 const lastMonthEnd = (iso: string) => new Date(Date.UTC(Number(iso.slice(0, 4)), Number(iso.slice(5, 7)) - 1, 0)).toISOString().slice(0, 10);
 
@@ -40,7 +54,7 @@ async function list(admin: Client, actor: Actor, body: any) {
   const acc = await accumulated(admin, rows.map((a: any) => a.id), asAt);
   const custodians = new Map<string, string>();
   const cids = [...new Set(rows.map((a: any) => a.custodian_id).filter(Boolean))];
-  if (cids.length) for (const e of (await admin.from("employees").select("id,full_name").in("id", cids)).data || []) custodians.set(e.id, e.full_name);
+  if (cids.length) for (const e of (await admin.from("employees").select("id,full_name").eq("organization_id", actor.organization_id).in("id", cids)).data || []) custodians.set(e.id, e.full_name);
   const posted = (runs.data || []).filter((r: any) => r.status === "posted");
   const last = posted[0]?.period_end || null;
   const who = await names(admin, (runs.data || []).map((r: any) => r.created_by));
@@ -66,10 +80,10 @@ async function options(admin: Client, actor: Actor) {
   const [lk, sup, emp] = await Promise.all([
     lookups(admin, actor),
     admin.from("suppliers").select("id,name").eq("organization_id", actor.organization_id).eq("status", "active").order("name").limit(1000),
-    admin.from("employees").select("id,full_name").in("status", ["active", "on_leave"]).order("full_name").limit(1000)
+    admin.from("employees").select("id,full_name").eq("organization_id", actor.organization_id).in("status", ["active", "on_leave"]).order("full_name").limit(1000)
   ]);
   return {
-    accounts: lk.accounts.filter((a: any) => a.status === "active").map((a: any) => ({ id: a.id, code: a.code, name: a.name, type: a.type, subtype: a.subtype })),
+    accounts: lk.accounts.filter((a: any) => a.status === "active").map((a: any) => ({ id: a.id, code: a.code, name: a.name, type: a.type, subtype: a.subtype, allowManual: a.allow_manual })),
     taxCodes: lk.taxCodes.filter((t: any) => t.active && ["sales", "both"].includes(t.applies_to)).map((t: any) => ({ id: t.id, code: t.code, name: t.name, rate: Number(t.rate) })),
     projects: lk.projects.filter((x: any) => !["closed", "cancelled"].includes(x.status)).map((x: any) => ({ id: x.id, label: `${x.number} ${x.name}` })),
     suppliers: (sup.data || []).map((x: any) => ({ id: x.id, name: x.name })),
@@ -85,7 +99,7 @@ async function get(admin: Client, actor: Actor, body: any) {
   const [dep, files, cust, disp] = await Promise.all([
     admin.from("asset_depreciation").select("period_start,period_end,amount,journal_id,run_id,asset_depreciation_runs(status),journal_entries(number)").eq("asset_id", id).order("period_end"),
     attachmentsFor(admin, actor, "asset", id),
-    a.custodian_id ? admin.from("employees").select("full_name").eq("id", a.custodian_id).maybeSingle() : Promise.resolve({ data: null }),
+    a.custodian_id ? admin.from("employees").select("full_name").eq("id", a.custodian_id).eq("organization_id", actor.organization_id).maybeSingle() : Promise.resolve({ data: null }),
     a.disposal_journal_id ? admin.from("journal_entries").select("id,number").eq("id", a.disposal_journal_id).maybeSingle() : Promise.resolve({ data: null })
   ]);
   // Everything posted so far (a run to month end counts once it's posted).
@@ -124,9 +138,9 @@ function assetBody(body: any) {
     in_service_date: optDate(body.inService) || "", supplier_id: optUuid(body.supplierId) || "", bill_id: optUuid(body.billId) || "",
     cost: n(body.cost, "The cost"), gst: n(body.gst, "GST"), serial_number: text(body.serial, 80), location: text(body.location, 120),
     custodian_id: optUuid(body.custodianId) || "", project_id: optUuid(body.projectId) || "", method,
-    useful_life_months: body.lifeMonths === "" || body.lifeMonths == null ? "" : String(Math.trunc(Number(body.lifeMonths))),
+    useful_life_months: months(body.lifeMonths),
     residual_value: n(body.residual, "The residual value"), opening_accumulated: n(body.openingAccumulated, "Opening depreciation"), opening_date: optDate(body.openingDate) || "",
-    tax_method: taxMethod, tax_effective_life_years: n(body.taxLife, "The tax effective life"), tax_notes: text(body.taxNotes, 1000)
+    tax_method: taxMethod, tax_effective_life_years: years(body.taxLife), tax_notes: text(body.taxNotes, 1000)
   };
 }
 
@@ -182,8 +196,8 @@ export const assetActions: Record<string, { perm: string[] | null; run: Handler 
     id: await rpc(admin, "asset_category_save", { p_actor: actor.id, p_id: optUuid(body.id), p: {
       name: text(body.name, 80), asset_account_id: optUuid(body.assetAccountId) || "", accumulated_account_id: optUuid(body.accumulatedAccountId) || "",
       expense_account_id: optUuid(body.expenseAccountId) || "", method: ["straight_line", "diminishing_value", "none"].includes(body.method) ? body.method : "straight_line",
-      useful_life_months: body.lifeMonths === "" || body.lifeMonths == null ? "" : String(Math.trunc(Number(body.lifeMonths))),
-      tax_effective_life_years: body.taxLife === "" || body.taxLife == null ? "" : String(Number(body.taxLife)), active: body.active !== false } })
+      useful_life_months: months(body.lifeMonths),
+      tax_effective_life_years: years(body.taxLife), active: body.active !== false } })
   }) },
   depreciation_preview: { perm: ["assets.manage"], run: preview },
   depreciation_run: { perm: ["assets.manage"], run: async (admin, actor, body) => ({ id: await rpc(admin, "asset_depreciation_run", { p_actor: actor.id, p_period_end: date(body.periodEnd, "The month end") }) }) },
