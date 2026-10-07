@@ -129,7 +129,7 @@ export async function createPayslipPdf(p: PayslipInput): Promise<Uint8Array> {
     text(p.leave.map(l => `${l.type}: ${Number(l.balance).toLocaleString("en-AU", { maximumFractionDigits: 2 })}`).join("    "), M, y); y -= 22;
   }
   const pages = pdf.getPages();
-  pages.forEach((pg, i) => {
+  pages.forEach((pg: any, i: number) => {
     page = pg;
     text(`${p.employer.legalName}${p.employer.abn ? ` - ABN ${fmtAbn(p.employer.abn)}` : ""} - Payslip issued for pay run ${p.payRun.number}. Keep it for your records.`
       + (pages.length > 1 ? `  Page ${i + 1} of ${pages.length}` : ""), M, 24, { size: 7, color: grey });
