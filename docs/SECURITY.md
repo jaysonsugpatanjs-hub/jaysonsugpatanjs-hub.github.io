@@ -18,8 +18,15 @@
   bank changes (`employee_bank`, approved by `payroll.approve`; nobody approves
   a change to their own account). Only approved bills can be paid. Pay runs
   are approved by someone other than the preparer and anyone paid in the run.
+- **Bank files.** A supplier payment batch is approved by someone other than
+  the person who made it before its ABA file can be downloaded; supplier bank
+  details are fixed in the batch and checked again on approval; bills in an
+  open batch can't be paid any other way; every file download is logged; a
+  batch whose file was downloaded can only be cancelled by someone else.
+  Statement files are read in the browser and only their lines are stored.
 - **Pay data.** TFNs and bank account numbers are masked in every API response
-  except the logged bank payment list, and are never written to the audit log.
+  except the logged bank payment list and bank file, and are never written to
+  the audit log.
   Employees see only their own payslips and leave (`payroll.self`).
 - **Append-only audit.** Audit rows cannot be updated or deleted; settings
   changes record old and new values.

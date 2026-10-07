@@ -31,7 +31,7 @@ export function options(list, selected) {
 /** A labelled form field. */
 export function field({ id, label, value = "", type = "text", hint = "", required = false, attrs = "", wide = false }) {
   return `<div class="fld${wide ? " wide" : ""}"><label for="${id}">${safe(label)}${required ? ' <span class="req" aria-hidden="true">*</span>' : ""}</label>
-    <input id="${id}" name="${id}" type="${type}" value="${safe(value)}" ${required ? "required" : ""} ${attrs}>
+    <input id="${id}"${/\bname=/.test(attrs) ? "" : ` name="${id}"`} type="${type}" value="${safe(value)}" ${required ? "required" : ""} ${attrs}>
     ${hint ? `<small>${safe(hint)}</small>` : ""}<small class="err" data-err="${id}"></small></div>`;
 }
 

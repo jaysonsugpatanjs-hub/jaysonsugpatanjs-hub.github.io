@@ -308,3 +308,7 @@ details.version summary { cursor: pointer; font-weight: 700; }
 .add-line .fld.t { min-width: 90px; max-width: 110px; }
 .add-line .fld.wide { min-width: 220px; flex: 1; }
 details summary { cursor: pointer; font-weight: 700; margin: 8px 0; }
+/* Reconciliation summary: label and amount, one row each. */
+.tbl.recon-sum { max-width: 560px; margin: 12px 0; }
+.tbl.recon-sum th[scope="row"] { text-align: left; font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--text, inherit); }
+.tbl.recon-sum td { width: 160px; }

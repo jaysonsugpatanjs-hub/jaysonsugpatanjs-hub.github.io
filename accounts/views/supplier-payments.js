@@ -14,7 +14,7 @@ async function list(view) {
   const [setup, d] = await Promise.all([call("purchases_setup"), call("supplier_payments_list")]);
   view.innerHTML = `
     <header class="page-head"><div><p class="eyebrow">PURCHASES</p><h1>Supplier payments</h1>
-      <p class="muted">Record payments after they leave the bank. Bank file (ABA) exports arrive with banking in Phase 6.</p></div>
+      <p class="muted">Record payments after they leave the bank, or pay several bills with one bank file in <a href="#/payment-batches">Payment batches</a>.</p></div>
       ${setup.can.bank ? '<a class="btn primary" href="#/supplier-payments/new">Pay bills</a>' : ""}</header>
     <section class="panel"><div class="tbl-wrap"><table class="tbl"><thead><tr><th scope="col">Date</th><th scope="col">Supplier</th><th scope="col">Reference</th><th scope="col">Method</th><th scope="col">Status</th><th scope="col" class="num">Amount</th></tr></thead><tbody>
       ${d.payments.map(p => `<tr><td class="nowrap"><a href="#/supplier-payments/${safe(p.id)}">${date(p.date)}</a></td><td>${safe(p.supplier)}</td><td>${safe(p.reference || "—")}</td>

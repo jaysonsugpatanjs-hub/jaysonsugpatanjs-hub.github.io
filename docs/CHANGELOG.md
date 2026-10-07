@@ -1,5 +1,36 @@
 # Changelog
 
+## Panalo Accounts Phase 6 — banking (2026-10-12)
+
+**Database** (`20261012000000_banking.sql`)
+
+- Current structure: company bank accounts without a ledger link; supplier
+  and pay run payments recorded by hand.
+- Change: statement imports and lines with duplicate detection, matching to
+  ledger lines, entries and payments created from lines, bank rules,
+  reconciliations with opening clearance, report and undo, payment batches
+  with second-person approval, ABA settings on company bank accounts, guards
+  on reversing matched journals and on paying a bill in an open batch twice.
+  Details in `BANKING.md`.
+- Reason: Phase 6 of the brief.
+- Affected modules: journals, bills and supplier payments, company bank
+  accounts, pay runs, dashboard.
+- Migration strategy: additive; no existing rows change.
+
+**API**: banking overview, settings, imports and undo, statement lines with
+suggestions, match, unmatch, exclude, spend/receive money, receipts and bill
+payments from lines, pay run payments from lines, rules, reconciliation
+preview, complete, report and undo, payment batches (make, approve, ABA file,
+mark paid, cancel), pay run ABA file.
+
+**Screens**: Bank accounts, Import statement (CSV, OFX/QFX, QIF read in the
+browser), Reconciliation, Bank rules, Payment batches; ABA download on pay
+runs; dashboard banking cards.
+
+**Not included**: live bank feeds (needs Consumer Data Right accreditation),
+BPAY batches, direct debits from customers, multi-currency accounts. ABA files
+should be tested with the bank with a small payment before regular use.
+
 ## Panalo Accounts Phase 5 — payroll (2026-10-11)
 
 **Database** (`20261011000000_payroll.sql`)

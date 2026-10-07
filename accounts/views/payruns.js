@@ -123,13 +123,13 @@ async function detail(view, id, ctx) {
           ${c.approve ? '<button type="button" class="btn primary" data-act="approve">Approve and post</button>' : ""}
           ${r.status === "submitted" && !c.approve && ctx.can("payroll.approve") ? '<span class="muted small">You prepared this pay run or are paid in it, so someone else must approve it.</span>' : ""}
           ${c.sendBack ? '<button type="button" class="btn" data-act="return">Send back</button>' : ""}
-          ${c.bankList ? '<button type="button" class="btn" data-act="banklist">Bank payment list (CSV)</button>' : ""}
+          ${c.bankList ? '<button type="button" class="btn" data-act="aba">Bank file (ABA)</button> <button type="button" class="btn" data-act="banklist">Bank payment list (CSV)</button>' : ""}
           ${c.delete ? '<button type="button" class="btn danger" data-act="delete">Delete draft</button>' : ""}
         </div>
         ${r.journal ? `<p class="muted small">Ledger: <a href="#/journals/${safe(r.journal.id)}">${safe(r.journal.number)}</a>${r.paymentJournal ? ` · net pay <a href="#/journals/${safe(r.paymentJournal.id)}">${safe(r.paymentJournal.number)}</a>` : ""}${r.superJournal ? ` · super <a href="#/journals/${safe(r.superJournal.id)}">${safe(r.superJournal.number)}</a>` : ""}</p>` : ""}
       </section>
       ${c.pay || c.paySuper ? `<section class="panel"><h2>Record payments</h2>
-        <p class="muted small">Record each payment after it has left the bank. Bank files (ABA) arrive with banking in Phase 6.</p>
+        <p class="muted small">Record each payment after it has left the bank, or match the bank statement line in Reconciliation, which records it for you.</p>
         <div class="grid2">
           ${c.pay ? `<form class="toolbar" data-pay="net"><div class="fld"><label for="pn-b">Net pay from</label><select id="pn-b">${options(setup.bankAccounts.map(a => [a.id, `${a.code} ${a.name}`]))}</select></div>
             <div class="fld"><label for="pn-d">Date</label><input id="pn-d" type="date" value="${safe(r.paymentDate)}"></div><button class="btn primary" type="submit">Net pay ${money(r.net)} paid</button></form>` : ""}
@@ -162,6 +162,13 @@ async function detail(view, id, ctx) {
       } else if (act === "delete") {
         if (!window.confirm("Delete this draft pay run? Nothing has been paid or posted.")) return;
         await call("pay_run_delete", { id }); location.hash = "#/pay-runs";
+      } else if (act === "aba") {
+        const f = await call("pay_run_aba", { id });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(new Blob([f.content], { type: "text/plain" }));
+        link.download = f.fileName;
+        document.body.appendChild(link); link.click(); link.remove();
+        flash(view, `Downloaded ${f.fileName}: ${f.count} payment(s), ${money(f.total)}. Upload it in your bank's internet banking, then record the net pay as paid. It holds bank details: delete it after uploading. The download is recorded in the audit log.`, "warn");
       } else if (act === "banklist") {
         const b = await call("pay_run_bank_list", { id });
         downloadCsv(`net-pay-${b.number}.csv`, [["Name", "Employee no.", "Account name", "BSB", "Account number", "Amount", "Reference"],

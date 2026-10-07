@@ -8,8 +8,8 @@ export async function renderIntegrations(view) {
   const rows = [
     ["Single Touch Payroll (ATO)", chip("Export only", "info"), "Panalo Accounts will prepare and validate STP Phase 2 data from Phase 5. Sending it to the ATO needs an ATO-registered Sending Service Provider; transmission stays switched off until that arrangement exists."],
     ["Super contributions (Payday Super)", s.super_clearing_house ? chip("Provider named", "info") : chip("Not set", "pending"), `${s.super_clearing_house ? `Clearing house: ${safe(s.super_clearing_house)}. ` : ""}Contributions will be calculated and exported per pay run; the clearing house sends money and data to funds on the same day.`],
-    ["Bank payments (ABA files)", c.bankAccounts.some(b => b.status === "active" && b.apcaUserId) ? chip("APCA ID recorded", "info") : chip("Not set", "pending"), "Pay runs and supplier payments will produce ABA files to upload to your bank. Add the APCA user ID to the paying account in Company settings › Banking."],
-    ["Bank statements", chip("Phase 6", ""), "CSV and OFX import with matching suggestions. A paid bank feed is optional later."],
+    ["Bank payments (ABA files)", c.bankAccounts.some(b => b.status === "active" && b.apcaUserId) ? chip("Live", "good") : chip("Not set", "pending"), "Pay runs and supplier payment batches produce ABA files to upload to your bank. Add the APCA user ID, bank code and user name in Banking › Bank accounts."],
+    ["Bank statements", chip("Live", "good"), "CSV, OFX/QFX and QIF import with matching suggestions and rules. A paid bank feed is optional later."],
     ["Email", chip("Portal email", "pending"), "Emails currently use Supabase's built-in sender, which only reaches Panalo's Supabase team. Connect Panalo's own mail (Microsoft 365, Google Workspace or a sending service) in Supabase before invoices or payslip notices go out."],
     ["ABN Lookup", chip("Phase 3", ""), "Supplier ABNs will be checked when suppliers and bills are entered; ABN check digits are already validated."]
   ];
