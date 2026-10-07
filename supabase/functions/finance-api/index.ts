@@ -12,6 +12,7 @@ import { projectsActions, projectsHeadlines } from "./projects.ts";
 import { payrollActions, payrollHeadlines } from "./payroll.ts";
 import { bankingActions, bankingHeadlines } from "./banking.ts";
 import { taxActions, taxHeadlines } from "./tax.ts";
+import { stpActions } from "./stp.ts";
 import { attachmentArchive, attachmentAttach, attachmentOpen, attachmentPrepare } from "./docs.ts";
 
 type Client = any;
@@ -375,6 +376,7 @@ const ACTIONS: Record<string, { perm: string[] | null; run: Handler }> = {
   ...payrollActions,
   ...bankingActions,
   ...taxActions,
+  ...stpActions,
   attachment_prepare_upload: { perm: ["sales.manage", "purchases.manage", "purchases.raise"], run: attachmentPrepare },
   attachment_attach: { perm: ["sales.manage", "purchases.manage", "purchases.raise"], run: attachmentAttach },
   attachment_open: { perm: ["sales.manage", "purchases.manage", "purchases.raise", "reports.view"], run: attachmentOpen },

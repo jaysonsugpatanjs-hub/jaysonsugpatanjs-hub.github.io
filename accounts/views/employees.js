@@ -4,6 +4,7 @@
 // to a second person for approval.
 import { call, chip, clearErrors, date, field, fieldError, flash, friendlyError, money, options, safe, today } from "../lib/ui.js";
 import { formatBsb, validAccountNumber, validBsb, validTfn } from "../lib/validate.js";
+import { readStpDetails, stpDetailsForm } from "./stp.js";
 
 export const BASIS = { full_time: "Full-time", part_time: "Part-time", casual: "Casual" };
 const FREQ = [["weekly", "Weekly"], ["fortnightly", "Fortnightly"], ["monthly", "Monthly"]];
@@ -105,6 +106,7 @@ async function detail(view, id, ctx) {
         <label class="check"><input type="checkbox" id="py-term" ${p.status === "terminated" ? "checked" : ""}> Finished: no longer paid</label>
         <div class="actions"><button class="btn primary" type="submit">${d.inPayroll ? "Save pay details" : "Set up in payroll"}</button></div>
       </form>
+      ${d.inPayroll ? stpDetailsForm({ ...p, stp: { ...(p.stp || {}), homeAddress: s.homeAddress && !(p.stp?.homeAddress?.street) ? s.homeAddress : p.stp?.homeAddress } }, sens) : ""}
       ${d.inPayroll ? `<section class="panel"><h2>Bank account</h2>
         ${p.bank ? `<p class="mono">${safe(p.bank.accountName || "")} · BSB ${safe(p.bank.bsb)} · ${safe(p.bank.accountNumber)}</p><p class="muted small">Approved ${date(p.bank.changedAt)}</p>` : '<p class="muted">No bank account yet.</p>'}
         ${p.bankChangePending ? `<p>${chip("Change waiting for approval", "pending")}</p>` : `
@@ -165,6 +167,10 @@ async function detail(view, id, ctx) {
         suggested = bank ? { bank } : null;
         await load();
         flash(view, "Pay details saved.", "good");
+      } else if (e.target.matches("[data-stp]")) {
+        await call("payroll_employee_stp_save", { id, ...readStpDetails(view) });
+        await load();
+        flash(view, "STP details saved.", "good");
       } else if (e.target.matches("[data-bank]")) {
         if (!validBsb(v("bk-bsb"))) return fieldError(view, "bk-bsb", "A BSB is 6 digits, like 062-000.");
         const fromOnboarding = Boolean(suggested?.bank?.fromOnboarding) && !v("bk-acct");
