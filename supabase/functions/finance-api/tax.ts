@@ -152,9 +152,22 @@ async function lines(admin: Client, actor: Actor, body: any) {
     if (l.is_tax_line) row.gst += v; else { row.base += v; row.accounts.add(`${l.accounts?.code} ${l.accounts?.name}`); }
     byJournal.set(je.id, row);
   }
+  if (b.gst_basis === "cash") {
+    // Invoices and bills count by the share paid in the period.
+    const docs = await rpc<any[]>(admin, "gst_cash_documents", { p_org: actor.organization_id, p_from: b.period_start, p_to: b.period_end, p_code: code });
+    if (docs?.length) {
+      const { data: js } = await admin.from("journal_entries").select("id,number,entry_date,memo,source_type").in("id", docs.map((x: any) => x.journal_id));
+      const jm = new Map((js || []).map((j: any) => [j.id, j]));
+      for (const x of docs) {
+        const je: any = jm.get(x.journal_id) || {};
+        byJournal.set(x.journal_id, { journalId: x.journal_id, number: je.number, date: je.entry_date, memo: `${je.memo || ""} · ${Math.round(Number(x.share) * 1000) / 10}% paid in the period`,
+          source: je.source_type, base: Number(x.base), gst: Number(x.gst), accounts: new Set<string>() });
+      }
+    }
+  }
   const rows = [...byJournal.values()].map(r => ({ ...r, base: Math.round(r.base * 100) / 100, gst: Math.round(r.gst * 100) / 100, accounts: [...r.accounts].join(", ") }))
     .filter(r => r.base || r.gst).sort((a, b2) => a.date.localeCompare(b2.date) || String(a.number).localeCompare(String(b2.number)));
-  return { rows, cashNote: b.gst_basis === "cash" ? "Cash basis: invoices and bills count as they are paid, so they aren't listed here; only other entries with this code are." : null };
+  return { rows, cashNote: b.gst_basis === "cash" ? "Cash basis: invoices and bills are listed with the share paid in the period; other entries in full." : null };
 }
 
 async function create(admin: Client, actor: Actor, body: any) {
@@ -241,6 +254,7 @@ export async function taxHeadlines(admin: Client, actor: Actor) {
 
 export const taxActions: Record<string, { perm: string[] | null; run: Handler }> = {
   bas_list: { perm: READ, run: list },
+  bas_counts: { perm: READ, run: taxHeadlines },
   bas_get: { perm: READ, run: get },
   bas_lines: { perm: READ, run: lines },
   bas_pdf: { perm: READ, run: pdfOut },

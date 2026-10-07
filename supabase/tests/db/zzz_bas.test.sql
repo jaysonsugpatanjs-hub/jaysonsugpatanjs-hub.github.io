@@ -128,6 +128,8 @@ begin
   f := public.bas_figures('00000000-0000-4000-8000-000000000001', '2027-01-01', '2027-03-31', 'cash');
   perform pg_temp.eq((pg_temp.ex(f, 'G1'), pg_temp.ex(f, '1A'), pg_temp.ex(f, 'G10'), pg_temp.ex(f, 'G11'), pg_temp.ex(f, '1B'))::text,
     '(5500.00,500.00,0,4020.55,320.05)', 'cash basis: only what was paid');
+  perform pg_temp.eq((select (share, base, gst)::text from public.gst_cash_documents('00000000-0000-4000-8000-000000000001', '2027-01-01', '2027-03-31', pg_temp.tax('GST'))),
+    '(0.5000,5000.00,500.00)', 'cash basis: half of I1, listed for the drill-down');
 
   f := public.bas_figures('00000000-0000-4000-8000-000000000001', '2027-01-01', '2027-03-31', 'accrual');
   r := public.bas_reconciliation('00000000-0000-4000-8000-000000000001', '2027-01-01', '2027-03-31', f);

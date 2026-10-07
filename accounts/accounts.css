@@ -312,3 +312,11 @@ details summary { cursor: pointer; font-weight: 700; margin: 8px 0; }
 .tbl.recon-sum { max-width: 560px; margin: 12px 0; }
 .tbl.recon-sum th[scope="row"] { text-align: left; font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--text, inherit); }
 .tbl.recon-sum td { width: 160px; }
+/* BAS workpaper: label, amount, note. */
+.tbl.bas-form { margin: 8px 0 16px; }
+.tbl.bas-form th[scope="row"] { text-align: left; font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--text); }
+.tbl.bas-form td.num { width: 140px; }
+.tbl.bas-form tr.total th, .tbl.bas-form tr.total td { font-weight: 700; }
+.label-key { display: inline-block; min-width: 2.6em; color: var(--gold); font-weight: 700; }
+.tbl.compact td { padding-top: 4px; padding-bottom: 4px; }
+.top-actions .fld select { min-width: 9em; }

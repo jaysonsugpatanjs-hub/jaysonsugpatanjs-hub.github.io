@@ -191,6 +191,47 @@ as $$
   group by l.tax_code_id;
 $$;
 
+-- The invoices and bills behind one tax code on the cash basis: each with the
+-- share paid in the range and the amounts that share brings in.
+create or replace function public.gst_cash_documents(p_org uuid, p_from date, p_to date, p_code uuid)
+returns table (journal_id uuid, share numeric, base numeric, gst numeric)
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  with paid as (
+    select i.journal_id, a.amount / i.total as f
+    from public.receivable_allocations a join public.customer_payments p on p.id = a.payment_id join public.invoices i on i.id = a.invoice_id
+    where a.organization_id = p_org and i.kind = 'invoice' and i.journal_id is not null and i.total > 0
+      and greatest(p.payment_date, a.allocation_date) between p_from and p_to
+    union all
+    select i.journal_id, -a.amount / i.total
+    from public.receivable_allocations a join public.invoices i on i.id = a.invoice_id
+    where a.organization_id = p_org and a.payment_id is not null and i.kind = 'invoice' and i.journal_id is not null and i.total > 0
+      and a.voided_at is not null and (a.voided_at at time zone 'Australia/Sydney')::date between p_from and p_to
+    union all
+    select b.journal_id, a.amount / (b.total - b.withholding)
+    from public.payable_allocations a join public.supplier_payments p on p.id = a.payment_id join public.bills b on b.id = a.bill_id
+    where a.organization_id = p_org and b.kind = 'bill' and b.journal_id is not null and b.total - b.withholding > 0
+      and greatest(p.payment_date, a.allocation_date) between p_from and p_to
+    union all
+    select b.journal_id, -a.amount / (b.total - b.withholding)
+    from public.payable_allocations a join public.bills b on b.id = a.bill_id
+    where a.organization_id = p_org and a.payment_id is not null and b.kind = 'bill' and b.journal_id is not null and b.total - b.withholding > 0
+      and a.voided_at is not null and (a.voided_at at time zone 'Australia/Sydney')::date between p_from and p_to
+  ), share as (
+    select journal_id, sum(f) as f from paid group by journal_id
+  )
+  select s.journal_id, round(s.f, 4),
+    coalesce(round(sum(case when not l.is_tax_line then (case when public.tax_kind_is_sale(tc.kind) then l.credit - l.debit else l.debit - l.credit end) * s.f end), 2), 0),
+    coalesce(round(sum(case when l.is_tax_line then (case when public.tax_kind_is_sale(tc.kind) then l.credit - l.debit else l.debit - l.credit end) * s.f end), 2), 0)
+  from share s
+  join public.journal_lines l on l.journal_id = s.journal_id and l.tax_code_id = p_code
+  join public.tax_codes tc on tc.id = l.tax_code_id
+  group by s.journal_id, s.f;
+$$;
+
 -- BAS label values: GST (G1 to G20, 1A, 1B), PAYG withholding (W1 to W5) and
 -- the summary (8A, 8B, 9). Exact amounts in cents and the whole-dollar
 -- amounts reported (cents dropped, as the ATO asks).
@@ -833,7 +874,7 @@ declare
   f text;
 begin
   foreach f in array array[
-    'gst_ledger_amounts(uuid, date, date, boolean)', 'gst_cash_document_amounts(uuid, date, date)',
+    'gst_ledger_amounts(uuid, date, date, boolean)', 'gst_cash_document_amounts(uuid, date, date)', 'gst_cash_documents(uuid, date, date, uuid)',
     'bas_figures(uuid, date, date, text, numeric, numeric)', 'bas_reconciliation(uuid, date, date, jsonb)', 'bas_exceptions(uuid, date, date)',
     'bas_create(uuid, date, date, text, text)', 'bas_save(uuid, uuid, numeric, numeric, text, text)', 'bas_review(uuid, uuid, text)',
     'bas_reopen(uuid, uuid, text)', 'bas_delete(uuid, uuid)', 'bas_lodge(uuid, uuid, date, text, boolean)',
