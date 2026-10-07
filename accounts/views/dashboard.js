@@ -1,4 +1,4 @@
-import { call, date, money, safe } from "../lib/ui.js";
+import { call, date, money, safe, today } from "../lib/ui.js";
 import { formatAbn } from "../lib/validate.js";
 
 const ROADMAP = [
@@ -38,6 +38,13 @@ export async function renderDashboard(view, { can }) {
       <section class="card ${d.banking.linesToMatch ? "attention" : ""}"><h2>Bank lines to match</h2><p class="big">${d.banking.linesToMatch}</p><a class="link" href="#/reconciliation">Reconciliation</a></section>
       <section class="card ${d.banking.batchesToApprove ? "attention" : ""}"><h2>Payment batches to approve</h2><p class="big">${d.banking.batchesToApprove}</p><a class="link" href="#/payment-batches">Payment batches</a></section>
     </div>` : ""}
+    ${d.tax ? `<div class="cards figures">
+      <section class="card ${d.tax.nextDue && d.tax.nextDue.due < today() ? "attention" : ""}"><h2>Next BAS</h2>${d.tax.nextDue
+        ? `<p class="big">${date(d.tax.nextDue.due)}</p><p class="muted small">${date(d.tax.nextDue.from)} to ${date(d.tax.nextDue.to)}</p>`
+        : '<p class="muted">None in progress</p>'}<a class="link" href="#/bas">BAS</a></section>
+      <section class="card ${d.tax.toReview ? "attention" : ""}"><h2>BAS to review</h2><p class="big">${d.tax.toReview}</p></section>
+      <section class="card ${d.tax.toLodge || d.tax.toPay ? "attention" : ""}"><h2>To lodge / to pay</h2><p class="big">${d.tax.toLodge} / ${d.tax.toPay}</p></section>
+    </div>` : ""}
     ${d.payroll ? `<div class="cards figures">
       ${d.payroll.payRunsToApprove != null ? `<section class="card ${d.payroll.payRunsToApprove ? "attention" : ""}"><h2>Pay runs to approve</h2><p class="big">${d.payroll.payRunsToApprove}</p><a class="link" href="#/pay-runs">Pay runs</a></section>` : ""}
       ${d.payroll.superUnpaid != null ? `<section class="card ${d.payroll.superUnpaid ? "attention" : ""}"><h2>Super not yet paid</h2><p class="big mono">${money(d.payroll.superUnpaid)}</p><p class="muted small">Due within 7 business days of each payday</p><a class="link" href="#/super">Super</a></section>` : ""}
@@ -71,7 +78,7 @@ export async function renderDashboard(view, { can }) {
       <h2>What's being built</h2>
       <p class="muted">Panalo Accounts is delivered in phases, each tested before the next starts. Menu items marked with a phase arrive then.</p>
       <table class="tbl"><thead><tr><th scope="col">Phase</th><th scope="col">Module</th><th scope="col">Includes</th><th scope="col">Status</th></tr></thead><tbody>
-        ${ROADMAP.map(([n, name, inc]) => `<tr><td>${n}</td><td><strong>${safe(name)}</strong></td><td class="muted">${safe(inc)}</td><td>${n <= 6 ? '<span class="chip good">Live</span>' : n === 7 ? '<span class="chip info">Next</span>' : '<span class="chip">Planned</span>'}</td></tr>`).join("")}
+        ${ROADMAP.map(([n, name, inc]) => `<tr><td>${n}</td><td><strong>${safe(name)}</strong></td><td class="muted">${safe(inc)}</td><td>${n <= 7 ? '<span class="chip good">Live</span>' : n === 8 ? '<span class="chip info">Next</span>' : '<span class="chip">Planned</span>'}</td></tr>`).join("")}
       </tbody></table>
     </section>
     ${can("audit.view") ? '<p class="muted small">Every change in Panalo Accounts is recorded in the <a href="#/audit">audit log</a>.</p>' : ""}`;

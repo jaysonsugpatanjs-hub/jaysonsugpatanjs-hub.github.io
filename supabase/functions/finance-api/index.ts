@@ -11,6 +11,7 @@ import { purchasesActions, purchasesHeadlines } from "./purchases.ts";
 import { projectsActions, projectsHeadlines } from "./projects.ts";
 import { payrollActions, payrollHeadlines } from "./payroll.ts";
 import { bankingActions, bankingHeadlines } from "./banking.ts";
+import { taxActions, taxHeadlines } from "./tax.ts";
 import { attachmentArchive, attachmentAttach, attachmentOpen, attachmentPrepare } from "./docs.ts";
 
 type Client = any;
@@ -327,8 +328,9 @@ async function auditList(admin: Client, actor: Actor, body: any) {
 /* ---------------- Dashboard ---------------- */
 
 async function dashboard(admin: Client, actor: Actor) {
-  const [company, approvals, notes, ledger, sales, purchases, projects, payroll, banking] = await Promise.all([companyGet(admin, actor), approvalsList(admin, actor), notificationsList(admin, actor),
-    ledgerHeadlines(admin, actor), salesHeadlines(admin, actor), purchasesHeadlines(admin, actor), projectsHeadlines(admin, actor), payrollHeadlines(admin, actor), bankingHeadlines(admin, actor)]);
+  const [company, approvals, notes, ledger, sales, purchases, projects, payroll, banking, tax] = await Promise.all([companyGet(admin, actor), approvalsList(admin, actor), notificationsList(admin, actor),
+    ledgerHeadlines(admin, actor), salesHeadlines(admin, actor), purchasesHeadlines(admin, actor), projectsHeadlines(admin, actor), payrollHeadlines(admin, actor), bankingHeadlines(admin, actor),
+    taxHeadlines(admin, actor)]);
   return {
     setup: { complete: Boolean(company.settings?.setup_completed_at), missing: company.missing, canEdit: company.canEdit },
     approvalsWaiting: approvals.toDecide.length,
@@ -340,6 +342,7 @@ async function dashboard(admin: Client, actor: Actor) {
     projects,
     payroll,
     banking,
+    tax,
     company: { legalName: company.settings?.legal_name, tradingName: company.settings?.trading_name, abn: company.settings?.abn, logoUrl: company.logoUrl }
   };
 }
@@ -371,6 +374,7 @@ const ACTIONS: Record<string, { perm: string[] | null; run: Handler }> = {
   ...projectsActions,
   ...payrollActions,
   ...bankingActions,
+  ...taxActions,
   attachment_prepare_upload: { perm: ["sales.manage", "purchases.manage", "purchases.raise"], run: attachmentPrepare },
   attachment_attach: { perm: ["sales.manage", "purchases.manage", "purchases.raise"], run: attachmentAttach },
   attachment_open: { perm: ["sales.manage", "purchases.manage", "purchases.raise", "reports.view"], run: attachmentOpen },

@@ -24,6 +24,9 @@
   open batch can't be paid any other way; every file download is logged; a
   batch whose file was downloaded can only be cancelled by someone else.
   Statement files are read in the browser and only their lines are stored.
+- **Tax returns.** A BAS is reviewed by someone who didn't prepare or change
+  it, and the reviewed figures are what is marked lodged; the transfer journal
+  can't be reversed. Nothing is sent to the ATO from this system.
 - **Pay data.** TFNs and bank account numbers are masked in every API response
   except the logged bank payment list and bank file, and are never written to
   the audit log.
