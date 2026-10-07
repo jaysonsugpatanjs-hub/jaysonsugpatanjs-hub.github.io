@@ -127,8 +127,9 @@ audit log.
    - fixes each payslip's content, including year to date and leave balances.
    An approved pay run can't be changed or deleted: corrections go in a later
    pay run.
-6. **Pay**: download the bank payment list (CSV, logged; ABA files come in
-   Phase 6), make the payments, then record them: Dr 2400, Cr bank. Pay super
+6. **Pay**: download the bank file (ABA) or the bank payment list (CSV); both
+   are logged (see `BANKING.md`). Make the payments, then record them, or match
+   the bank statement line, which records them: Dr 2400, Cr bank. Pay super
    through the clearing house and record it: Dr 2200, Cr bank. The Super
    screen shows what is due and flags anything past its due date.
 

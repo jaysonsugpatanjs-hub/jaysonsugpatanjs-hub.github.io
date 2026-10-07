@@ -212,6 +212,6 @@ with short-lived links.
   them: planned with the BAS work (Phase 7).
 - **Expense claims**: planned with payroll (Phase 5), since they are paid with
   or like wages.
-- **Scheduled payment batches and ABA bank files**: Phase 6 (banking). Today a
-  payment is recorded after it has been made.
+- **Payment batches and ABA bank files**: live from Phase 6, see
+  `BANKING.md`. A payment can still be recorded by hand after it has been made.
 - Recurring invoices and retentions.
