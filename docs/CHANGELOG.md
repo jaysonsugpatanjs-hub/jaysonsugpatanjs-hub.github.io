@@ -1,5 +1,35 @@
 # Changelog
 
+## Panalo Accounts Phase 7 — BAS and TPAR (2026-10-13)
+
+**Database** (`20261013000000_bas.sql`)
+
+- Current structure: tax codes with BAS labels and GST settings; no BAS
+  records.
+- Change: BAS figures from the ledger by tax code (accrual or cash basis),
+  PAYG withholding (W1, W2, W4 as paid), reconciliation to the GST and PAYG
+  accounts, exceptions to check, adjustments carried from lodged periods, BAS
+  returns (prepare, second-person review, mark lodged with the transfer
+  journal and optional period lock, payments and voids), TPAR figures and
+  lodgement record; permission `tax.review`; accounts 2350, 1450, 4850, 7950.
+  Details in `BAS.md`.
+- Reason: Phase 7 of the brief.
+- Affected modules: ledger (accounts, reversal guard, period locks),
+  dashboard, menu.
+- Migration strategy: additive; no existing rows change.
+
+**API**: BAS list, workpaper, drill-down, PDF, create, save, review, back to
+draft, delete, mark lodged, record and void payments; TPAR by year and mark
+lodged; dashboard and menu counts.
+
+**Screens**: Tax > BAS (list, workpaper with BAS labels, GST by tax code,
+calculation worksheet, PAYG, reconciliation, to check, review, lodge, pay)
+and Tax > TPAR (by financial year, CSV); dashboard cards.
+
+**Not included**: lodging with the ATO (Standard Business Reporting), GST
+instalments, labels 1C to 1G, 5B, 7C, WET and LCT, TPAR electronic files.
+Not ATO approved; the accountant should check the first BAS prepared.
+
 ## Panalo Accounts Phase 6 — banking (2026-10-12)
 
 **Database** (`20261012000000_banking.sql`)
