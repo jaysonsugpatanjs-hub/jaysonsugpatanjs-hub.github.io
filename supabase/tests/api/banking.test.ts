@@ -128,7 +128,7 @@ Deno.test("pay run bank file needs payroll details access and every bank account
   const runs = await rest("pay_runs?select=id,number,status&status=eq.paid&order=payment_date");
   const src = (await rest("company_bank_accounts?select=id&account_number=eq.87654321&status=eq.active"))[0].id;
   expectStatus(await call(FINANCE, { action: "pay_run_aba", id: runs[0].id, sourceId: src }), 403, "finance can't see pay bank details");
-  const r = await call(PAYROLL, { action: "pay_run_aba", id: runs[0].id, sourceId: src });
+  const r = await call(PAYROLL, { action: "pay_run_aba", id: runs[0].id });
   expectStatus(r, 409, "missing bank accounts");
   assert(/No approved bank account for/.test(r.body.message), r.body.message);
 });

@@ -454,7 +454,17 @@ async function payRunAba(admin: Client, actor: Actor, body: any) {
   const { data: r } = await admin.from("pay_runs").select("id,number,status,payment_date,net").eq("id", id).eq("organization_id", actor.organization_id).maybeSingle();
   if (!r) throw httpError(404, "Pay run not found.");
   if (!["approved", "paid"].includes(r.status)) throw httpError(409, "The bank file is available once the pay run is approved.");
-  const src = await abaSource(admin, actor, uuid(body.sourceId, "Bank account"));
+  let sourceId = optUuid(body.sourceId);
+  if (!sourceId) {
+    // The payroll account if one is set up for bank files, otherwise the only one that is.
+    const { data: ready } = await admin.from("company_bank_accounts").select("id,purpose").eq("organization_id", actor.organization_id).eq("status", "active")
+      .not("apca_user_id", "is", null).not("aba_bank_code", "is", null).not("aba_user_name", "is", null);
+    const pick = (ready || []).filter((c: any) => c.purpose === "payroll");
+    const list = pick.length ? pick : ready || [];
+    if (list.length !== 1) throw httpError(409, list.length ? "More than one bank account is set up for bank files: mark the one for wages as the payroll account." : "No company bank account is set up for bank files yet (Banking > Bank accounts).");
+    sourceId = list[0].id;
+  }
+  const src = await abaSource(admin, actor, sourceId!);
   const { data: rows } = await admin.from("pay_run_employees").select("net,employee_id,payroll_employees(bank_account_name,bank_bsb,bank_account_number,employees(full_name))")
     .eq("pay_run_id", id).gt("net", 0);
   const missing = (rows || []).filter((x: any) => !x.payroll_employees?.bank_bsb).map((x: any) => x.payroll_employees?.employees?.full_name || "someone");
@@ -484,6 +494,7 @@ export async function bankingHeadlines(admin: Client, actor: Actor) {
 
 export const bankingActions: Record<string, { perm: string[] | null; run: Handler }> = {
   banking_overview: { perm: BANK_READ, run: overview },
+  banking_counts: { perm: BANK, run: bankingHeadlines },
   bank_settings_save: { perm: BANK, run: settingsSave },
   bank_lines: { perm: BANK_READ, run: lines },
   bank_line_candidates: { perm: BANK, run: candidates },

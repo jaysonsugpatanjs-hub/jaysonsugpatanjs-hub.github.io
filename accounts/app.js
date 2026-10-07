@@ -28,6 +28,8 @@ import { renderTimesheets } from "./views/timesheets.js";
 import { renderEmployees } from "./views/employees.js";
 import { renderPayRuns, renderPayrollReports, renderSuper } from "./views/payruns.js";
 import { renderLeave, renderMyPay } from "./views/leave.js";
+import { renderBankAccounts, renderBankRules, renderReconciliation } from "./views/banking.js";
+import { renderPaymentBatches } from "./views/payment-batches.js";
 
 const $ = sel => document.querySelector(sel);
 const state = { me: null };
@@ -63,7 +65,12 @@ const MENU = [
     { path: "chart-of-accounts", label: "Chart of accounts", any: LEDGER },
     { path: "tax-codes", label: "Tax codes", any: LEDGER },
     { path: "periods", label: "Periods", any: LEDGER },
-    ["bank-accounts", "Bank accounts", 6], ["reconciliation", "Reconciliation", 6], ["assets", "Assets", 8], ["bas", "BAS", 7]] },
+    ["assets", "Assets", 8], ["bas", "BAS", 7]] },
+  { group: "Banking", items: [
+    { path: "bank-accounts", label: "Bank accounts", any: ["bank.manage", "reports.view"] },
+    { path: "reconciliation", label: "Reconciliation", any: ["bank.manage", "reports.view"], count: "bankLines" },
+    { path: "payment-batches", label: "Payment batches", perm: "bank.manage", count: "batches" },
+    { path: "bank-rules", label: "Bank rules", perm: "bank.manage" }] },
   { group: "Administration", items: [
     { path: "company", label: "Company settings" },
     { path: "users", label: "Users and roles", perm: "access.manage" },
@@ -80,7 +87,8 @@ const VIEWS = {
   customers: renderCustomers, quotes: renderQuotes, invoices: renderInvoices, receipts: renderReceipts,
   suppliers: renderSuppliers, "purchase-orders": renderPurchaseOrders, bills: renderBills, "supplier-payments": renderSupplierPayments,
   projects: renderProjects, "job-costing": renderJobCosting, timesheets: renderTimesheets,
-  employees: renderEmployees, "pay-runs": renderPayRuns, leave: renderLeave, super: renderSuper, "payroll-reports": renderPayrollReports, "my-pay": renderMyPay
+  employees: renderEmployees, "pay-runs": renderPayRuns, leave: renderLeave, super: renderSuper, "payroll-reports": renderPayrollReports, "my-pay": renderMyPay,
+  "bank-accounts": renderBankAccounts, reconciliation: renderReconciliation, "bank-rules": renderBankRules, "payment-batches": renderPaymentBatches
 };
 const allowed = i => (!i.perm || can(i.perm)) && (!i.any || i.any.some(can));
 
@@ -143,7 +151,7 @@ document.addEventListener("submit", async event => {
 
 /* ---------------- Shell ---------------- */
 
-let counts = { approvals: 0, timesheets: 0, payRuns: 0, leave: 0 };
+let counts = { approvals: 0, timesheets: 0, payRuns: 0, leave: 0, bankLines: 0, batches: 0 };
 
 function renderNav() {
   const current = (location.hash.replace(/^#\/?/, "") || "dashboard").split("?")[0].split("/")[0];
@@ -162,6 +170,11 @@ async function refreshCounts() {
     counts.approvals = approvals.toDecide.length;
     if (can("payroll.approve")) counts.payRuns = (await call("pay_runs_list")).runs.filter(r => r.status === "submitted").length;
     if (can("leave.approve")) counts.leave = (await call("leave_list", { status: "submitted" })).requests.filter(r => !r.mine).length;
+    if (can("bank.manage")) {
+      const b = await call("banking_counts");
+      counts.bankLines = b?.linesToMatch || 0;
+      counts.batches = b?.batchesToApprove || 0;
+    }
     if (can("time.approve")) counts.timesheets = (await call("timesheets_review", { status: "submitted" })).timesheets.filter(t => !t.mine).length;
     const badge = $("[data-bell-count]");
     badge.textContent = String(notes.unread);
