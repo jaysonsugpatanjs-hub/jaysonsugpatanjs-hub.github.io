@@ -38,7 +38,8 @@ jobs:
         run: |
           set -o pipefail
           if ! deno check --node-modules-dir=auto supabase/functions/training-api/index.ts supabase/functions/admin-api/index.ts supabase/functions/ims-api/index.ts supabase/functions/finance-api/index.ts 2>&1 | tee check.log; then
-            sed 's/\x1b\[[0-9;]*m//g' check.log | grep -v '^\s*$' | tail -20 | sed 's/^/::error title=deno check::/'
+            # Annotations are capped at 10 per step: send the errors themselves, not download progress.
+            sed 's/\x1b\[[0-9;]*m//g' check.log | grep -v -E '^\s*$|^(Download|Initialize|Check) ' | grep -A3 -E 'ERROR|error:' | grep -v '^--$' | head -30 | paste -sd '|' | sed 's/^/::error title=deno check::/'
             exit 1
           fi
 

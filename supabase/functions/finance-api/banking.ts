@@ -99,7 +99,7 @@ function rowOut(t: any) {
 }
 
 /** Unmatched, uncleared, posted ledger lines on a bank account in a date range. */
-async function openLedgerLines(admin: Client, accountId: string, from: string, to: string) {
+async function openLedgerLines(admin: Client, accountId: string, from: string, to: string): Promise<any[]> {
   const { data, error } = await admin.from("journal_lines")
     .select("id,debit,credit,description,journal_entries!inner(id,number,entry_date,memo,source_type,source_id,source_ref,status,reverses_id)")
     .eq("account_id", accountId).eq("journal_entries.status", "posted").is("journal_entries.reverses_id", null)
@@ -227,7 +227,7 @@ async function candidates(admin: Client, actor: Actor, body: any) {
   const amount = Number(t.amount);
   return {
     line: rowOut(t),
-    ledger: ledger.filter(l => Math.sign(l.amount) === Math.sign(amount)).sort((a, b) => (a.amount === amount ? 0 : 1) - (b.amount === amount ? 0 : 1) || dayGap(a.date, t.txn_date) - dayGap(b.date, t.txn_date)),
+    ledger: ledger.filter((l: any) => Math.sign(l.amount) === Math.sign(amount)).sort((a: any, b: any) => (a.amount === amount ? 0 : 1) - (b.amount === amount ? 0 : 1) || dayGap(a.date, t.txn_date) - dayGap(b.date, t.txn_date)),
     invoices: amount > 0 ? docs.invoices : [],
     bills: amount < 0 ? docs.bills : [],
     payRuns: amount < 0 ? docs.payRuns : []
