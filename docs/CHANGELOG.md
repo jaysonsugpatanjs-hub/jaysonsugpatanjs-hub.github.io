@@ -1,5 +1,39 @@
 # Changelog
 
+## Panalo Accounts Phase 8 — STP information and fixed assets (2026-10-14)
+
+**Database** (`20261014000000_stp.sql`, `20261015000000_assets.sql`)
+
+- Current structure: pay items, payroll employees and pay runs (Phase 5);
+  fixed asset and accumulated depreciation accounts with no register.
+- Change: STP Phase 2 settings (sending locked off by a check constraint),
+  pay item mapping to STP categories and types, employee STP details, STP
+  events and employee records with year-to-date figures, tax treatment and
+  TFN codes, checks, ready by a second person, refused send. Fixed asset
+  categories, register, monthly depreciation runs, disposals, reconciliation,
+  asset documents; permission `assets.manage`; accounts 4950 and 7810.
+  Details in `STP_ROADMAP.md` and `ASSETS.md`.
+- Reason: Phase 8 of the brief.
+- Affected modules: payroll, ledger (chart, journals, reversal guard),
+  documents, BAS (GST on asset sales), menu and dashboard.
+- Migration strategy: additive. Existing pay items get a mapping, existing
+  employees income type SAW.
+
+**API**: STP overview, events (pay, update, finalisation), get, check, ready,
+JSON and CSV export (logged), settings, pay item mapping, employee STP
+details, refused send. Assets list, get, save, add from bill lines,
+categories, depreciation preview, run and undo, dispose, reconciliation;
+attachments on assets.
+
+**Screens**: Payroll › STP (events, mapping, settings) and STP details on the
+employee pay form. Accounting › Fixed assets (register with CSV,
+depreciation, categories, reconciliation; asset detail with depreciation,
+tax treatment, disposal and documents).
+
+**Not included**: sending STP to the ATO (stages 2 to 5 in
+`STP_ROADMAP.md`), tax depreciation schedules, revaluations, leases. Not ATO
+approved or STP certified.
+
 ## Panalo Accounts Phase 7 — BAS and TPAR (2026-10-13)
 
 **Database** (`20261013000000_bas.sql`)

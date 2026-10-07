@@ -27,6 +27,14 @@
 - **Tax returns.** A BAS is reviewed by someone who didn't prepare or change
   it, and the reviewed figures are what is marked lodged; the transfer journal
   can't be reversed. Nothing is sent to the ATO from this system.
+- **STP.** Sending to the ATO is locked off by a database check constraint,
+  and the send action always refuses; switching it on needs a reviewed
+  migration. STP events are made ready by someone with `payroll.approve` who
+  didn't prepare them. Full TFNs appear only in the logged STP export
+  (`payroll.sensitive`).
+- **Fixed assets.** Depreciation and disposal journals can only be reversed
+  through the register (undo of the latest run); disposal journals can't be
+  reversed. Changes need `assets.manage` and are audited.
 - **Pay data.** TFNs and bank account numbers are masked in every API response
   except the logged bank payment list and bank file, and are never written to
   the audit log.
@@ -41,8 +49,8 @@
 | Role | Highlights |
 | --- | --- |
 | Super admin | Company settings, users, every finance area except payroll details |
-| Director / owner | Reports, approvals (banking, journals, pay runs), audit |
-| Finance admin | Sales, purchases, banking, journals, BAS, reports |
+| Director / owner | Reports, approvals (banking, journals, pay runs), fixed assets, audit |
+| Finance admin | Sales, purchases, banking, journals, BAS, fixed assets, reports |
 | Payroll admin | Payroll details, pay runs, leave, timesheets, payroll reports |
 | Project manager | Projects, job costing, timesheet approval |
 | Supervisor | Team timesheets and leave, team competency |
