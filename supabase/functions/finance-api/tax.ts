@@ -72,20 +72,23 @@ async function load(admin: Client, actor: Actor, id: string) {
   return b;
 }
 
-async function live(admin: Client, actor: Actor, b: any) {
-  const f = await rpc<any>(admin, "bas_figures", { p_org: actor.organization_id, p_from: b.period_start, p_to: b.period_end, p_basis: b.gst_basis,
-    p_5a: b.instalment_5a, p_7d: b.fuel_credit_7d });
-  const [rec, ex] = await Promise.all([
-    rpc<any>(admin, "bas_reconciliation", { p_org: actor.organization_id, p_from: b.period_start, p_to: b.period_end, p_figures: f }),
-    rpc<any>(admin, "bas_exceptions", { p_org: actor.organization_id, p_from: b.period_start, p_to: b.period_end })
-  ]);
-  return { ...f, reconciliation: rec, exceptions: ex };
+/** The BAS as it would be now: its period, adjustments carried from earlier lodged BAS, reconciliation, exceptions. */
+async function live(admin: Client, b: any) {
+  return await rpc<any>(admin, "bas_return_figures", { p_id: b.id });
 }
+const dayAfter = (iso: string) => {
+  const d = new Date(`${iso}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + 1);
+  return d.toISOString().slice(0, 10);
+};
 
 function figuresOut(f: any) {
   return {
     labels: numbers(f.labels), exact: numbers(f.exact),
     codes: (f.codes || []).map((c: any) => ({ id: c.id, code: c.code, name: c.name, kind: c.kind, labels: c.labels, sale: c.sale, base: Number(c.base), gst: Number(c.gst), gross: Number(c.gross) })),
+    // Changes to earlier lodged BAS carried into this one, by BAS.
+    adjustments: Object.entries(f.adjustments || {}).map(([id, a]: [string, any]) => ({ basId: id, period: a._period,
+      labels: Object.entries(a).filter(([k]) => k !== "_period").map(([k, v]) => ({ label: k, amount: Number(v) })) })),
     reconciliation: f.reconciliation, exceptions: (f.exceptions || []).map((e: any) => ({ ...e, amount: num(e.amount) }))
   };
 }
@@ -93,17 +96,21 @@ function figuresOut(f: any) {
 async function get(admin: Client, actor: Actor, body: any) {
   const b = await load(admin, actor, uuid(body.id, "BAS"));
   const fixed = b.status !== "draft" && b.figures;
-  const now = await live(admin, actor, b);
+  const now = await live(admin, b);
   const shown = fixed ? b.figures : now;
-  // After the figures are fixed, what has changed in the books since (to include in the next BAS).
+  // Reviewed: anything that changed since the review (it must be reviewed again).
+  // Lodged: changes to its period since, not yet carried into a later BAS.
   let changes: any[] = [];
-  if (fixed) {
+  if (b.status === "reviewed") {
     const was = numbers(b.figures.exact), is = numbers(now.exact);
-    changes = Object.keys(is).filter(k => Math.abs((is[k] || 0) - (was[k] || 0)) >= 0.01).map(k => ({ label: k, fixed: was[k] || 0, now: is[k], change: Math.round(((is[k] || 0) - (was[k] || 0)) * 100) / 100 }));
+    changes = Object.keys(is).filter(k => Math.abs((is[k] || 0) - (was[k] || 0)) >= 0.01).map(k => ({ label: k, change: Math.round(((is[k] || 0) - (was[k] || 0)) * 100) / 100 }));
+  } else if (fixed) {
+    const pa = await rpc<any>(admin, "bas_prior_adjustments", { p_org: actor.organization_id, p_before: dayAfter(b.period_end), p_exclude: null });
+    changes = Object.entries(pa?.byBas?.[b.id] || {}).filter(([k]) => k !== "_period").map(([k, v]) => ({ label: k, change: Number(v) }));
   }
   const [who, pays, journal] = await Promise.all([
     names(admin, [b.prepared_by, b.reviewed_by, b.lodged_by]),
-    admin.from("bas_payments").select("id,payment_date,amount,journal_id,journal_entries(number),accounts(code,name)").eq("bas_id", b.id).order("payment_date"),
+    admin.from("bas_payments").select("id,payment_date,amount,journal_id,voided_at,void_reason,journal_entries(number),accounts(code,name)").eq("bas_id", b.id).order("payment_date"),
     b.journal_id ? admin.from("journal_entries").select("id,number").eq("id", b.journal_id).maybeSingle() : Promise.resolve({ data: null })
   ]);
   const { data: banks } = await admin.from("accounts").select("id,code,name").eq("organization_id", actor.organization_id).eq("subtype", "bank").eq("status", "active").order("code");
@@ -119,14 +126,15 @@ async function get(admin: Client, actor: Actor, body: any) {
     exceptionsNow: figuresOut(now).exceptions,
     changes,
     payments: (pays.data || []).map((p: any) => ({ id: p.id, date: p.payment_date, amount: Number(p.amount), journal: p.journal_entries?.number, journalId: p.journal_id,
-      bank: p.accounts ? `${p.accounts.code} ${p.accounts.name}` : "" })),
+      bank: p.accounts ? `${p.accounts.code} ${p.accounts.name}` : "", voided: Boolean(p.voided_at), voidReason: p.void_reason })),
     bankAccounts: (banks || []).map((a: any) => ({ id: a.id, code: a.code, name: a.name })),
     can: {
       edit: b.status === "draft" && prepare,
-      review: b.status === "draft" && has(actor, "tax.review") && b.prepared_by !== actor.id,
+      review: b.status === "draft" && has(actor, "tax.review") && (b.edited_by || []).length > 0 && !(b.edited_by || []).includes(actor.id),
       reopen: b.status === "reviewed" && prepare,
       lodge: b.status === "reviewed" && prepare,
       pay: b.status === "lodged" && (prepare || has(actor, "bank.manage")),
+      voidPayment: ["lodged", "settled"].includes(b.status) && (prepare || has(actor, "bank.manage")),
       delete: b.status === "draft" && prepare
     }
   };
@@ -139,7 +147,7 @@ async function lines(admin: Client, actor: Actor, body: any) {
   const { data, error } = await admin.from("journal_lines")
     .select("debit,credit,is_tax_line,description,accounts(code,name),journal_entries!inner(id,number,entry_date,memo,source_type,status,organization_id)")
     .eq("tax_code_id", code).eq("journal_entries.organization_id", actor.organization_id)
-    .gte("journal_entries.entry_date", b.period_start).lte("journal_entries.entry_date", b.period_end).in("journal_entries.status", ["posted", "reversed"]).limit(2000);
+    .gte("journal_entries.entry_date", b.period_start).lte("journal_entries.entry_date", b.period_end).in("journal_entries.status", ["posted", "reversed"]).limit(5000);
   if (error) throw httpError(500, "The lines could not be loaded.");
   const { data: tc } = await admin.from("tax_codes").select("kind").eq("id", code).maybeSingle();
   const sale = ["gst_income", "gst_free_income", "export", "input_taxed_income"].includes(tc?.kind);
@@ -167,7 +175,7 @@ async function lines(admin: Client, actor: Actor, body: any) {
   }
   const rows = [...byJournal.values()].map(r => ({ ...r, base: Math.round(r.base * 100) / 100, gst: Math.round(r.gst * 100) / 100, accounts: [...r.accounts].join(", ") }))
     .filter(r => r.base || r.gst).sort((a, b2) => a.date.localeCompare(b2.date) || String(a.number).localeCompare(String(b2.number)));
-  return { rows, cashNote: b.gst_basis === "cash" ? "Cash basis: invoices and bills are listed with the share paid in the period; other entries in full." : null };
+  return { rows, truncated: (data || []).length >= 5000, cashNote: b.gst_basis === "cash" ? "Cash basis: invoices and bills are listed with the share paid in the period; other entries in full." : null };
 }
 
 async function create(admin: Client, actor: Actor, body: any) {
@@ -190,7 +198,7 @@ async function save(admin: Client, actor: Actor, body: any) {
 
 async function pdfOut(admin: Client, actor: Actor, body: any) {
   const b = await load(admin, actor, uuid(body.id, "BAS"));
-  const [s, f, who] = await Promise.all([settings(admin, actor), b.status !== "draft" && b.figures ? Promise.resolve(b.figures) : live(admin, actor, b),
+  const [s, f, who] = await Promise.all([settings(admin, actor), b.status !== "draft" && b.figures ? Promise.resolve(b.figures) : live(admin, b),
     names(admin, [b.prepared_by, b.reviewed_by, b.lodged_by])]);
   const dt = (t?: string | null) => (t ? new Intl.DateTimeFormat("en-AU", { day: "numeric", month: "short", year: "numeric", timeZone: "Australia/Sydney" }).format(new Date(t)) : "");
   const out = figuresOut(f);
@@ -198,7 +206,7 @@ async function pdfOut(admin: Client, actor: Actor, body: any) {
     company: { legalName: s.legal_name || "", abn: s.abn },
     period: { from: b.period_start, to: b.period_end, frequency: b.frequency, basis: b.gst_basis, method: b.gst_method, due: b.due_date },
     status: { draft: "Draft: figures can still change", reviewed: "Reviewed", lodged: "Lodged", settled: "Lodged and settled" }[b.status as string] || b.status,
-    labels: out.labels, exact: out.exact, codes: out.codes, reconciliation: out.reconciliation, exceptions: out.exceptions,
+    labels: out.labels, exact: out.exact, codes: out.codes, reconciliation: out.reconciliation, exceptions: out.exceptions, adjustments: out.adjustments,
     people: { prepared: `${who.get(b.prepared_by) || ""} ${dt(b.prepared_at)}`.trim(), reviewed: b.reviewed_by ? `${who.get(b.reviewed_by) || ""} ${dt(b.reviewed_at)}`.trim() : "",
       reviewComment: b.review_comment, lodged: b.lodged_on ? `${who.get(b.lodged_by) || ""}, lodged ${b.lodged_on}`.trim() : "", reference: b.lodgement_reference },
     notes: b.notes
@@ -274,6 +282,10 @@ export const taxActions: Record<string, { perm: string[] | null; run: Handler }>
     const journalId = await rpc(admin, "bas_record_payment", { p_actor: actor.id, p_id: uuid(body.id, "BAS"), p_bank: uuid(body.bankAccountId, "Bank account"),
       p_date: date(body.date, "The date"), p_amount: amt });
     return { journalId };
+  } },
+  bas_payment_void: { perm: ["tax.bas", "bank.manage"], run: async (admin, actor, body) => {
+    await rpc(admin, "bas_payment_void", { p_actor: actor.id, p_payment: uuid(body.paymentId, "Payment"), p_reason: text(body.reason, 300) });
+    return { ok: true };
   } },
   tpar_get: { perm: READ, run: tparGet },
   tpar_lodge: { perm: ["tax.bas"], run: async (admin, actor, body) => {

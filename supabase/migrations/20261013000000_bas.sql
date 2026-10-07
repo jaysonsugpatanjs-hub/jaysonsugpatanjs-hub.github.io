@@ -76,6 +76,7 @@ create table public.bas_returns (
   journal_id uuid references public.journal_entries(id) on delete restrict,
   locked_periods uuid[] not null default '{}',
   settled_amount numeric(14,2) not null default 0,
+  edited_by uuid[] not null default '{}', -- everyone who prepared or changed it: none of them can review it
   updated_at timestamptz not null default now(),
   check (period_end >= period_start)
 );
@@ -90,7 +91,10 @@ create table public.bas_payments (
   bank_account_id uuid not null references public.accounts(id) on delete restrict,
   journal_id uuid not null references public.journal_entries(id) on delete restrict,
   created_by uuid references public.training_profiles(id) on delete set null,
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  voided_at timestamptz,
+  voided_by uuid references public.training_profiles(id) on delete set null,
+  void_reason text
 );
 create index bas_payments_bas_idx on public.bas_payments (bas_id);
 
@@ -232,6 +236,67 @@ as $$
   group by s.journal_id, s.f;
 $$;
 
+-- The labels worked out from others, on exact amounts: G5 to G20 and W5.
+create or replace function public.bas_exact_derive(e jsonb)
+returns jsonb
+language plpgsql
+immutable
+set search_path = ''
+as $$
+declare
+  n jsonb := e;
+  v text;
+begin
+  foreach v in array array['G1', 'G2', 'G3', 'G4', 'G7', 'G10', 'G11', 'G13', 'G14', 'G15', 'G18', '1A', '1B', 'W1', 'W2', 'W3', 'W4'] loop
+    n := n || jsonb_build_object(v, coalesce((n->>v)::numeric, 0));
+  end loop;
+  n := n || jsonb_build_object('G5', (n->>'G2')::numeric + (n->>'G3')::numeric + (n->>'G4')::numeric);
+  n := n || jsonb_build_object('G6', (n->>'G1')::numeric - (n->>'G5')::numeric);
+  n := n || jsonb_build_object('G8', (n->>'G6')::numeric + (n->>'G7')::numeric);
+  n := n || jsonb_build_object('G9', round((n->>'G8')::numeric / 11, 2));
+  n := n || jsonb_build_object('G12', (n->>'G10')::numeric + (n->>'G11')::numeric);
+  n := n || jsonb_build_object('G16', (n->>'G13')::numeric + (n->>'G14')::numeric + (n->>'G15')::numeric);
+  n := n || jsonb_build_object('G17', (n->>'G12')::numeric - (n->>'G16')::numeric);
+  n := n || jsonb_build_object('G19', (n->>'G17')::numeric + (n->>'G18')::numeric);
+  n := n || jsonb_build_object('G20', round((n->>'G19')::numeric / 11, 2));
+  n := n || jsonb_build_object('W5', (n->>'W2')::numeric + (n->>'W3')::numeric + (n->>'W4')::numeric);
+  return n;
+end;
+$$;
+
+-- The whole-dollar labels entered on the BAS. Cents are dropped from each
+-- reported amount, and the totals are worked out from the reported amounts
+-- (W5 = W2 + W4 + W3 as entered), as the ATO does.
+create or replace function public.bas_labels(e jsonb, p_5a numeric, p_7d numeric)
+returns jsonb
+language plpgsql
+immutable
+set search_path = ''
+as $$
+declare
+  d jsonb := '{}'::jsonb;
+  v text;
+begin
+  foreach v in array array['G1', 'G2', 'G3', 'G4', 'G7', 'G10', 'G11', 'G13', 'G14', 'G15', 'G18', '1A', '1B', 'W1', 'W2', 'W3', 'W4'] loop
+    d := d || jsonb_build_object(v, trunc(coalesce((e->>v)::numeric, 0)));
+  end loop;
+  d := d || jsonb_build_object('G5', (d->>'G2')::numeric + (d->>'G3')::numeric + (d->>'G4')::numeric);
+  d := d || jsonb_build_object('G6', (d->>'G1')::numeric - (d->>'G5')::numeric);
+  d := d || jsonb_build_object('G8', (d->>'G6')::numeric + (d->>'G7')::numeric);
+  d := d || jsonb_build_object('G9', trunc((d->>'G8')::numeric / 11));
+  d := d || jsonb_build_object('G12', (d->>'G10')::numeric + (d->>'G11')::numeric);
+  d := d || jsonb_build_object('G16', (d->>'G13')::numeric + (d->>'G14')::numeric + (d->>'G15')::numeric);
+  d := d || jsonb_build_object('G17', (d->>'G12')::numeric - (d->>'G16')::numeric);
+  d := d || jsonb_build_object('G19', (d->>'G17')::numeric + (d->>'G18')::numeric);
+  d := d || jsonb_build_object('G20', trunc((d->>'G19')::numeric / 11));
+  d := d || jsonb_build_object('W5', (d->>'W2')::numeric + (d->>'W3')::numeric + (d->>'W4')::numeric);
+  d := d || jsonb_build_object('4', (d->>'W5')::numeric, '5A', trunc(coalesce(p_5a, 0)), '7D', trunc(coalesce(p_7d, 0)));
+  d := d || jsonb_build_object('8A', (d->>'1A')::numeric + (d->>'4')::numeric + (d->>'5A')::numeric, '8B', (d->>'1B')::numeric + (d->>'7D')::numeric);
+  d := d || jsonb_build_object('9', (d->>'8A')::numeric - (d->>'8B')::numeric);
+  return d;
+end;
+$$;
+
 -- BAS label values: GST (G1 to G20, 1A, 1B), PAYG withholding (W1 to W5) and
 -- the summary (8A, 8B, 9). Exact amounts in cents and the whole-dollar
 -- amounts reported (cents dropped, as the ATO asks).
@@ -272,37 +337,30 @@ begin
   end loop;
   v_1a := coalesce((select sum((c->>'gst')::numeric) from jsonb_array_elements(v_codes) c where c->'labels' ? '1A'), 0);
   v_1b := coalesce((select sum((c->>'gst')::numeric) from jsonb_array_elements(v_codes) c where c->'labels' ? '1B'), 0);
-  -- The calculation worksheet (full reporting method).
-  g := g || jsonb_build_object('G5', (g->>'G2')::numeric + (g->>'G3')::numeric + (g->>'G4')::numeric);
-  g := g || jsonb_build_object('G6', (g->>'G1')::numeric - (g->>'G5')::numeric, 'G7', 0);
-  g := g || jsonb_build_object('G8', (g->>'G6')::numeric);
-  g := g || jsonb_build_object('G9', round((g->>'G8')::numeric / 11, 2));
-  g := g || jsonb_build_object('G12', (g->>'G10')::numeric + (g->>'G11')::numeric, 'G15', 0);
-  g := g || jsonb_build_object('G16', (g->>'G13')::numeric + (g->>'G14')::numeric);
-  g := g || jsonb_build_object('G17', (g->>'G12')::numeric - (g->>'G16')::numeric, 'G18', 0);
-  g := g || jsonb_build_object('G19', (g->>'G17')::numeric);
-  g := g || jsonb_build_object('G20', round((g->>'G19')::numeric / 11, 2));
   g := g || jsonb_build_object('1A', v_1a, '1B', v_1b);
 
-  -- PAYG withholding. W1 and W2 from pay runs paid in the period (W1 is pay
-  -- subject to withholding, after salary sacrifice); W4 from no-ABN
-  -- withholding posted on bills dated in the period.
+  -- PAYG withholding is reported when the payment is made. W1 and W2 from pay
+  -- runs paid in the period (W1 is pay subject to withholding, after salary
+  -- sacrifice); W4 from no-ABN withholding, in proportion to what was paid on
+  -- each bill in the period (a voided payment counts back out when voided).
   select coalesce(sum(x.taxable), 0), coalesce(sum(x.payg), 0) into v_w1, v_w2
   from public.pay_run_employees x join public.pay_runs r on r.id = x.pay_run_id
   where r.organization_id = p_org and r.status in ('approved', 'paid') and r.payment_date between p_from and p_to;
-  v_payg := array(select id from public.accounts where organization_id = p_org and subtype = 'payg');
-  select coalesce(sum(l.credit - l.debit), 0) into v_w4
-  from public.journal_lines l join public.journal_entries je on je.id = l.journal_id
-  where je.organization_id = p_org and je.status in ('posted', 'reversed') and je.entry_date between p_from and p_to
-    and je.source_type in ('bill', 'supplier_credit') and l.account_id = any(v_payg);
+  select coalesce(round(sum(x.w), 2), 0) into v_w4 from (
+    select a.amount * b.withholding / (b.total - b.withholding) as w
+    from public.payable_allocations a join public.supplier_payments p on p.id = a.payment_id join public.bills b on b.id = a.bill_id
+    where a.organization_id = p_org and b.kind = 'bill' and b.withholding > 0 and b.total - b.withholding > 0
+      and greatest(p.payment_date, a.allocation_date) between p_from and p_to
+    union all
+    select -a.amount * b.withholding / (b.total - b.withholding)
+    from public.payable_allocations a join public.bills b on b.id = a.bill_id
+    where a.organization_id = p_org and a.payment_id is not null and b.kind = 'bill' and b.withholding > 0 and b.total - b.withholding > 0
+      and a.voided_at is not null and (a.voided_at at time zone 'Australia/Sydney')::date between p_from and p_to
+  ) x;
   w := jsonb_build_object('W1', v_w1, 'W2', v_w2, 'W3', 0, 'W4', v_w4, 'W5', v_w2 + v_w4);
 
-  -- Reported in whole dollars: cents dropped from each label.
-  d := (select jsonb_object_agg(k, trunc(v::text::numeric)) from jsonb_each(g || w) as e(k, v));
-  v_8a := (d->>'1A')::numeric + (d->>'W5')::numeric + trunc(coalesce(p_5a, 0));
-  v_8b := (d->>'1B')::numeric + trunc(coalesce(p_7d, 0));
-  d := d || jsonb_build_object('4', (d->>'W5')::numeric, '5A', trunc(coalesce(p_5a, 0)), '7D', trunc(coalesce(p_7d, 0)), '8A', v_8a, '8B', v_8b, '9', v_8a - v_8b);
-  return jsonb_build_object('from', p_from, 'to', p_to, 'basis', p_basis, 'codes', v_codes, 'exact', g || w, 'labels', d);
+  d := public.bas_exact_derive(g || w);
+  return jsonb_build_object('from', p_from, 'to', p_to, 'basis', p_basis, 'codes', v_codes, 'exact', d, 'labels', public.bas_labels(d, p_5a, p_7d));
 end;
 $$;
 
@@ -441,7 +499,7 @@ as $$
   )
   select coalesce(jsonb_agg(jsonb_build_object('kind', kind, 'severity', severity, 'journalId', journal_id, 'number', number, 'date', entry_date,
     'message', message, 'amount', amount) order by case severity when 'warn' then 0 else 1 end, entry_date nulls last, number), '[]'::jsonb)
-  from (select * from items limit 500) x;
+  from (select * from items order by case severity when 'warn' then 0 else 1 end, entry_date nulls last, number limit 500) x;
 $$;
 
 -- When the BAS is due (self-lodgers; tax agents may have later dates).
@@ -456,7 +514,79 @@ as $$
     when 'quarterly' then case extract(month from p_end)::int
       when 12 then make_date(extract(year from p_end)::int + 1, 2, 28)
       else (date_trunc('month', p_end) + interval '1 month')::date + 27 end
-    else make_date(extract(year from p_end)::int, 10, 31) end;
+    -- Annual GST return: the end of the fourth month after the year (31 October for a June year end).
+    else (date_trunc('month', p_end) + interval '5 months' - interval '1 day')::date end;
+$$;
+
+-- Changes since lodgement. After a BAS is lodged, entries can still land in
+-- its period (a document voided later is reversed on its own date; a payment
+-- allocated later counts when it is allocated). Each lodged BAS's figures are
+-- worked out again and compared with what it reported; whatever hasn't
+-- already been carried into a later BAS is carried into this one, by label.
+create or replace function public.bas_prior_adjustments(p_org uuid, p_before date, p_exclude uuid)
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path = ''
+as $$
+declare
+  r record;
+  v_now jsonb; v_was jsonb; v_carried numeric; v numeric;
+  k text;
+  tot jsonb := '{}'::jsonb;
+  by_bas jsonb := '{}'::jsonb;
+  one jsonb;
+begin
+  for r in select * from public.bas_returns where organization_id = p_org and status in ('lodged', 'settled') and period_end < p_before
+           and id is distinct from p_exclude order by period_start loop
+    v_now := public.bas_figures(p_org, r.period_start, r.period_end, r.gst_basis)->'exact';
+    v_was := coalesce(r.figures->'base', r.figures->'exact');
+    one := '{}'::jsonb;
+    foreach k in array array['G1', 'G2', 'G3', 'G4', 'G10', 'G11', 'G13', 'G14', '1A', '1B', 'W1', 'W2', 'W4'] loop
+      select coalesce(sum((x.figures->'adjustments'->(r.id::text)->>k)::numeric), 0) into v_carried
+      from public.bas_returns x where x.organization_id = p_org and x.id is distinct from p_exclude and x.status in ('reviewed', 'lodged', 'settled');
+      v := coalesce((v_now->>k)::numeric, 0) - coalesce((v_was->>k)::numeric, 0) - v_carried;
+      if abs(v) >= 0.01 then
+        one := one || jsonb_build_object(k, v);
+        tot := tot || jsonb_build_object(k, coalesce((tot->>k)::numeric, 0) + v);
+      end if;
+    end loop;
+    if one <> '{}'::jsonb then
+      by_bas := by_bas || jsonb_build_object(r.id::text, one || jsonb_build_object('_period', to_char(r.period_start, 'Mon YYYY') || ' to ' || to_char(r.period_end, 'Mon YYYY')));
+    end if;
+  end loop;
+  return jsonb_build_object('total', tot, 'byBas', by_bas);
+end;
+$$;
+
+-- Everything a BAS shows: its own period's figures, adjustments carried from
+-- earlier lodged BAS, the reconciliation (of its own period) and exceptions.
+create or replace function public.bas_return_figures(p_id uuid)
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path = ''
+as $$
+declare
+  b record;
+  f jsonb; adj jsonb; ex jsonb;
+  k text;
+begin
+  select * into b from public.bas_returns where id = p_id;
+  f := public.bas_figures(b.organization_id, b.period_start, b.period_end, b.gst_basis, b.instalment_5a, b.fuel_credit_7d);
+  adj := public.bas_prior_adjustments(b.organization_id, b.period_start, b.id);
+  ex := f->'exact';
+  for k in select jsonb_object_keys(adj->'total') loop
+    ex := ex || jsonb_build_object(k, (ex->>k)::numeric + (adj->'total'->>k)::numeric);
+  end loop;
+  ex := public.bas_exact_derive(ex);
+  return f || jsonb_build_object('base', f->'exact', 'exact', ex, 'labels', public.bas_labels(ex, b.instalment_5a, b.fuel_credit_7d),
+    'adjustments', adj->'byBas', 'adjustmentTotals', adj->'total',
+    'reconciliation', public.bas_reconciliation(b.organization_id, b.period_start, b.period_end, f),
+    'exceptions', public.bas_exceptions(b.organization_id, b.period_start, b.period_end));
+end;
 $$;
 
 ------------------------------------------------------------------------------
@@ -477,7 +607,8 @@ declare
   v_fy int;
 begin
   perform public.app_require(p_actor, 'tax.bas');
-  select * into v_set from public.company_settings where organization_id = v_org;
+  -- Locked so two people can't make a BAS for the same period at once.
+  select * into v_set from public.company_settings where organization_id = v_org for update;
   if not coalesce(v_set.gst_registered, false) and not exists (select 1 from public.pay_runs where organization_id = v_org) then
     raise exception 'The business isn''t registered for GST and has no payroll: there is no BAS to prepare.' using errcode = '22023';
   end if;
@@ -497,9 +628,9 @@ begin
   if exists (select 1 from public.bas_returns where organization_id = v_org and daterange(period_start, period_end, '[]') && daterange(p_start, p_end, '[]')) then
     raise exception 'A BAS already covers part of this period.' using errcode = '22023';
   end if;
-  insert into public.bas_returns (organization_id, period_start, period_end, frequency, gst_basis, gst_method, due_date, prepared_by)
+  insert into public.bas_returns (organization_id, period_start, period_end, frequency, gst_basis, gst_method, due_date, prepared_by, edited_by)
   values (v_org, p_start, p_end, p_frequency, coalesce(v_set.gst_basis, 'accrual'), case when p_method = 'full' then 'full' else 'simpler' end,
-    public.bas_due_date(p_frequency, p_end), p_actor)
+    public.bas_due_date(p_frequency, p_end), p_actor, array[p_actor])
   returning id into v_id;
   perform public.app_audit(p_actor, 'bas_created', 'bas_return', v_id::text, null,
     jsonb_build_object('from', p_start, 'to', p_end, 'frequency', p_frequency, 'basis', coalesce(v_set.gst_basis, 'accrual')));
@@ -526,7 +657,7 @@ begin
   end if;
   update public.bas_returns set instalment_5a = coalesce(p_5a, 0), fuel_credit_7d = coalesce(p_7d, 0),
     gst_method = case when p_method in ('simpler', 'full') then p_method else gst_method end,
-    notes = left(coalesce(p_notes, ''), 2000), updated_at = now() where id = p_id;
+    notes = left(coalesce(p_notes, ''), 2000), edited_by = array_append(array_remove(edited_by, p_actor), p_actor), updated_at = now() where id = p_id;
   perform public.app_audit(p_actor, 'bas_saved', 'bas_return', p_id::text,
     jsonb_build_object('5A', v.instalment_5a, '7D', v.fuel_credit_7d, 'method', v.gst_method), jsonb_build_object('5A', coalesce(p_5a, 0), '7D', coalesce(p_7d, 0), 'method', p_method));
 end;
@@ -548,13 +679,13 @@ begin
   select * into v from public.bas_returns where id = p_id and organization_id = public.app_org_of(p_actor) for update;
   if not found then raise exception 'BAS not found.' using errcode = 'P0002'; end if;
   if v.status <> 'draft' then raise exception 'Only a draft BAS can be reviewed.' using errcode = '22023'; end if;
-  if v.prepared_by = p_actor then raise exception 'Someone other than the person who prepared the BAS must review it.' using errcode = '42501'; end if;
+  if p_actor = any(v.edited_by) or cardinality(v.edited_by) = 0 then
+    raise exception 'Someone other than the people who prepared or changed the BAS must review it.' using errcode = '42501';
+  end if;
   if exists (select 1 from public.bas_returns where organization_id = v.organization_id and period_end < v.period_start and status in ('draft', 'reviewed')) then
     raise exception 'An earlier BAS isn''t lodged yet. Lodge the BAS in order.' using errcode = '22023';
   end if;
-  f := public.bas_figures(v.organization_id, v.period_start, v.period_end, v.gst_basis, v.instalment_5a, v.fuel_credit_7d);
-  f := f || jsonb_build_object('reconciliation', public.bas_reconciliation(v.organization_id, v.period_start, v.period_end, f),
-    'exceptions', public.bas_exceptions(v.organization_id, v.period_start, v.period_end), 'method', v.gst_method, 'fixedAt', now());
+  f := public.bas_return_figures(p_id) || jsonb_build_object('method', v.gst_method, 'fixedAt', now());
   update public.bas_returns set status = 'reviewed', figures = f, payable = (f->'labels'->>'9')::numeric, reviewed_by = p_actor, reviewed_at = now(),
     review_comment = nullif(btrim(coalesce(p_comment, '')), ''), updated_at = now() where id = p_id;
   if v.prepared_by is not null then
@@ -637,18 +768,21 @@ begin
   end if;
   f := v.figures;
   -- If the books changed since the review, the reviewed figures are no longer right.
-  v_now := public.bas_figures(v.organization_id, v.period_start, v.period_end, v.gst_basis, v.instalment_5a, v.fuel_credit_7d);
+  v_now := public.bas_return_figures(p_id);
   if v_now->'exact' is distinct from f->'exact' then
     raise exception 'The books for this period changed after the BAS was reviewed. Send it back to draft and review it again.' using errcode = '22023';
   end if;
 
   select id into v_gst from public.accounts where organization_id = v_org and subtype = 'gst' and status = 'active' order by code limit 1;
   select id into v_payg from public.accounts where organization_id = v_org and subtype = 'payg' and status = 'active' order by code limit 1;
-  select id into v_ato from public.accounts where organization_id = v_org and code = '2350';
-  select id into v_inst from public.accounts where organization_id = v_org and code = '1450';
-  select id into v_ftc from public.accounts where organization_id = v_org and code = '4850';
-  select id into v_round from public.accounts where organization_id = v_org and code = '7950';
-  if v_ato is null or v_round is null then raise exception 'The ATO integrated client account (2350) or BAS rounding account (7950) is missing.' using errcode = '22023'; end if;
+  select id into v_ato from public.accounts where organization_id = v_org and code = '2350' and is_system and type = 'liability';
+  select id into v_inst from public.accounts where organization_id = v_org and code = '1450' and is_system and type = 'asset';
+  select id into v_ftc from public.accounts where organization_id = v_org and code = '4850' and is_system and type = 'other_income';
+  select id into v_round from public.accounts where organization_id = v_org and code = '7950' and is_system and type = 'expense';
+  if v_ato is null or v_round is null or (v.instalment_5a > 0 and v_inst is null) or (v.fuel_credit_7d > 0 and v_ftc is null) then
+    raise exception 'The BAS accounts (2350 ATO integrated client account, 1450 instalments, 4850 fuel tax credits, 7950 rounding) are missing or changed.' using errcode = '22023';
+  end if;
+  if v_gst is null or v_payg is null then raise exception 'There is no active GST or PAYG withholding account.' using errcode = '22023'; end if;
 
   v_gst_amt := (f->'exact'->>'1A')::numeric - (f->'exact'->>'1B')::numeric;
   v_payg_amt := (f->'exact'->>'W5')::numeric;
@@ -678,7 +812,8 @@ begin
       'debit', greatest(v_round_amt, 0), 'credit', greatest(-v_round_amt, 0), 'taxCodeId', null);
   end if;
   if jsonb_array_length(v_lines) > 0 then
-    v_journal := public.ledger_post_entry(p_actor, v.period_end, 'BAS ' || to_char(v.period_start, 'Mon YYYY') || ' to ' || to_char(v.period_end, 'Mon YYYY')
+    -- Dated when it was lodged, so it posts even if the period's months are already locked.
+    v_journal := public.ledger_post_entry(p_actor, p_lodged_on, 'BAS ' || to_char(v.period_start, 'Mon YYYY') || ' to ' || to_char(v.period_end, 'Mon YYYY')
       || coalesce(' · ' || nullif(btrim(p_reference), ''), ''), 'bas', p_id, left(coalesce(nullif(btrim(p_reference), ''), 'BAS'), 60), v_lines, 'no_tax', false);
   end if;
 
@@ -744,6 +879,37 @@ begin
   perform public.app_audit(p_actor, 'bas_payment_recorded', 'bas_return', p_id::text, null,
     jsonb_build_object('amount', v_amt, 'date', p_date, 'refund', v.payable < 0));
   return v_journal;
+end;
+$$;
+
+-- A payment or refund recorded by mistake: the journal is reversed and the
+-- BAS is owing again by that much.
+create or replace function public.bas_payment_void(p_actor uuid, p_payment uuid, p_reason text)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v record;
+  b record;
+begin
+  if not (public.app_has(p_actor, 'tax.bas') or public.app_has(p_actor, 'bank.manage')) then perform public.app_require(p_actor, 'tax.bas'); end if;
+  select bp.* into v from public.bas_payments bp join public.bas_returns br on br.id = bp.bas_id
+  where bp.id = p_payment and br.organization_id = public.app_org_of(p_actor) for update of bp;
+  if not found or v.voided_at is not null then raise exception 'Payment not found.' using errcode = 'P0002'; end if;
+  if length(btrim(coalesce(p_reason, ''))) < 3 then raise exception 'Say why the payment is voided.' using errcode = '22023'; end if;
+  if exists (select 1 from public.bank_matches m where m.journal_line_id in (select id from public.journal_lines where journal_id = v.journal_id)) then
+    raise exception 'This payment is matched to a bank statement line. Unmatch it in Reconciliation first.' using errcode = '22023';
+  end if;
+  select * into b from public.bas_returns where id = v.bas_id for update;
+  perform set_config('app.bas_reversal', 'on', true);
+  perform public.ledger_reverse_entry(p_actor, v.journal_id, null, btrim(p_reason));
+  perform set_config('app.bas_reversal', '', true);
+  update public.bas_payments set voided_at = now(), voided_by = p_actor, void_reason = btrim(p_reason) where id = p_payment;
+  update public.bas_returns set settled_amount = settled_amount - abs(v.amount), status = 'lodged', updated_at = now() where id = v.bas_id;
+  perform public.app_audit(p_actor, 'bas_payment_voided', 'bas_return', v.bas_id::text, jsonb_build_object('amount', v.amount, 'date', v.payment_date),
+    jsonb_build_object('reason', btrim(p_reason)));
 end;
 $$;
 
@@ -817,7 +983,10 @@ declare
   f jsonb;
 begin
   perform public.app_require(p_actor, 'tax.bas');
-  if p_year_start is null or extract(day from p_year_start) <> 1 then raise exception 'Choose the financial year.' using errcode = '22023'; end if;
+  if p_year_start is null or extract(day from p_year_start) <> 1
+     or extract(month from p_year_start)::int <> coalesce((select financial_year_start_month from public.company_settings where organization_id = v_org), 7) then
+    raise exception 'Choose the financial year.' using errcode = '22023';
+  end if;
   if p_lodged_on is null or p_lodged_on <= v_end then
     raise exception 'Enter the date it was lodged (after the year ended).' using errcode = '22023';
   end if;
@@ -845,7 +1014,8 @@ language plpgsql
 set search_path = ''
 as $$
 begin
-  if new.status = 'reversed' and old.status = 'posted' and old.source_type in ('bas', 'bas_payment') then
+  if new.status = 'reversed' and old.status = 'posted' and old.source_type in ('bas', 'bas_payment')
+     and not (old.source_type = 'bas_payment' and coalesce(current_setting('app.bas_reversal', true), '') = 'on') then
     raise exception 'BAS journals can''t be reversed. Correct the amounts on the next BAS.' using errcode = '22023';
   end if;
   return new;
@@ -876,6 +1046,7 @@ begin
   foreach f in array array[
     'gst_ledger_amounts(uuid, date, date, boolean)', 'gst_cash_document_amounts(uuid, date, date)', 'gst_cash_documents(uuid, date, date, uuid)',
     'bas_figures(uuid, date, date, text, numeric, numeric)', 'bas_reconciliation(uuid, date, date, jsonb)', 'bas_exceptions(uuid, date, date)',
+    'bas_prior_adjustments(uuid, date, uuid)', 'bas_return_figures(uuid)', 'bas_payment_void(uuid, uuid, text)',
     'bas_create(uuid, date, date, text, text)', 'bas_save(uuid, uuid, numeric, numeric, text, text)', 'bas_review(uuid, uuid, text)',
     'bas_reopen(uuid, uuid, text)', 'bas_delete(uuid, uuid)', 'bas_lodge(uuid, uuid, date, text, boolean)',
     'bas_record_payment(uuid, uuid, uuid, date, numeric)', 'tpar_figures(uuid, date, date)', 'tpar_lodge(uuid, date, date, text)', 'bas_journal_guard()']
@@ -884,7 +1055,7 @@ begin
     execute format('grant execute on function public.%s to service_role', f);
   end loop;
   -- Pure helpers.
-  foreach f in array array['tax_kind_is_sale(text)', 'bas_due_date(text, date)'] loop
+  foreach f in array array['tax_kind_is_sale(text)', 'bas_due_date(text, date)', 'bas_exact_derive(jsonb)', 'bas_labels(jsonb, numeric, numeric)'] loop
     execute format('grant execute on function public.%s to anon, authenticated, service_role', f);
   end loop;
 end;

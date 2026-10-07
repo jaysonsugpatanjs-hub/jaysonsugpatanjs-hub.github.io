@@ -16,8 +16,8 @@
 -- Accrual basis:
 --   G1  = 9,900 (GST: 9,000 + 900) + 2,000 (FRE) = 11,900;  G3 = 2,000;  1A = 900.00
 --   G10 = 5,500;  G11 = 3,520.55 (GSTE: 3,200.50 + 320.05) + 1,000 (FREE) = 4,520.55;  G14 = 1,000;  1B = 820.05
---   W1  = 1,400 (after salary sacrifice);  W2 = 439;  W4 = 470;  W5 = 909
---   5A  = 1,200 and 7D = 35 entered.  8A = 900 + 909 + 1,200 = 3,009;  8B = 820 + 35 = 855;  9 = 2,154
+--   W1  = 1,400 (after salary sacrifice);  W2 = 439;  W4 = 235 (withholding is reported as the bill is paid: half);  W5 = 674
+--   5A  = 1,200 and 7D = 35 entered.  8A = 900 + 674 + 1,200 = 2,774;  8B = 820 + 35 = 855;  9 = 1,919
 -- Cash basis: half of I1 (G1 5,500, 1A 500), B1 in full, half of B3, the journal; B2 and I2 unpaid.
 
 -- Everything here is rolled back at the end, so the API tests that follow see
@@ -117,10 +117,12 @@ begin
   f := public.bas_figures('00000000-0000-4000-8000-000000000001', '2027-01-01', '2027-03-31', 'accrual', 1200, 35);
   perform pg_temp.eq((pg_temp.ex(f, 'G1'), pg_temp.ex(f, 'G3'), pg_temp.ex(f, '1A'))::text, '(11900.00,2000.00,900.00)', 'accrual sales: G1, G3, 1A');
   perform pg_temp.eq((pg_temp.ex(f, 'G10'), pg_temp.ex(f, 'G11'), pg_temp.ex(f, 'G14'), pg_temp.ex(f, '1B'))::text, '(5500.00,4520.55,1000.00,820.05)', 'accrual purchases');
-  perform pg_temp.eq((pg_temp.ex(f, 'W1'), pg_temp.ex(f, 'W2'), pg_temp.ex(f, 'W4'), pg_temp.ex(f, 'W5'))::text, '(1400.00,439.00,470.00,909.00)', 'PAYG withholding');
+  perform pg_temp.eq((pg_temp.ex(f, 'W1'), pg_temp.ex(f, 'W2'), pg_temp.ex(f, 'W4'), pg_temp.ex(f, 'W5'))::text, '(1400.00,439.00,235.00,674.00)', 'PAYG withholding');
   perform pg_temp.eq((pg_temp.ex(f, 'G9'), pg_temp.ex(f, 'G20'))::text, '(900.00,820.05)', 'worksheet G9 and G20 agree with 1A and 1B');
   perform pg_temp.eq((pg_temp.lab(f, 'G11'), pg_temp.lab(f, '1B'))::text, '(4520,820)', 'labels in whole dollars, cents dropped');
-  perform pg_temp.eq((pg_temp.lab(f, '8A'), pg_temp.lab(f, '8B'), pg_temp.lab(f, '9'))::text, '(3009,855,2154)', 'summary 8A, 8B, 9');
+  perform pg_temp.eq((pg_temp.lab(f, '8A'), pg_temp.lab(f, '8B'), pg_temp.lab(f, '9'))::text, '(2774,855,1919)', 'summary 8A, 8B, 9');
+  -- Totals are worked out from the whole-dollar amounts: 100 + 50, not 151.
+  perform pg_temp.eq((select (l->>'W5', l->>'4', l->>'9')::text from (select public.bas_labels('{"W2":100.60,"W4":50.60}', 0, 0) l) x), '(150,150,150)', 'W5 from the reported W2 and W4');
   -- By tax code: the credit note nets off the invoice.
   select c2 into c from jsonb_array_elements(f->'codes') c2 where c2->>'code' = 'GST';
   perform pg_temp.eq((c->>'base', c->>'gst', c->>'gross')::text, '(9000.00,900.00,9900.00)', 'GST code after the credit note');
@@ -135,7 +137,7 @@ begin
   r := public.bas_reconciliation('00000000-0000-4000-8000-000000000001', '2027-01-01', '2027-03-31', f);
   perform pg_temp.eq((r->'gst'->>'accountMovement', r->'gst'->>'expected', r->'gst'->>'difference', r->'gst'->>'notFromTaxLines')::text,
     '(74.95,79.95,-5.00,-5.00)', 'GST account agrees but for the direct posting');
-  perform pg_temp.eq((r->'payg'->>'payRunDifference', r->'payg'->>'bills')::text, '(0.00,470.00)', 'PAYG account agrees with W2 and W4');
+  perform pg_temp.eq((r->'payg'->>'payRunDifference', r->'payg'->>'bills', r->'payg'->>'w4')::text, '(0.00,470.00,235.00)', 'PAYG: W2 agrees; W4 is the part paid');
 
   x := public.bas_exceptions('00000000-0000-4000-8000-000000000001', '2027-01-01', '2027-03-31');
   perform pg_temp.eq((select count(*)::int from jsonb_array_elements(x) e where e->>'kind' = 'gst_account'), 1, 'direct GST posting flagged');
@@ -145,6 +147,8 @@ begin
   perform pg_temp.eq(public.bas_due_date('quarterly', '2027-03-31'), date '2027-04-28', 'Q3 due 28 April');
   perform pg_temp.eq(public.bas_due_date('quarterly', '2026-12-31'), date '2027-02-28', 'Q2 due 28 February');
   perform pg_temp.eq(public.bas_due_date('monthly', '2027-01-31'), date '2027-02-21', 'monthly due the 21st');
+  perform pg_temp.eq(public.bas_due_date('annual', '2027-06-30'), date '2027-10-31', 'annual due 31 October');
+  perform pg_temp.eq(public.bas_due_date('annual', '2026-12-31'), date '2027-04-30', 'annual, calendar year: after the year ends');
 end $$;
 
 -- Prepare, review, lodge, pay ------------------------------------------------------------------------------------
@@ -162,12 +166,16 @@ begin
   perform pg_temp.eq((select due_date from public.bas_returns where id = v_bas), date '2027-04-28', 'due date');
   perform pg_temp.expect_error(format('select public.bas_save(%L, %L, 12.5, 0, null, null)', pg_temp.p('finance'), v_bas), 'whole dollars');
   perform public.bas_save(pg_temp.p('finance'), v_bas, 1200, 35, 'full', 'Instalment from the ATO notice');
+  -- Whoever changes it can't review it, even with the Review BAS permission.
+  perform public.bas_save(pg_temp.p('director'), v_bas, 1200, 35, 'full', 'Instalment from the ATO notice');
+  perform pg_temp.expect_error(format('select public.bas_review(%L, %L, null)', pg_temp.p('director'), v_bas), 'prepared or changed');
+  update public.bas_returns set edited_by = array[pg_temp.p('finance')] where id = v_bas;
 
   -- A second person reviews it; that fixes the figures.
   perform pg_temp.expect_error(format('select public.bas_review(%L, %L, null)', pg_temp.p('finance'), v_bas), 'Review BAS');
   perform pg_temp.expect_error(format('select public.bas_lodge(%L, %L, %L, null, false)', pg_temp.p('finance'), v_bas, '2027-04-20'), 'must be reviewed');
   f := public.bas_review(pg_temp.p('director'), v_bas, 'Checked against the bank');
-  perform pg_temp.eq((select (status, payable)::text from public.bas_returns where id = v_bas), '(reviewed,2154.00)', 'reviewed');
+  perform pg_temp.eq((select (status, payable)::text from public.bas_returns where id = v_bas), '(reviewed,1919.00)', 'reviewed');
   perform pg_temp.expect_error(format('select public.bas_save(%L, %L, 0, 0, null, null)', pg_temp.p('finance'), v_bas), 'Only a draft');
 
   -- The books change after the review: it can't be lodged until they agree again.
@@ -178,10 +186,10 @@ begin
   perform pg_temp.expect_error(format('select public.bas_lodge(%L, %L, %L, null, false)', pg_temp.p('finance'), v_bas, '2027-03-30'), 'after the period');
 
   v_j := public.bas_lodge(pg_temp.p('finance'), v_bas, '2027-04-20', '4001234567', true);
-  -- Dr GST 79.95, Dr PAYG 909.00, Dr instalments 1,200.00; Cr fuel tax credits 35.00, Cr ATO 2,154.00; rounding Dr 0.05.
+  -- Dr GST 79.95, Dr PAYG 674.00, Dr instalments 1,200.00; Cr fuel tax credits 35.00, Cr ATO 1,919.00; rounding Dr 0.05.
   perform pg_temp.eq((select debit from public.journal_lines where journal_id = v_j and account_id = pg_temp.acc('2300')), 79.95, 'GST cleared by the exact amount');
-  perform pg_temp.eq((select debit from public.journal_lines where journal_id = v_j and account_id = pg_temp.acc('2100')), 909.00, 'PAYG cleared by W5');
-  perform pg_temp.eq((select credit from public.journal_lines where journal_id = v_j and account_id = pg_temp.acc('2350')), 2154.00, 'owed to the ATO');
+  perform pg_temp.eq((select debit from public.journal_lines where journal_id = v_j and account_id = pg_temp.acc('2100')), 674.00, 'PAYG cleared by W5');
+  perform pg_temp.eq((select credit from public.journal_lines where journal_id = v_j and account_id = pg_temp.acc('2350')), 1919.00, 'owed to the ATO');
   perform pg_temp.eq((select debit from public.journal_lines where journal_id = v_j and account_id = pg_temp.acc('7950')), 0.05, 'cents dropped');
   perform pg_temp.eq((select count(*)::int from public.accounting_periods where start_date between '2027-01-01' and '2027-03-31' and status = 'soft_locked'), 3, 'the quarter is soft-locked');
   perform pg_temp.expect_error(format('select public.ledger_post_entry(%L, %L, %L, %L, null, null, %L, %L, true)', pg_temp.p('finance'), '2027-02-10', 'late', 'manual',
@@ -189,11 +197,25 @@ begin
   perform pg_temp.expect_error(format('select public.ledger_reverse_entry(%L, %L, %L, %L)', pg_temp.p('finance'), v_j, '2027-04-21', 'Wrong amount'), 'BAS journals can''t be reversed');
 
   -- Paying the ATO.
-  perform public.bas_record_payment(pg_temp.p('finance'), v_bas, pg_temp.acc('1000'), '2027-04-25', 2000);
-  perform pg_temp.expect_error(format('select public.bas_record_payment(%L, %L, %L, %L, 154.01)', pg_temp.p('finance'), v_bas, pg_temp.acc('1000'), '2027-04-26'), 'up to');
+  perform public.bas_record_payment(pg_temp.p('finance'), v_bas, pg_temp.acc('1000'), '2027-04-25', 1500);
+  perform pg_temp.expect_error(format('select public.bas_record_payment(%L, %L, %L, %L, 419.01)', pg_temp.p('finance'), v_bas, pg_temp.acc('1000'), '2027-04-26'), 'up to');
   perform public.bas_record_payment(pg_temp.p('finance'), v_bas, pg_temp.acc('1000'), '2027-04-26', null);
-  perform pg_temp.eq((select (status, settled_amount)::text from public.bas_returns where id = v_bas), '(settled,2154.00)', 'settled');
+  perform pg_temp.eq((select (status, settled_amount)::text from public.bas_returns where id = v_bas), '(settled,1919.00)', 'settled');
+  -- A payment recorded by mistake is voided: owing again, then recorded properly.
+  perform public.bas_payment_void(pg_temp.p('finance'), (select id from public.bas_payments where bas_id = v_bas and amount = 419), 'Wrong bank account');
+  perform pg_temp.eq((select (status, settled_amount)::text from public.bas_returns where id = v_bas), '(lodged,1500.00)', 'owing again after the void');
+  perform public.bas_record_payment(pg_temp.p('finance'), v_bas, pg_temp.acc('1000'), '2027-04-27', null);
   perform pg_temp.eq((select coalesce(sum(credit - debit), 0) from public.journal_lines where account_id = pg_temp.acc('2350')), 0::numeric, 'ATO account back to nil');
+
+  -- After lodging, a Q3 entry posted by someone who can post into the locked months is carried into the next BAS.
+  perform public.ledger_post_entry(pg_temp.p('director'), '2027-03-15', 'Missed invoice', 'manual', null, null,
+    jsonb_build_array(pg_temp.jl('1000', 110, 0), pg_temp.jl('4000', 0, 100, 'GST')), 'exclusive', true);
+  insert into bt values ('bas4', public.bas_create(pg_temp.p('finance'), '2027-04-01', '2027-06-30', 'quarterly', 'simpler'));
+  f := public.bas_return_figures((select v from bt where k = 'bas4'));
+  perform pg_temp.eq((f->'adjustmentTotals'->>'G1', f->'adjustmentTotals'->>'1A', pg_temp.ex(f, '1A'))::text, '(110.00,10.00,10.00)', 'Q3 change carried into Q4');
+  f := public.bas_review(pg_temp.p('director'), (select v from bt where k = 'bas4'), null);
+  -- Once carried, it isn't carried again (and the lodged Q3 shows nothing left to carry).
+  perform pg_temp.eq(public.bas_prior_adjustments('00000000-0000-4000-8000-000000000001', '2027-07-01', null)->'total', '{}'::jsonb, 'carried once');
   update public.company_settings set gst_basis = v_basis where organization_id = '00000000-0000-4000-8000-000000000001';
 end $$;
 
@@ -217,7 +239,7 @@ do $$
 begin
   perform pg_temp.eq(has_table_privilege('authenticated', 'public.bas_returns', 'select'), false, 'BAS not readable from browsers');
   perform pg_temp.eq(has_function_privilege('authenticated', 'public.bas_lodge(uuid, uuid, date, text, boolean)', 'execute'), false, 'lodge not callable from browsers');
-  perform pg_temp.eq((select count(*)::int from public.training_audit_events where event_type in ('bas_created', 'bas_reviewed', 'bas_lodged', 'bas_payment_recorded')), 5, 'audited');
+  perform pg_temp.eq((select count(*)::int from public.training_audit_events where event_type in ('bas_created', 'bas_reviewed', 'bas_lodged', 'bas_payment_recorded', 'bas_payment_voided')), 9, 'audited');
 end $$;
 
 select 'bas tests passed' as result;

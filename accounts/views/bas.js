@@ -152,9 +152,12 @@ async function workpaper(view, ctx, id) {
       <header class="page-head"><div><p class="eyebrow">TAX · BAS</p><h1>${period(b.from, b.to)} ${chip(...BAS_STATUS[b.status])}</h1>
         <p class="muted">${safe(FREQ[b.frequency])} · GST ${safe(b.basis)} basis · ${b.method === "full" ? "full reporting" : "simpler BAS"} · due ${date(b.due)}</p></div>
         <div class="top-actions"><button type="button" class="btn" data-pdf>Workpaper (PDF)</button> <a class="btn" href="#/bas">All BAS</a></div></header>
-      ${d.changes.length ? `<div class="note"><strong>The books changed after these figures were fixed${b.fixedAt ? ` (${dateTime(b.fixedAt)})` : ""}.</strong>
-        ${b.status === "reviewed" ? "Send it back to draft and review it again before lodging." : "Include these in the next BAS (or revise this one with the ATO):"}
-        <ul>${d.changes.map(x => `<li><span class="mono">${safe(x.label)}</span>: ${money(x.fixed)} then, ${money(x.now)} now (${x.change > 0 ? "+" : ""}${money(x.change)})</li>`).join("")}</ul></div>` : ""}
+      ${d.changes.length ? `<div class="note">${b.status === "reviewed"
+        ? `<strong>The books changed after this BAS was reviewed${b.fixedAt ? ` (${dateTime(b.fixedAt)})` : ""}.</strong> Send it back to draft and review it again before lodging.`
+        : "<strong>Entries in this period changed after it was lodged.</strong> They will be carried into the next BAS you prepare as adjustments (or you can revise this BAS with the ATO):"}
+        <ul>${d.changes.map(x => `<li><span class="mono">${safe(x.label)}</span> ${x.change > 0 ? "+" : ""}${money(x.change)}</li>`).join("")}</ul></div>` : ""}
+      ${f.adjustments.length ? `<div class="note"><strong>Includes changes to earlier BAS after they were lodged:</strong>
+        <ul>${f.adjustments.map(a => `<li><a href="#/bas/${safe(a.basId)}">${safe(a.period)}</a>: ${a.labels.map(l => `<span class="mono">${safe(l.label)}</span> ${l.amount > 0 ? "+" : ""}${money(l.amount)}`).join(", ")}</li>`).join("")}</ul></div>` : ""}
       <div class="tabs" role="tablist">${tabs.map(([k, l]) => `<button type="button" role="tab" aria-selected="${k === st.tab}" class="${k === st.tab ? "on" : ""}" data-tab="${k}">${safe(l)}</button>`).join("")}</div>
       <section class="panel">${body[st.tab]}</section>
       ${steps(d)}
@@ -162,7 +165,7 @@ async function workpaper(view, ctx, id) {
   };
   const drillTable = r => {
     if (!r) return '<p class="muted small">Loading…</p>';
-    return `${r.cashNote ? `<p class="muted small">${safe(r.cashNote)}</p>` : ""}<table class="tbl compact"><tbody>${r.rows.map(x => `<tr><td class="nowrap">${date(x.date)}</td>
+    return `${r.cashNote ? `<p class="muted small">${safe(r.cashNote)}</p>` : ""}${r.truncated ? '<p class="small bad-text">Only the first 5,000 lines are listed.</p>' : ""}<table class="tbl compact"><tbody>${r.rows.map(x => `<tr><td class="nowrap">${date(x.date)}</td>
       <td><a href="#/journals/${safe(x.journalId)}">${safe(x.number)}</a> <small>${safe(x.memo)}</small><small>${safe(x.accounts)}</small></td><td class="num mono">${money(x.base)}</td><td class="num mono">${money(x.gst)}</td></tr>`).join("")
       || '<tr><td class="muted">No entries.</td></tr>'}</tbody></table>`;
   };
@@ -182,6 +185,10 @@ async function workpaper(view, ctx, id) {
         const reason = window.prompt("Send this BAS back to draft? Its figures will be worked out again and it will need another review. Say why:", "");
         if (reason === null) return;
         await call("bas_reopen", { id, reason }); await load(); flash(view, "Back to draft.", "good");
+      } else if (e.target.closest("[data-void]")) {
+        const reason = window.prompt("Void this payment? Its journal is reversed and the amount is owing again. Say why:", "");
+        if (reason === null) return;
+        await call("bas_payment_void", { id, paymentId: e.target.closest("[data-void]").dataset.void, reason }); await load(); flash(view, "Payment voided.", "good");
       } else if (act?.dataset.act === "delete") {
         if (!window.confirm("Delete this draft BAS? Nothing has been lodged or posted.")) return;
         await call("bas_delete", { id }); location.hash = "#/bas";
@@ -232,7 +239,7 @@ function steps(d) {
       <div class="fld"><label for="b-n">Notes for the reviewer</label><textarea id="b-n" name="notes" rows="2" maxlength="2000">${safe(b.notes || "")}</textarea></div>
       <div class="actions"><button class="btn" type="submit">Save</button> ${c.delete ? '<button type="button" class="btn danger" data-act="delete">Delete draft</button>' : ""}</div></form>`
       : b.notes ? `<p class="muted small">Notes: ${safe(b.notes)}</p>` : ""}
-    ${b.status === "draft" && !c.review ? '<p class="muted small">Waiting for review by someone else with the Review BAS permission.</p>' : ""}
+    ${b.status === "draft" && !c.review ? '<p class="muted small">Waiting for review by someone with the Review BAS permission who didn’t prepare or change it.</p>' : ""}
     ${c.review ? `<form data-review class="toolbar"><div class="fld wide"><label for="b-rc">Review comment (optional)</label><input id="b-rc" name="comment" maxlength="1000"></div>
       <button class="btn primary" type="submit">Mark reviewed</button></form>` : ""}
     ${c.lodge ? `<form data-lodge><div class="grid3">
@@ -246,9 +253,11 @@ function steps(d) {
       ${field({ id: "b-pd", label: "Date", type: "date", value: today(), attrs: 'name="date"' })}
       ${field({ id: "b-pa", label: "Amount", value: left.toFixed(2), attrs: 'name="amount" inputmode="decimal"' })}
       <button class="btn primary" type="submit">${b.payable > 0 ? "Record payment" : "Record refund"}</button></form>
-      <p class="muted small">Or match the bank statement line in Reconciliation to the ATO account (2350).</p>` : ""}
-    ${d.payments.length ? `<table class="tbl compact"><tbody>${d.payments.map(p => `<tr><td>${date(p.date)}</td><td>${p.amount > 0 ? "Paid to the ATO" : "Refund from the ATO"} · ${safe(p.bank)}</td>
-      <td><a href="#/journals/${safe(p.journalId)}">${safe(p.journal || "")}</a></td><td class="num mono">${money(Math.abs(p.amount))}</td></tr>`).join("")}</tbody></table>` : ""}
+      <p class="muted small">Record it here, then match the bank statement line to this payment in Reconciliation.</p>` : ""}
+    ${d.payments.length ? `<table class="tbl compact"><tbody>${d.payments.map(p => `<tr><td>${date(p.date)}</td><td>${p.amount > 0 ? "Paid to the ATO" : "Refund from the ATO"} · ${safe(p.bank)}
+      ${p.voided ? `<small class="bad-text">Voided: ${safe(p.voidReason || "")}</small>` : ""}</td>
+      <td><a href="#/journals/${safe(p.journalId)}">${safe(p.journal || "")}</a></td><td class="num mono">${money(Math.abs(p.amount))}</td>
+      <td>${c.voidPayment && !p.voided ? `<button type="button" class="link" data-void="${safe(p.id)}">Void</button>` : ""}</td></tr>`).join("")}</tbody></table>` : ""}
   </section>`;
 }
 

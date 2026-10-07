@@ -13,6 +13,7 @@ export type BasPdfInput = {
   codes: { code: string; name: string; labels: string[]; base: number; gst: number; gross: number }[];
   reconciliation: any;
   exceptions: { severity: string; number?: string | null; date?: string | null; message: string; amount?: number | null }[];
+  adjustments?: { period: string; labels: { label: string; amount: number }[] }[];
   people: { prepared?: string; reviewed?: string; reviewComment?: string | null; lodged?: string; reference?: string | null };
   notes?: string;
 };
@@ -118,6 +119,11 @@ export async function createBasPdf(p: BasPdfInput): Promise<Uint8Array> {
   if (p.period.method === "full") {
     row("Worksheet G9 (G8 / 11) and G20 (G19 / 11)", `${money(p.exact.G9)} / ${money(p.exact.G20)}`,
       { sub: "Should be close to 1A and 1B. They differ where GST-free or input-taxed items are coded with GST, or GST was rounded per line." });
+  }
+
+  if (p.adjustments?.length) {
+    heading("ADJUSTMENTS FROM EARLIER BAS (included above)");
+    for (const a of p.adjustments) row(`Changes to ${a.period} after it was lodged`, a.labels.map(l => `${l.label} ${money(l.amount)}`).join("  "));
   }
 
   const r = p.reconciliation || {};
