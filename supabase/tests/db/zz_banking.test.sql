@@ -107,6 +107,11 @@ begin
   perform pg_temp.expect_error(format('select public.payment_batch_file_downloaded(%L, %L)', pg_temp.p('finance'), v_pb), 'once the batch is approved');
   perform pg_temp.expect_error(format('select public.payment_batch_approve(%L, %L)', pg_temp.p('finance'), v_pb), 'Someone other');
   perform public.payment_batch_approve(pg_temp.p('director'), v_pb);
+  perform pg_temp.eq((select ledger_account_id from public.payment_batches where id = v_pb), pg_temp.acc('1010'), 'ledger account fixed on the batch');
+  -- While the batch is open its bill can't be paid, or voided, any other way.
+  perform pg_temp.expect_error(format('select public.supplier_payment_record(%L, %L, %L, %L, %L, %L, %L)', pg_temp.p('finance'), (select v from bk where k = 'sup'), '2026-10-06',
+    pg_temp.acc('1000'), 'Manual', 'bank_transfer', jsonb_build_array(jsonb_build_object('billId', (select v from bk where k = 'bill'), 'amount', 100))), 'in payment batch PB-0001');
+  perform pg_temp.expect_error(format('select public.bill_void(%L, %L, %L)', pg_temp.p('finance'), (select v from bk where k = 'bill'), 'Duplicate'), 'Cancel the batch');
   perform pg_temp.expect_error(format('select public.payment_batch_mark_paid(%L, %L)', pg_temp.p('finance'), v_pb), 'Download the bank file');
   perform public.payment_batch_file_downloaded(pg_temp.p('finance'), v_pb);
   perform public.payment_batch_mark_paid(pg_temp.p('finance'), v_pb);
@@ -124,6 +129,13 @@ begin
   perform pg_temp.expect_error(format('select public.payment_batch_cancel(%L, %L, %L)', pg_temp.p('finance'), v_pb2, ''), 'Say why');
   perform public.payment_batch_cancel(pg_temp.p('finance'), v_pb2, 'Supplier changed banks');
   update public.suppliers set bank_account_number = '22334455' where id = (select v from bk where k = 'sup');
+  -- Once the file is downloaded, someone other than the downloader confirms with the bank and cancels.
+  v_pb2 := public.payment_batch_create(pg_temp.p('finance'), (select v from bk where k = 'cba'), '2026-10-09', null,
+    jsonb_build_array(jsonb_build_object('billId', (select v from bk where k = 'bill3'))));
+  perform public.payment_batch_approve(pg_temp.p('director'), v_pb2);
+  perform public.payment_batch_file_downloaded(pg_temp.p('finance'), v_pb2);
+  perform pg_temp.expect_error(format('select public.payment_batch_cancel(%L, %L, %L)', pg_temp.p('finance'), v_pb2, 'Bank rejected it'), 'You downloaded the bank file');
+  perform public.payment_batch_cancel(pg_temp.p('director'), v_pb2, 'Bank rejected the file');
 end $$;
 
 -- Import: validation, duplicates within and across files, undo ----------------------------------------------
@@ -153,6 +165,16 @@ begin
     {"date":"2026-10-06","amount":"-2200.00","description":"BATCH PB-0001 SUPPLIERS"},
     {"date":"2026-10-06","amount":"-2200.00","description":"BATCH PB-0001 SUPPLIERS PAYMENT"}]', 3815.00, '2026-10-08');
   perform pg_temp.eq((r->>'added', r->>'skipped')::text, '(2,3)', 'overlap skipped');
+
+  -- A CSV after an OFX of the same days: no bank ID to compare, so date, amount and description decide.
+  r := public.bank_import(pg_temp.p('finance'), pg_temp.acc('1010'), 'late.ofx', 'ofx', '[{"date":"2026-10-25","amount":"-20.00","description":"WILSON PARKING","externalId":"FIT-9001"}]', null, null);
+  insert into bk values ('late_ofx', (r->>'id')::uuid);
+  r := public.bank_import(pg_temp.p('finance'), pg_temp.acc('1010'), 'late.csv', 'csv', '[{"date":"2026-10-25","amount":"-20.00","description":"Wilson Parking"}]', null, null);
+  perform pg_temp.eq((r->>'added', r->>'skipped')::text, '(0,1)', 'CSV line already imported from OFX');
+  -- The earlier file can't be undone while a later one covering the same dates relies on its lines.
+  perform pg_temp.expect_error(format('select public.bank_import_undo(%L, %L)', pg_temp.p('finance'), (select v from bk where k = 'late_ofx')), 'later import covers');
+  perform public.bank_import_undo(pg_temp.p('finance'), (r->>'id')::uuid);
+  perform public.bank_import_undo(pg_temp.p('finance'), (select v from bk where k = 'late_ofx'));
 
   -- A file can be undone while none of its lines is used.
   r := public.bank_import(pg_temp.p('finance'), pg_temp.acc('1010'), 'wrong-account.qif', 'qif', '[{"date":"2026-10-07","amount":"-9.99","description":"NOT OURS"}]', null, null);
@@ -257,7 +279,7 @@ do $$
 begin
   perform pg_temp.eq(has_table_privilege('authenticated', 'public.bank_transactions', 'select'), false, 'statement lines not readable from browsers');
   perform pg_temp.eq(has_function_privilege('authenticated', 'public.bank_reconcile(uuid, uuid, date, numeric, date, text)', 'execute'), false, 'reconcile not callable from browsers');
-  perform pg_temp.eq((select count(*)::int from public.training_audit_events where event_type in ('bank_reconciled', 'payment_batch_approved', 'bank_line_excluded')), 5, 'audited');
+  perform pg_temp.eq((select count(*)::int from public.training_audit_events where event_type in ('bank_reconciled', 'payment_batch_approved', 'bank_line_excluded')), 6, 'audited');
 end $$;
 
 select 'banking tests passed' as result;

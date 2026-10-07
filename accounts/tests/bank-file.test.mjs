@@ -74,3 +74,18 @@ test("QIF", () => {
   assert.equal(r.rows.length, 2);
   assert.deepEqual(r.rows[1], { date: "2026-10-02", amount: "1100.00", description: "HUNTER INV-1001", reference: "55", balance: null, externalId: null });
 });
+
+test("a quote inside an unquoted cell is just a character", () => {
+  const rows = parseCsv('01/10/2026,-5.00,BUNNINGS 12" SAW,100.00\n02/10/2026,-6.00,NEXT LINE,94.00\n');
+  assert.equal(rows.length, 2);
+  assert.equal(rows[0][2], 'BUNNINGS 12" SAW');
+  assert.deepEqual(parseCsv('"A, B","C ""D"""\n')[0], ["A, B", 'C "D"']);
+});
+
+test("QIF dates: month/day order and space padding", () => {
+  assert.equal(parseDate("1/ 5'24", "mdy"), "2024-01-05");
+  assert.equal(parseDate("01/02'2024", "mdy"), "2024-01-02");
+  assert.equal(parseDate("01/02'2024"), "2024-02-01");
+  const r = parseQif("!Type:Bank\nD1/ 5'24\nT-10.00\nPSHOP\n^\n", "mdy");
+  assert.equal(r.rows[0].date, "2024-01-05");
+});

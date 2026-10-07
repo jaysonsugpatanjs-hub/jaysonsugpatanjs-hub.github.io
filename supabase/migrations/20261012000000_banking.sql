@@ -59,7 +59,7 @@ create table public.bank_imports (
   statement_balance numeric(14,2),
   statement_balance_date date,
   imported_by uuid references public.training_profiles(id) on delete set null,
-  imported_at timestamptz not null default now(),
+  imported_at timestamptz not null default clock_timestamp(), -- orders imports, even two in one transaction
   undone_by uuid references public.training_profiles(id) on delete set null,
   undone_at timestamptz
 );
@@ -96,7 +96,8 @@ create table public.bank_transactions (
   amount numeric(14,2) not null check (amount <> 0),
   balance numeric(14,2),
   external_id text check (external_id is null or length(external_id) <= 120),
-  dedupe_key text not null,
+  dedupe_key text not null,  -- the bank's own ID when the file has one, otherwise content_key
+  content_key text not null, -- date, amount and description (numbered for identical lines on a day)
   status text not null default 'new' check (status in ('new', 'matched', 'excluded')),
   match_kind text check (match_kind in ('existing', 'created')),
   matched_by uuid references public.training_profiles(id) on delete set null,
@@ -108,6 +109,9 @@ create table public.bank_transactions (
   check ((status = 'matched') = (match_kind is not null))
 );
 create unique index bank_transactions_dedupe_idx on public.bank_transactions (account_id, dedupe_key);
+-- A line from an overlapping file in another format (CSV after OFX, say) has no bank ID to compare,
+-- so lines are also skipped when the date, amount and description are already there.
+create unique index bank_transactions_content_idx on public.bank_transactions (account_id, content_key);
 create index bank_transactions_account_idx on public.bank_transactions (account_id, status, txn_date);
 
 -- Which ledger lines a statement line pays. A ledger line is matched once.
@@ -150,6 +154,7 @@ create table public.payment_batches (
   organization_id uuid not null references public.organizations(id) on delete restrict,
   number text not null,
   source_bank_id uuid not null references public.company_bank_accounts(id) on delete restrict,
+  ledger_account_id uuid not null references public.accounts(id) on delete restrict, -- the ledger bank account the file pays from, fixed when made
   payment_date date not null,
   description text not null default 'SUPPLIERS' check (description ~ '^[A-Za-z0-9 &./-]{1,12}$'),
   status text not null default 'draft' check (status in ('draft', 'approved', 'paid', 'cancelled')),
@@ -328,6 +333,8 @@ declare
   r jsonb;
   v_i int := 0;
   v_date date; v_amount numeric; v_desc text;
+  v_reconciled date;
+  v_early int;
 begin
   perform public.app_require(p_actor, 'bank.manage');
   if not exists (select 1 from public.accounts where id = p_account and organization_id = v_org and subtype = 'bank' and status = 'active') then
@@ -369,24 +376,29 @@ begin
       left(btrim(coalesce(x->>'reference', '')), 120) as ref, nullif(x->>'balance', '')::numeric as bal, nullif(left(btrim(coalesce(x->>'externalId', '')), 120), '') as ext
     from jsonb_array_elements(p_rows) with ordinality as t(x, ord)
   ), keyed as (
-    select *, coalesce('id:' || ext, d::text || '|' || amt::text || '|' || lower(descr)) as k from src
+    select *, d::text || '|' || amt::text || '|' || lower(descr) as ck from src
   ), numbered as (
-    select *, k || '#' || row_number() over (partition by k order by ord) as dk from keyed
+    select *, ck || '#' || row_number() over (partition by ck order by ord) as cnk from keyed
   ), ins as (
-    insert into public.bank_transactions (organization_id, account_id, import_id, txn_date, description, reference, amount, balance, external_id, dedupe_key)
-    select v_org, p_account, v_id, d, descr, ref, amt, round(bal, 2), ext, dk from numbered order by ord
-    on conflict (account_id, dedupe_key) do nothing
+    -- Skipped when either the bank's ID or the content is already there for this account.
+    insert into public.bank_transactions (organization_id, account_id, import_id, txn_date, description, reference, amount, balance, external_id, dedupe_key, content_key)
+    select v_org, p_account, v_id, d, descr, ref, amt, round(bal, 2), ext, coalesce('id:' || ext, cnk), cnk from numbered order by ord
+    on conflict do nothing
     returning txn_date
   )
   select count(*) into v_added from ins;
 
+  -- The dates the file covers (not just the lines added), so overlapping imports can be found.
   update public.bank_imports set rows_added = v_added,
-    first_date = (select min(txn_date) from public.bank_transactions where import_id = v_id),
-    last_date = (select max(txn_date) from public.bank_transactions where import_id = v_id)
+    first_date = (select min((x->>'date')::date) from jsonb_array_elements(p_rows) x),
+    last_date = (select max((x->>'date')::date) from jsonb_array_elements(p_rows) x)
   where id = v_id;
+  -- New lines dated on or before the last completed reconciliation mean it missed something: say so.
+  v_reconciled := (select max(statement_date) from public.bank_reconciliations where account_id = p_account and status = 'completed');
+  v_early := (select count(*) from public.bank_transactions where import_id = v_id and v_reconciled is not null and txn_date <= v_reconciled);
   perform public.app_audit(p_actor, 'bank_statement_imported', 'bank_import', v_id::text, null,
     jsonb_build_object('account', (select code from public.accounts where id = p_account), 'file', p_file_name, 'lines', v_rows, 'added', v_added));
-  return jsonb_build_object('id', v_id, 'rows', v_rows, 'added', v_added, 'skipped', v_rows - v_added);
+  return jsonb_build_object('id', v_id, 'rows', v_rows, 'added', v_added, 'skipped', v_rows - v_added, 'beforeReconciled', v_early, 'reconciledTo', v_reconciled);
 end;
 $$;
 
@@ -405,6 +417,11 @@ begin
   if not found or v.undone_at is not null then raise exception 'Import not found.' using errcode = 'P0002'; end if;
   if exists (select 1 from public.bank_transactions where import_id = p_import and status <> 'new') then
     raise exception 'Some lines from this file are already matched or excluded. Undo those first.' using errcode = '22023';
+  end if;
+  -- A later file covering the same dates skipped these lines as already imported; removing them would leave gaps.
+  if exists (select 1 from public.bank_imports l where l.account_id = v.account_id and l.id <> v.id and l.undone_at is null
+             and l.imported_at > v.imported_at and l.first_date <= v.last_date and l.last_date >= v.first_date) then
+    raise exception 'A later import covers some of the same dates. Undo that one first.' using errcode = '22023';
   end if;
   delete from public.bank_transactions where import_id = p_import;
   update public.bank_imports set undone_at = now(), undone_by = p_actor where id = p_import;
@@ -810,6 +827,51 @@ $$;
 
 -- Items: [{billId, amount}]. Supplier bank details are copied now and
 -- checked again at approval.
+-- The company account the batch pays from must still be approved and linked to the
+-- ledger account fixed on the batch.
+create or replace function public.payment_batch_check_source(p_source uuid, p_ledger uuid)
+returns void
+language plpgsql
+stable
+set search_path = ''
+as $$
+begin
+  if not exists (select 1 from public.company_bank_accounts where id = p_source and status = 'active' and ledger_account_id = p_ledger) then
+    raise exception 'The account this batch pays from is no longer active or linked to the same ledger account. Cancel the batch and make a new one.' using errcode = '22023';
+  end if;
+end;
+$$;
+
+-- A bill in a batch waiting for approval or payment can't be paid, credited or voided any
+-- other way: the bank file may already be with the bank. Only the batch itself pays it.
+create or replace function public.payment_batch_bill_guard()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+declare
+  v_batch record;
+begin
+  if tg_table_name = 'payable_allocations' then
+    if new.bill_id is null then return new; end if;
+    select pb.id, pb.number into v_batch from public.payment_batch_items pi join public.payment_batches pb on pb.id = pi.batch_id
+    where pi.bill_id = new.bill_id and pb.status in ('draft', 'approved') limit 1;
+    if v_batch.id is not null and v_batch.id::text is distinct from nullif(current_setting('app.paying_batch', true), '') then
+      raise exception 'This bill is in payment batch %, which is waiting to be approved or paid. Mark that batch as paid, or cancel it first.', v_batch.number using errcode = '22023';
+    end if;
+  elsif new.status is distinct from old.status and new.status = 'void' then
+    select pb.number into v_batch from public.payment_batch_items pi join public.payment_batches pb on pb.id = pi.batch_id
+    where pi.bill_id = new.id and pb.status in ('draft', 'approved') limit 1;
+    if v_batch.number is not null then
+      raise exception 'This bill is in payment batch %. Cancel the batch before voiding the bill.', v_batch.number using errcode = '22023';
+    end if;
+  end if;
+  return new;
+end;
+$$;
+create trigger payable_allocations_batch_guard before insert on public.payable_allocations for each row execute function public.payment_batch_bill_guard();
+create trigger bills_batch_guard before update of status on public.bills for each row execute function public.payment_batch_bill_guard();
+
 create or replace function public.payment_batch_create(p_actor uuid, p_source uuid, p_date date, p_description text, p_items jsonb)
 returns uuid
 language plpgsql
@@ -835,8 +897,8 @@ begin
   if p_date is null then raise exception 'Choose the payment date.' using errcode = '22023'; end if;
   if p_items is null or jsonb_typeof(p_items) <> 'array' or jsonb_array_length(p_items) = 0 then raise exception 'Choose the bills to pay.' using errcode = '22023'; end if;
   if jsonb_array_length(p_items) > 500 then raise exception 'A batch can pay at most 500 bills.' using errcode = '22023'; end if;
-  insert into public.payment_batches (organization_id, number, source_bank_id, payment_date, description, created_by)
-  values (v_org, public.next_document_number(v_org, 'payment_batch'), p_source, p_date,
+  insert into public.payment_batches (organization_id, number, source_bank_id, ledger_account_id, payment_date, description, created_by)
+  values (v_org, public.next_document_number(v_org, 'payment_batch'), p_source, v_src.ledger_account_id, p_date,
     coalesce(nullif(btrim(left(regexp_replace(upper(btrim(coalesce(p_description, ''))), '[^A-Z0-9 &./-]', '', 'g'), 12)), ''), 'SUPPLIERS'), p_actor)
   returning id into v_id;
   for i in select * from jsonb_array_elements(p_items) loop
@@ -887,6 +949,7 @@ begin
   if not found then raise exception 'Payment batch not found.' using errcode = 'P0002'; end if;
   if v.status <> 'draft' then raise exception 'Only a batch waiting for approval can be approved.' using errcode = '22023'; end if;
   if v.created_by = p_actor then raise exception 'Someone other than the person who made the batch must approve it.' using errcode = '42501'; end if;
+  perform public.payment_batch_check_source(v.source_bank_id, v.ledger_account_id);
   for i in select pi.*, b.number as bill_number, b.status as bill_status, s.name as supplier, s.bank_bsb, s.bank_account_number
            from public.payment_batch_items pi join public.bills b on b.id = pi.bill_id join public.suppliers s on s.id = pi.supplier_id where pi.batch_id = p_id loop
     if i.bill_status <> 'approved' or i.amount > public.bill_outstanding(i.bill_id) then
@@ -943,12 +1006,16 @@ begin
   if not found then raise exception 'Payment batch not found.' using errcode = 'P0002'; end if;
   if v.status <> 'approved' then raise exception 'Only an approved batch can be marked as paid.' using errcode = '22023'; end if;
   if v.file_downloaded_at is null then raise exception 'Download the bank file and send it to the bank first.' using errcode = '22023'; end if;
-  v_ledger := (select ledger_account_id from public.company_bank_accounts where id = v.source_bank_id);
+  perform public.payment_batch_check_source(v.source_bank_id, v.ledger_account_id);
+  v_ledger := v.ledger_account_id;
+  -- Lets this batch's own payments through the open-batch guard on bill allocations.
+  perform set_config('app.paying_batch', p_id::text, true);
   for s in select supplier_id, jsonb_agg(jsonb_build_object('billId', bill_id, 'amount', amount)) as allocations
            from public.payment_batch_items where batch_id = p_id group by supplier_id loop
     v_pay := public.supplier_payment_record(p_actor, s.supplier_id, v.payment_date, v_ledger, v.number, 'bank_transfer', s.allocations);
     update public.payment_batch_items set supplier_payment_id = v_pay where batch_id = p_id and supplier_id = s.supplier_id;
   end loop;
+  perform set_config('app.paying_batch', '', true);
   update public.payment_batches set status = 'paid', paid_by = p_actor, paid_at = now() where id = p_id;
   perform public.app_audit(p_actor, 'payment_batch_paid', 'payment_batch', p_id::text, jsonb_build_object('status', 'approved'),
     jsonb_build_object('status', 'paid', 'total', v.total));
@@ -969,6 +1036,11 @@ begin
   if not found then raise exception 'Payment batch not found.' using errcode = 'P0002'; end if;
   if v.status not in ('draft', 'approved') then raise exception 'Only a batch that hasn''t been paid can be cancelled.' using errcode = '22023'; end if;
   if length(btrim(coalesce(p_reason, ''))) < 3 then raise exception 'Say why the batch is cancelled.' using errcode = '22023'; end if;
+  -- Once the file has left the system the bank may have paid it: someone other than the person who
+  -- downloaded it confirms with the bank before the bills can be paid again.
+  if v.file_downloaded_at is not null and v.file_downloaded_by = p_actor then
+    raise exception 'You downloaded the bank file, so someone else must confirm with the bank that it wasn''t paid, and cancel it.' using errcode = '42501';
+  end if;
   update public.payment_batches set status = 'cancelled', cancelled_by = p_actor, cancelled_at = now(), cancel_reason = btrim(p_reason) where id = p_id;
   perform public.app_audit(p_actor, 'payment_batch_cancelled', 'payment_batch', p_id::text, jsonb_build_object('status', v.status),
     jsonb_build_object('status', 'cancelled', 'reason', btrim(p_reason), 'fileDownloaded', v.file_downloaded_at is not null));
@@ -1005,7 +1077,8 @@ begin
     'bank_pay_run(uuid, uuid, uuid, text)', 'bank_rule_save(uuid, uuid, jsonb)', 'bank_rule_delete(uuid, uuid)',
     'bank_reconcile(uuid, uuid, date, numeric, date, text)', 'bank_reconcile_undo(uuid, uuid, text)',
     'payment_batch_create(uuid, uuid, date, text, jsonb)', 'payment_batch_approve(uuid, uuid)', 'payment_batch_file_downloaded(uuid, uuid)',
-    'payment_batch_mark_paid(uuid, uuid)', 'payment_batch_cancel(uuid, uuid, text)']
+    'payment_batch_mark_paid(uuid, uuid)', 'payment_batch_cancel(uuid, uuid, text)',
+    'payment_batch_check_source(uuid, uuid)', 'payment_batch_bill_guard()']
   loop
     execute format('revoke execute on function public.%s from public, anon, authenticated', f);
     execute format('grant execute on function public.%s to service_role', f);

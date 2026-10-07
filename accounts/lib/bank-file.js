@@ -25,7 +25,8 @@ export function parseDate(value, order = "dmy") {
   if (m && MONTHS[m[2].toLowerCase()]) return validDate(+m[3], MONTHS[m[2].toLowerCase()], +m[1]);
   m = /^([A-Za-z]{3,4})[A-Za-z]*\s+(\d{1,2}),?\s+(\d{4})$/.exec(s);
   if (m && MONTHS[m[1].toLowerCase()]) return validDate(+m[3], MONTHS[m[1].toLowerCase()], +m[2]);
-  m = /^(\d{1,2})[-/.'](\d{1,2})[-/.'](\d{2,4})$/.exec(s);
+  // QIF pads with spaces ("1/ 5'24") and uses ' before the year.
+  m = /^(\d{1,2})[-/.'](\d{1,2})[-/.'](\d{2,4})$/.exec(s.replace(/\s+/g, ""));
   if (m) return order === "mdy" ? validDate(+m[3], +m[1], +m[2]) : validDate(+m[3], +m[2], +m[1]);
   return null;
 }
@@ -59,7 +60,7 @@ export function parseCsv(text) {
       if (c === '"' && src[i + 1] === '"') { cell += '"'; i++; }
       else if (c === '"') quoted = false;
       else cell += c;
-    } else if (c === '"') quoted = true;
+    } else if (c === '"' && cell.trim() === "") { quoted = true; cell = ""; }  // a quote only opens a quoted cell at its start
     else if (c === ",") { row.push(cell); cell = ""; }
     else if (c === "\n" || c === "\r") {
       if (c === "\r" && src[i + 1] === "\n") i++;

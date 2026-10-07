@@ -110,10 +110,12 @@ async function importScreen(view, ctx, accountId) {
             <div class="fld"><label for="im-cred">and money in column</label><select id="im-cred" data-map="credit">${colOptions(st.mapping.credit)}</select></div>
             <div class="fld"><label for="im-ref">Reference</label><select id="im-ref" data-map="reference">${colOptions(st.mapping.reference)}</select></div>
             <div class="fld"><label for="im-bal">Balance</label><select id="im-bal" data-map="balance">${colOptions(st.mapping.balance)}</select></div>
-            <div class="fld"><label for="im-order">Dates are written</label><select id="im-order">${options([["dmy", "Day/month/year (Australia)"], ["mdy", "Month/day/year"]], st.order)}</select></div>
+
           </div>
           <label class="check"><input type="checkbox" id="im-header" ${st.mapping.header ? "checked" : ""}> The first row is headings</label>
           <label class="check"><input type="checkbox" id="im-flip" ${st.flip ? "checked" : ""}> Swap money in and out (the file shows spending as positive)</label>` : ""}
+        ${st.file && st.format !== "ofx" ? `<div class="fld"><label for="im-order">Dates are written</label><select id="im-order">${options([["dmy", "Day/month/year (Australian banks)"], ["mdy", "Month/day/year (Quicken and US software)"]], st.order)}</select>
+          ${st.format === "qif" ? "<small>QIF files from Quicken usually use month/day/year. Check the preview dates.</small>" : ""}</div>` : ""}
       </section>
       ${st.file ? `<section class="panel"><h2>Preview</h2>
         ${st.parsed.errors.length ? `<div class="note"><strong>${st.parsed.errors.length} line(s) can't be read and will be left out:</strong><ul>${st.parsed.errors.slice(0, 8).map(e => `<li>${safe(e)}</li>`).join("")}</ul></div>` : ""}
@@ -168,7 +170,7 @@ async function importScreen(view, ctx, accountId) {
     try {
       const r = await call("bank_import", { accountId, fileName: st.file.name, format: st.format, rows: st.parsed.rows,
         statementBalance: view.querySelector("#im-sbal").value.replace(/[$,\s]/g, ""), balanceDate: view.querySelector("#im-sdate").value });
-      location.hash = `#/reconciliation/${accountId}?imported=${r.added}&skipped=${r.skipped}`;
+      location.hash = `#/reconciliation/${accountId}?imported=${r.added}&skipped=${r.skipped}${r.beforeReconciled ? `&early=${r.beforeReconciled}&rec=${r.reconciledTo}` : ""}`;
     } catch (error) { btn.disabled = false; flash(view, friendlyError(error), "bad"); }
   });
 }
@@ -199,6 +201,7 @@ export async function renderReconciliation(view, ctx) {
       <section class="card"><h2>Reconciled to</h2><p class="big">${acc.lastReconciled ? date(acc.lastReconciled) : "—"}</p><p class="muted small">${acc.lastReconciled ? money(acc.reconciledBalance) : "Not reconciled yet"}</p></section>
     </div>
     ${p.get("imported") ? `<p class="note">Imported ${safe(p.get("imported"))} new line(s)${Number(p.get("skipped")) ? `; ${safe(p.get("skipped"))} already here were skipped` : ""}.</p>` : ""}
+    ${Number(p.get("early")) ? `<p class="note bad-text">${safe(p.get("early"))} new line(s) are dated on or before ${date(p.get("rec"))}, when this account was last reconciled. That reconciliation missed them, or they're duplicates with different wording: check them, then match or exclude them.</p>` : ""}
     <div class="tabs" role="tablist">${tabs.map(([k, l]) => `<button type="button" role="tab" aria-selected="${k === st.tab}" class="${k === st.tab ? "on" : ""}" data-tab="${k}">${safe(l)}</button>`).join("")}</div>`;
 
   const suggestionLabel = s => s.type === "match" ? `Match ${s.label}` : s.type === "invoice" ? `Receipt for ${s.label}${s.amount < s.owing ? ` (part of ${money(s.owing)})` : ""}`

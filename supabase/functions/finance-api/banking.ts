@@ -288,6 +288,7 @@ async function ruleSave(admin: Client, actor: Actor, body: any) {
 async function unpresentedAt(admin: Client, accountId: string, asAt: string) {
   const rows = await rpc<any[]>(admin, "bank_ledger_lines", { p_account: accountId, p_as_at: asAt });
   return (rows || []).filter(r => !r.cleared).map(r => ({ lineId: r.journal_line_id, journalId: r.journal_id, number: r.number, date: r.entry_date, memo: r.memo,
+    matchedLater: Boolean(r.matched_txn),
     source: r.source_type, amount: Number(r.amount) })).sort((a, b) => a.date.localeCompare(b.date));
 }
 
@@ -299,9 +300,10 @@ async function reconcilePreview(admin: Client, actor: Actor, body: any) {
   let unpresented = await unpresentedAt(admin, acc.id, asAt);
   let cleared = 0;
   if (clearedBefore && s.firstReconciliation) {
-    const before = unpresented.filter(u => u.date < clearedBefore);
+    // Same rule as bank_reconcile: earlier entries already matched to a later statement line stay unpresented.
+    const before = unpresented.filter(u => u.date < clearedBefore && !u.matchedLater);
     cleared = dollars(before.reduce((t, u) => t + cents(u.amount), 0));
-    unpresented = unpresented.filter(u => u.date >= clearedBefore);
+    unpresented = unpresented.filter(u => !(u.date < clearedBefore && !u.matchedLater));
   }
   const unp = dollars(unpresented.reduce((t, u) => t + cents(u.amount), 0));
   const expected = dollars(cents(s.ledgerBalance) - cents(unp) + cents(s.recordedEarly));
