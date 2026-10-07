@@ -320,3 +320,8 @@ details summary { cursor: pointer; font-weight: 700; margin: 8px 0; }
 .label-key { display: inline-block; min-width: 2.6em; color: var(--gold); font-weight: 700; }
 .tbl.compact td { padding-top: 4px; padding-bottom: 4px; }
 .top-actions .fld select { min-width: 9em; }
+
+/* Fixed assets: cost, depreciation and book value side by side. */
+.asset-sum { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+.asset-sum > div { display: flex; flex-direction: column; gap: 4px; }
+.asset-sum strong { font-size: 1.35rem; }

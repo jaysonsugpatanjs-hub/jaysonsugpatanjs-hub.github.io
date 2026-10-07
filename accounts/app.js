@@ -31,6 +31,7 @@ import { renderLeave, renderMyPay } from "./views/leave.js";
 import { renderBankAccounts, renderBankRules, renderReconciliation } from "./views/banking.js";
 import { renderBas, renderTpar } from "./views/bas.js";
 import { renderStp } from "./views/stp.js";
+import { renderAssets } from "./views/assets.js";
 import { renderPaymentBatches } from "./views/payment-batches.js";
 
 const $ = sel => document.querySelector(sel);
@@ -67,7 +68,7 @@ const MENU = [
     { path: "chart-of-accounts", label: "Chart of accounts", any: LEDGER },
     { path: "tax-codes", label: "Tax codes", any: LEDGER },
     { path: "periods", label: "Periods", any: LEDGER },
-    ["assets", "Assets", 8]] },
+    { path: "assets", label: "Fixed assets", any: ["assets.manage", "reports.view"] }] },
   { group: "Tax", items: [
     { path: "bas", label: "BAS", any: ["tax.bas", "tax.review"], count: "bas" },
     { path: "tpar", label: "TPAR", any: ["tax.bas", "tax.review"] }] },
@@ -94,7 +95,7 @@ const VIEWS = {
   projects: renderProjects, "job-costing": renderJobCosting, timesheets: renderTimesheets,
   employees: renderEmployees, "pay-runs": renderPayRuns, leave: renderLeave, super: renderSuper, "payroll-reports": renderPayrollReports, "my-pay": renderMyPay,
   "bank-accounts": renderBankAccounts, reconciliation: renderReconciliation, "bank-rules": renderBankRules, "payment-batches": renderPaymentBatches,
-  bas: renderBas, tpar: renderTpar, stp: renderStp
+  bas: renderBas, tpar: renderTpar, stp: renderStp, assets: renderAssets
 };
 const allowed = i => (!i.perm || can(i.perm)) && (!i.any || i.any.some(can));
 

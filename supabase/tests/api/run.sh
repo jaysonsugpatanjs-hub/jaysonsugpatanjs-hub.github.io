@@ -46,4 +46,4 @@ for _ in $(seq 1 30); do
   sleep 0.5
 done
 
-POSTGREST_URL="http://127.0.0.1:$port" deno test --config "$here/deno.json" --allow-env --allow-net --allow-read --no-check "$here/api.test.ts" "$here/finance.test.ts" "$here/ledger.test.ts" "$here/sales.test.ts" "$here/projects.test.ts" "$here/payroll.test.ts" "$here/banking.test.ts" "$here/tax.test.ts" "$here/stp.test.ts"
+POSTGREST_URL="http://127.0.0.1:$port" deno test --config "$here/deno.json" --allow-env --allow-net --allow-read --no-check "$here/api.test.ts" "$here/finance.test.ts" "$here/ledger.test.ts" "$here/sales.test.ts" "$here/projects.test.ts" "$here/payroll.test.ts" "$here/banking.test.ts" "$here/tax.test.ts" "$here/stp.test.ts" "$here/assets.test.ts"

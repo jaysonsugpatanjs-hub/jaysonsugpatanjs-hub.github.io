@@ -42,9 +42,9 @@ Deno.test("chart, tax codes and who can see them", async () => {
   if (typeof bank.balance !== "number") throw new Error("balances missing");
   await ok(PAY, { action: "ledger_setup" });
   expectStatus(await call(STAFF, { action: "ledger_setup" }), 403, "staff without finance access");
-  expectStatus(await call(PAY, { action: "account_save", code: "4950", name: "x", type: "revenue" }), 403, "payroll cannot edit the chart");
+  expectStatus(await call(PAY, { action: "account_save", code: "4960", name: "x", type: "revenue" }), 403, "payroll cannot edit the chart");
   expectStatus(await call(FIN, { action: "account_save", code: "bad code!", name: "x", type: "revenue" }), 400, "invalid code");
-  const created = await ok(FIN, { action: "account_save", code: "4950", name: "Testing Revenue", type: "revenue", defaultTaxCodeId: tax("GST") });
+  const created = await ok(FIN, { action: "account_save", code: "4960", name: "Testing Revenue", type: "revenue", defaultTaxCodeId: tax("GST") });
   await ok(FIN, { action: "account_set_status", id: created.id, active: false });
   await ok(FIN, { action: "tax_code_save", code: "GST5", name: "Test 5%", kind: "gst_income", ratePercent: 5, appliesTo: "sales" });
   const after = await ok(FIN, { action: "ledger_setup" });
