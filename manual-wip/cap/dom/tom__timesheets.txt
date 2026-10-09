@@ -1,0 +1,169 @@
+p [class=msg id=app-msg]
+div [data-view] "   "
+  header [class=page-head]
+    div
+      p [class=eyebrow] "PROJECTS · TIMESHEETS"
+      h1 "My timesheet"
+        span [class=chip pending] "Draft"
+      p [class=muted] "Record your hours for each day, then submit the week for app"
+  section [class=panel] "  "
+    div [class=week-bar] "    "
+      button [type=button class=btn data-shift=-7 aria-label=Previous week] "‹"
+      div [class=fld]
+        label "Week starting"
+        input [id=ts-week type=date]
+      button [type=button class=btn data-shift=7 aria-label=Next week] "›"
+      p [class=week-total]
+        span [class=muted small] "Week total"
+    form [data-ts] "  "
+      fieldset [class=day ] "  "
+        legend
+          span "Mon 5 Oct 2026"
+          span [class=muted small data-day-total=2026-10-05] "7.6 h"
+        div [class=entry data-entry=0] "         "
+          div [class=fld wide]
+            label "Project"
+            select [id=e0-p data-f=projectId]
+          div [class=fld]
+            label "Cost code"
+            select [id=e0-c data-f=costCodeId]
+          div [class=fld t]
+            label "Start"
+            input [id=e0-s type=time data-f=start]
+          div [class=fld t]
+            label "Finish"
+            input [id=e0-e type=time data-f=end]
+          div [class=fld t]
+            label "Break (min)"
+            input [id=e0-b data-f=breakMinutes]
+          div [class=fld t]
+            label "Hours"
+            input [id=e0-h data-f=hours class=num]
+          div [class=fld]
+            label "Type"
+            select [id=e0-y data-f=hourType]
+          div [class=fld wide]
+            label "Notes"
+            input [id=e0-n data-f=notes]
+          button [type=button class=link remove data-remove=0 aria-label=Remove this entry] "Remove"
+        button [type=button class=link data-add=2026-10-05] "+ Add hours for Mon"
+      fieldset [class=day ] "  "
+        legend
+          span "Tue 6 Oct 2026"
+          span [class=muted small data-day-total=2026-10-06] "7.6 h"
+        div [class=entry data-entry=1] "         "
+          div [class=fld wide]
+            label "Project"
+            select [id=e1-p data-f=projectId]
+          div [class=fld]
+            label "Cost code"
+            select [id=e1-c data-f=costCodeId]
+          div [class=fld t]
+            label "Start"
+            input [id=e1-s type=time data-f=start]
+          div [class=fld t]
+            label "Finish"
+            input [id=e1-e type=time data-f=end]
+          div [class=fld t]
+            label "Break (min)"
+            input [id=e1-b data-f=breakMinutes]
+          div [class=fld t]
+            label "Hours"
+            input [id=e1-h data-f=hours class=num]
+          div [class=fld]
+            label "Type"
+            select [id=e1-y data-f=hourType]
+          div [class=fld wide]
+            label "Notes"
+            input [id=e1-n data-f=notes]
+          button [type=button class=link remove data-remove=1 aria-label=Remove this entry] "Remove"
+        button [type=button class=link data-add=2026-10-06] "+ Add hours for Tue"
+      fieldset [class=day ] "  "
+        legend
+          span "Wed 7 Oct 2026"
+          span [class=muted small data-day-total=2026-10-07] "7.6 h"
+        div [class=entry data-entry=2] "         "
+          div [class=fld wide]
+            label "Project"
+            select [id=e2-p data-f=projectId]
+          div [class=fld]
+            label "Cost code"
+            select [id=e2-c data-f=costCodeId]
+          div [class=fld t]
+            label "Start"
+            input [id=e2-s type=time data-f=start]
+          div [class=fld t]
+            label "Finish"
+            input [id=e2-e type=time data-f=end]
+          div [class=fld t]
+            label "Break (min)"
+            input [id=e2-b data-f=breakMinutes]
+          div [class=fld t]
+            label "Hours"
+            input [id=e2-h data-f=hours class=num]
+          div [class=fld]
+            label "Type"
+            select [id=e2-y data-f=hourType]
+          div [class=fld wide]
+            label "Notes"
+            input [id=e2-n data-f=notes]
+          button [type=button class=link remove data-remove=2 aria-label=Remove this entry] "Remove"
+        button [type=button class=link data-add=2026-10-07] "+ Add hours for Wed"
+      fieldset [class=day empty] " "
+        legend
+          span "Thu 8 Oct 2026"
+          span [class=muted small data-day-total=2026-10-08]
+        button [type=button class=link data-add=2026-10-08] "+ Add hours for Thu"
+      fieldset [class=day empty] " "
+        legend
+          span "Fri 9 Oct 2026"
+          span [class=muted small data-day-total=2026-10-09]
+        button [type=button class=link data-add=2026-10-09] "+ Add hours for Fri"
+      fieldset [class=day empty] " "
+        legend
+          span "Sat 10 Oct 2026"
+          span [class=muted small data-day-total=2026-10-10]
+        button [type=button class=link data-add=2026-10-10] "+ Add hours for Sat"
+      fieldset [class=day empty] " "
+        legend
+          span "Sun 11 Oct 2026"
+          span [class=muted small data-day-total=2026-10-11]
+        button [type=button class=link data-add=2026-10-11] "+ Add hours for Sun"
+      div [class=actions] " "
+        button [class=btn type=submit data-act=save] "Save"
+        button [class=btn primary type=submit data-act=submit] "Submit for approval"
+  section [class=panel]
+    h2 "Recent weeks"
+    table [class=tbl]
+      tbody " "
+        tr
+          td
+            a [href=#/timesheets?week=2026-10-05] "Week of 5 Oct 2026"
+          td
+            span [class=chip pending] "Draft"
+          td [class=num mono] "22.8 h"
+        tr
+          td
+            a [href=#/timesheets?week=2026-09-28] "Week of 28 Sept 2026"
+          td
+            span [class=chip good] "Approved"
+          td [class=num mono] "40 h"
+        tr
+          td
+            a [href=#/timesheets?week=2026-09-21] "Week of 21 Sept 2026"
+          td
+            span [class=chip good] "Approved"
+          td [class=num mono] "38 h"
+        tr
+          td
+            a [href=#/timesheets?week=2026-09-14] "Week of 14 Sept 2026"
+          td
+            span [class=chip good] "Approved"
+          td [class=num mono] "40 h"
+        tr
+          td
+            a [href=#/timesheets?week=2026-09-07] "Week of 7 Sept 2026"
+          td
+            span [class=chip good] "Approved"
+          td [class=num mono] "38 h"
+  p [class=msg data-msg]

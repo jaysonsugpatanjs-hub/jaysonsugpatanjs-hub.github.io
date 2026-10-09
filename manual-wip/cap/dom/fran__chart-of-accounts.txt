@@ -1,0 +1,680 @@
+p [class=msg id=app-msg]
+div [data-view] "  "
+  header [class=page-head]
+    div
+      p [class=eyebrow] "ACCOUNTING"
+      h1 "Chart of accounts"
+      p [class=muted] "Balances as at 8 Oct 2026: balance sheet accounts to date, p"
+    button [class=btn primary type=button data-add] "Add account"
+  section [class=panel] "  "
+    div [class=toolbar]
+      div [class=fld]
+        label "Find an account"
+        input [id=c-q type=search]
+      label [class=check] "Show archived"
+        input [type=checkbox data-archived]
+    div [class=tbl-wrap]
+      table [class=tbl] " "
+        thead
+          tr
+            th "Code"
+            th "Name"
+            th "Default tax"
+            th [class=num] "Balance"
+            th
+              span [class=sr-only] "Actions"
+        tbody
+          tr [class=group]
+            th "Assets"
+          tr [class] "  "
+            td [class=mono] "1000"
+            td " "
+              a [href=#/reports?type=account&account=abf5a6be-] "Bank"
+              span [class=chip info] "System"
+            td
+            td [class=num mono] "179,482.47"
+            td [class=row-acts]
+              button [type=button class=link data-edit=abf5a6be-47f8-4dc0-a43c-e040e4994c8c] "Edit"
+          tr [class] "  "
+            td [class=mono] "1100"
+            td "  "
+              a [href=#/reports?type=account&account=c310cbe2-] "Accounts Receivable"
+              span [class=chip info] "System"
+              span [class=chip ] "Module entries only"
+            td
+            td [class=num mono] "83,677.00"
+            td [class=row-acts]
+              button [type=button class=link data-edit=c310cbe2-2f23-4613-bd5c-2fa9c17b8543] "Edit"
+          tr [class] "  "
+            td [class=mono] "1200"
+            td
+              a [href=#/reports?type=account&account=5ee60211-] "Inventory - Steel and Materials"
+            td
+            td [class=num mono]
+            td [class=row-acts]
+              button [type=button class=link data-edit=5ee60211-9ff0-4037-969a-ee235690445a] "Edit"
+              button [type=button class=link data-status=5ee60211-9ff0-4037-969a-ee235690445a data-active=false] "Archive"
+          tr [class] "  "
+            td [class=mono] "1210"
+            td
+              a [href=#/reports?type=account&account=09b1a173-] "Welding Consumables"
+            td
+            td [class=num mono]
+            td [class=row-acts]
+              button [type=button class=link data-edit=09b1a173-1cba-4549-92e3-adca40fbc1b1] "Edit"
+              button [type=button class=link data-status=09b1a173-1cba-4549-92e3-adca40fbc1b1 data-active=false] "Archive"
+          tr [class] "  "
+            td [class=mono] "1220"
+            td
+              a [href=#/reports?type=account&account=07446290-] "Project Materials"
+            td
+            td [class=num mono]
+            td [class=row-acts]
+              button [type=button class=link data-edit=07446290-9887-427c-b47a-f3aba4fc07ea] "Edit"
+              button [type=button class=link data-status=07446290-9887-427c-b47a-f3aba4fc07ea data-active=false] "Archive"
+          tr [class] "  "
+            td [class=mono] "1300"
+            td
+              a [href=#/reports?type=account&account=cb055253-] "Work in Progress"
+            td
+            td [class=num mono]
+            td [class=row-acts]
+              button [type=button class=link data-edit=cb055253-3e76-41b4-a743-cef09711a2fc] "Edit"
+              button [type=button class=link data-status=cb055253-3e76-41b4-a743-cef09711a2fc data-active=false] "Archive"
+          tr [class] "  "
+            td [class=mono] "1400"
+            td
+              a [href=#/reports?type=account&account=53220ede-] "Prepayments"
+            td
+            td [class=num mono]
+            td [class=row-acts]
+              button [type=button class=link data-edit=53220ede-f0c9-4a5f-b095-af03a39492c1] "Edit"
+              button [type=button class=link data-status=53220ede-f0c9-4a5f-b095-af03a39492c1 data-active=false] "Archive"
+          tr [class] "  "
+            td [class=mono] "1450"
+            td " "
+              a [href=#/reports?type=account&account=44cc46fa-] "PAYG Income Tax Instalments Paid"
+              span [class=chip info] "System"
+              small "PAYG instalments (BAS label 5A), offset against income tax a"
+            td "NG"
+            td [class=num mono]
+            td [class=row-acts]
+              button [type=button class=link data-edit=44cc46fa-34f7-4abd-bae3-f8e3f27843a4] "Edit"
+          tr [class] "  "
+            td [class=mono] "1500"
+            td
+              a [href=#/reports?type=account&account=b293b326-] "Tools and Equipment"
+            td "CAP"
+            td [class=num mono] "8,900.00"
+            td [class=row-acts]
+              button [type=button class=link data-edit=b293b326-2c77-41b2-994d-ce83635ccf38] "Edit"
+              button [type=button class=link data-status=b293b326-2c77-41b2-994d-ce83635ccf38 data-active=false] "Archive"
+          tr [class] "  "
+            td [class=mono] "1510"
+            td
+              a [href=#/reports?type=account&account=9432ffb0-] "Tools and Equipment - Accumulated Depreciation"
+            td
+            td [class=num mono] "(378.00)"
+            td [class=row-acts]
+              button [type=button class=link data-edit=9432ffb0-c852-4d4f-9060-c87aedef8dd2] "Edit"
+              button [type=button class=link data-status=9432ffb0-c852-4d4f-9060-c87aedef8dd2 data-active=false] "Archive"
+          tr [class] "  "
+            td [class=mono] "1600"
+            td
+              a [href=#/reports?type=account&account=c2bf4753-] "Vehicles"
+            td "CAP"
+            td [class=num mono] "54,000.00"
+            td [class=row-acts]
+              button [type=button class=link data-edit=c2bf4753-a92c-4b44-968e-49e6714a310c] "Edit"
+              button [type=button class=link data-status=c2bf4753-a92c-4b44-968e-49e6714a310c data-active=false] "Archive"
+          tr [class] "  "
+            td [class=mono] "1610"
+            td
+              a [href=#/reports?type=account&account=c7235479-] "Vehicles - Accumulated Depreciation"
+            td
+            td [class=num mono] "(2,226.56)"
+            td [class=row-acts]
+              button [type=button class=link data-edit=c7235479-74a6-4dc3-96a7-de79f09da709] "Edit"
+              button [type=button class=link data-status=c7235479-74a6-4dc3-96a7-de79f09da709 data-active=false] "Archive"
+          tr [class] "  "
+            td [class=mono] "1700"
+            td
+              a [href=#/reports?type=account&account=c3db7fdb-] "Plant and Machinery"
+            td "CAP"
+            td [class=num mono] "38,000.00"
+            td [class=row-acts]
+              button [type=button class=link data-edit=c3db7fdb-c1d7-4885-8f30-0cf788d4f407] "Edit"
+              button [type=button class=link data-status=c3db7fdb-c1d7-4885-8f30-0cf788d4f407 data-active=false] "Archive"
+          tr [class] "  "
+            td [class=mono] "1710"
+            td
+              a [href=#/reports?type=account&account=52afb167-] "Plant and Machinery - Accumulated Depreciation"
+            td
+            td [class=num mono] "(10,450.01)"
+            td [class=row-acts]
+              button [type=button class=link data-edit=52afb167-e35b-4d24-8887-9f8d82279d3c] "Edit"
+              button [type=button class=link data-status=52afb167-e35b-4d24-8887-9f8d82279d3c data-active=false] "Archive"
+          tr [class] "  "
+            td [class=mono] "1800"
+            td
+              a [href=#/reports?type=account&account=ba0c0a7b-] "Office Equipment"
+            td "CAP"
+            td [class=num mono] "2,400.00"
+            td [class=row-acts]
+              button [type=button class=link data-edit=ba0c0a7b-425e-4ad2-ace8-e059d8aa536f] "Edit"
+              button [type=button class=link data-status=ba0c0a7b-425e-4ad2-ace8-e059d8aa536f data-active=false] "Archive"
+          tr [class] "  "
+            td [class=mono] "1810"
+            td
+              a [href=#/reports?type=account&account=bd7775bf-] "Office Equipment - Accumulated Depreciation"
+            td
+            td [class=num mono] "(159.15)"
+            td [class=row-acts]
+              button [type=button class=link data-edit=bd7775bf-de7f-4561-9c4a-4777a9ac41b0] "Edit"
+              button [type=button class=link data-status=bd7775bf-de7f-4561-9c4a-4777a9ac41b0 data-active=false] "Archive"
+        tbody
+          tr [class=group]
+            th "Liabilities"
+          tr [class] "  "
+            td [class=mono] "2000"
+            td "  "
+              a [href=#/reports?type=account&account=97f6590d-] "Accounts Payable"
+              span [class=chip info] "System"
+              span [class=chip ] "Module entries only"
+            td
+            td [class=num mono] "26,991.80"
+            td [class=row-acts]
+              button [type=button class=link data-edit=97f6590d-7ad4-42da-95be-e1f495c6b36f] "Edit"
+          tr [class] "  "
+            td [class=mono] "2100"
+            td " "
+              a [href=#/reports?type=account&account=9d35d917-] "PAYG Withholding Payable"
+              span [class=chip info] "System"
+            td
+            td [class=num mono] "3,530.00"
+            td [class=row-acts]
+              button [type=button class=link data-edit=9d35d917-d746-4f34-8216-f38ff6a26b14] "Edit"
+          tr [class] "  "
+            td [class=mono] "2200"
+            td " "
+              a [href=#/reports?type=account&account=446a03bf-] "Superannuation Payable"
+              span [class=chip info] "System"
+            td
+            td [class=num mono] "1,194.14"
+            td [class=row-acts]
+              button [type=button class=link data-edit=446a03bf-7920-403a-951c-647b9ca6d085] "Edit"
+          tr [class] "  "
+            td [class=mono] "2300"
+            td " "
+              a [href=#/reports?type=account&account=f2816071-] "GST Payable/Receivable"
+              span [class=chip info] "System"
+            td
+            td [class=num mono] "5,866.05"
+            td [class=row-acts]
+              button [type=button class=link data-edit=f2816071-4298-448b-98db-b375bb89c6dc] "Edit"
+          tr [class] "  "
+            td [class=mono] "2350"
+            td " "
+              a [href=#/reports?type=account&account=4df5207b-] "ATO Integrated Client Account"
+              span [class=chip info] "System"
+              small "What the business owes the ATO (or is owed) from lodged BAS,"
+            td "NG"
+            td [class=num mono]
+            td [class=row-acts]
+              button [type=button class=link data-edit=4df5207b-1d28-4d7a-9556-2e4b43624e50] "Edit"
+          tr [class] "  "
+            td [class=mono] "2400"
+            td " "
+              a [href=#/reports?type=account&account=01d6f3a0-] "Payroll Clearing"
+              span [class=chip info] "System"
+            td
+            td [class=num mono]
+            td [class=row-acts]
+              button [type=button class=link data-edit=01d6f3a0-0705-47c5-9513-dd0fbce1f6bd] "Edit"
+          tr [class] "  "
+            td [class=mono] "2500"
+            td
+              a [href=#/reports?type=account&account=10b47715-] "Accrued Expenses"
+            td
+            td [class=num mono] "1,250.00"
+            td [class=row-acts]
+              button [type=button class=link data-edit=10b47715-4269-4bf6-b794-e1822941d384] "Edit"
+              button [type=button class=link data-status=10b47715-4269-4bf6-b794-e1822941d384 data-active=false] "Archive"
+          tr [class] "  "
+            td [class=mono] "2600"
+            td " "
+              a [href=#/reports?type=account&account=cf3b39c5-] "Employee Deductions Payable"
+              span [class=chip info] "System"
+            td
+            td [class=num mono]
+            td [class=row-acts]
+              button [type=button class=link data-edit=cf3b39c5-1822-461a-b53c-7765d40a5087] "Edit"
+        tbody
+          tr [class=group]
+            th "Equity"
+          tr [class] "  "
+            td [class=mono] "3000"
+            td
+              a [href=#/reports?type=account&account=ed1c53e1-] "Share Capital"
+            td
+            td [class=num mono] "100.00"
+            td [class=row-acts]
+              button [type=button class=link data-edit=ed1c53e1-da27-4975-9a51-615af8ed35b8] "Edit"
+              button [type=button class=link data-status=ed1c53e1-da27-4975-9a51-615af8ed35b8 data-active=false] "Archive"
+          tr [class] "  "
+            td [class=mono] "3100"
+            td " "
+              a [href=#/reports?type=account&account=2c29b1b8-] "Retained Earnings"
+              span [class=chip info] "System"
+            td
+            td [class=num mono] "213,400.00"
+            td [class=row-acts]
+              button [type=button class=link data-edit=2c29b1b8-2dba-4020-b06f-fe13cbc9df38] "Edit"
+          tr [class] "  "
+            td [class=mono] "3200"
+            td "  "
+              a [href=#/reports?type=account&account=8c526417-] "Current Year Earnings"
+              span [class=chip info] "System"
+              span [class=chip ] "Module entries only"
+            td
+            td [class=num mono]
+            td [class=row-acts]
+              button [type=button class=link data-edit=8c526417-3ef6-4cff-a52c-392eed27764e] "Edit"
+        tbody
+          tr [class=group]
+            th "Revenue"
+          tr [class] "  "
+            td [class=mono] "4000"
+            td
+              a [href=#/reports?type=account&account=81e5c9c7-] "Fabrication Revenue"
+            td "GST"
+            td [class=num mono] "78,100.00"
+            td [class=row-acts]
+              button [type=button class=link data-edit=81e5c9c7-33ad-4a24-b6ee-f26c0fdce683] "Edit"
+              button [type=button class=link data-status=81e5c9c7-33ad-4a24-b6ee-f26c0fdce683 data-active=false] "Archive"
+          tr [class] "  "
+            td [class=mono] "4100"
+            td
+              a [href=#/reports?type=account&account=ddb00ce3-] "Welding Revenue"
+            td "GST"
+            td [class=num mono] "7,680.00"
+            td [class=row-acts]
+              button [type=button class=link data-edit=ddb00ce3-bd28-4854-84d8-e891970a8f02] "Edit"
+              button [type=button class=link data-status=ddb00ce3-bd28-4854-84d8-e891970a8f02 data-active=false] "Archive"
+          tr [class] "  "
+            td [class=mono] "4200"
+            td
+              a [href=#/reports?type=account&account=3428919e-] "Shutdown/Maintenance Revenue"
+            td "GST"
+            td [class=num mono] "14,500.00"
+            td [class=row-acts]
+              button [type=button class=link data-edit=3428919e-3800-41d0-be32-5d91b4871394] "Edit"
+              button [type=button class=link data-status=3428919e-3800-41d0-be32-5d91b4871394 data-active=false] "Archive"
+          tr [class] "  "
+            td [class=mono] "4300"
+            td
+              a [href=#/reports?type=account&account=ad9c0366-] "Pipework Revenue"
+            td "GST"
+            td [class=num mono] "55,000.00"
+            td [class=row-acts]
+              button [type=button class=link data-edit=ad9c0366-e962-4356-80b5-2d26c7cc55e5] "Edit"
+              button [type=button class=link data-status=ad9c0366-e962-4356-80b5-2d26c7cc55e5 data-active=false] "Archive"
+          tr [class] "  "
+            td [class=mono] "4400"
+            td
+              a [href=#/reports?type=account&account=9add25c8-] "Site Labour Revenue"
+            td "GST"
+            td [class=num mono]
+            td [class=row-acts]
+              button [type=button class=link data-edit=9add25c8-a4a0-449e-9199-bfcff3847527] "Edit"
+              button [type=button class=link data-status=9add25c8-a4a0-449e-9199-bfcff3847527 data-active=false] "Archive"
+          tr [class] "  "
+            td [class=mono] "4500"
+            td
+              a [href=#/reports?type=account&account=ee02c377-] "Labour Hire Revenue"
+            td "GST"
+            td [class=num mono]
+            td [class=row-acts]
+              button [type=button class=link data-edit=ee02c377-a4d1-45e3-be4b-2acab3086c5c] "Edit"
+              button [type=button class=link data-status=ee02c377-a4d1-45e3-be4b-2acab3086c5c data-active=false] "Archive"
+          tr [class] "  "
+            td [class=mono] "4600"
+            td
+              a [href=#/reports?type=account&account=c06adf2c-] "Equipment Hire Revenue"
+            td "GST"
+            td [class=num mono]
+            td [class=row-acts]
+              button [type=button class=link data-edit=c06adf2c-d525-4b2d-b370-f26993dd96a0] "Edit"
+              button [type=button class=link data-status=c06adf2c-d525-4b2d-b370-f26993dd96a0 data-active=false] "Archive"
+          tr [class] "  "
+            td [class=mono] "4700"
+            td
+              a [href=#/reports?type=account&account=2f6e748d-] "Materials Recharge"
+            td "GST"
+            td [class=num mono] "3,410.00"
+            td [class=row-acts]
+              button [type=button class=link data-edit=2f6e748d-726d-4fcb-b9f4-dd0253bcc377] "Edit"
+              button [type=button class=link data-status=2f6e748d-726d-4fcb-b9f4-dd0253bcc377 data-active=false] "Archive"
+          tr [class] "  "
+            td [class=mono] "4800"
+            td
+              a [href=#/reports?type=account&account=ac71d7db-] "Other Operating Revenue"
+            td "GST"
+            td [class=num mono]
+            td [class=row-acts]
+              button [type=button class=link data-edit=ac71d7db-5364-40ce-8cf3-60f3270135be] "Edit"
+              button [type=button class=link data-status=ac71d7db-5364-40ce-8cf3-60f3270135be data-active=false] "Archive"
+        tbody
+          tr [class=group]
+            th "Cost of sales"
+          tr [class] "  "
+            td [class=mono] "5000"
+            td " "
+              a [href=#/reports?type=account&account=95ac86ed-] "Direct Labour"
+              span [class=chip info] "System"
+            td "NG"
+            td [class=num mono] "15,054.36"
+            td [class=row-acts]
+              button [type=button class=link data-edit=95ac86ed-5276-4224-b076-f08dc4172577] "Edit"
+          tr [class] "  "
+            td [class=mono] "5100"
+            td
+              a [href=#/reports?type=account&account=c36a904b-] "Direct Materials"
+            td "GSTE"
+            td [class=num mono] "26,496.00"
+            td [class=row-acts]
+              button [type=button class=link data-edit=c36a904b-a684-4f1c-9d22-5d0c8d0b4710] "Edit"
+              button [type=button class=link data-status=c36a904b-a684-4f1c-9d22-5d0c8d0b4710 data-active=false] "Archive"
+          tr [class] "  "
+            td [class=mono] "5200"
+            td
+              a [href=#/reports?type=account&account=5ac084bf-] "Welding Consumables"
+            td "GSTE"
+            td [class=num mono] "1,778.00"
+            td [class=row-acts]
+              button [type=button class=link data-edit=5ac084bf-3d25-4836-a45e-9eb20c1dd7a3] "Edit"
+              button [type=button class=link data-status=5ac084bf-3d25-4836-a45e-9eb20c1dd7a3 data-active=false] "Archive"
+          tr [class] "  "
+            td [class=mono] "5300"
+            td
+              a [href=#/reports?type=account&account=81370f82-] "Subcontractors"
+            td "GSTE"
+            td [class=num mono] "2,800.00"
+            td [class=row-acts]
+              button [type=button class=link data-edit=81370f82-60d0-4ccf-b9b4-bf0f2da48a0a] "Edit"
+              button [type=button class=link data-status=81370f82-60d0-4ccf-b9b4-bf0f2da48a0a data-active=false] "Archive"
+          tr [class] "  "
+            td [class=mono] "5400"
+            td
+              a [href=#/reports?type=account&account=4316e894-] "Project Travel"
+            td "GSTE"
+            td [class=num mono]
+            td [class=row-acts]
+              button [type=button class=link data-edit=4316e894-6937-4847-8884-eb2addfdb174] "Edit"
+              button [type=button class=link data-status=4316e894-6937-4847-8884-eb2addfdb174 data-active=false] "Archive"
+          tr [class] "  "
+            td [class=mono] "5500"
+            td
+              a [href=#/reports?type=account&account=62cb04c9-] "Equipment Hire - Projects"
+            td "GSTE"
+            td [class=num mono] "4,200.00"
+            td [class=row-acts]
+              button [type=button class=link data-edit=62cb04c9-3a5d-4213-9a51-78c2b9b8cc86] "Edit"
+              button [type=button class=link data-status=62cb04c9-3a5d-4213-9a51-78c2b9b8cc86 data-active=false] "Archive"
+          tr [class] "  "
+            td [class=mono] "5600"
+            td
+              a [href=#/reports?type=account&account=99d9b6d0-] "Freight"
+            td "GSTE"
+            td [class=num mono]
+            td [class=row-acts]
+              button [type=button class=link data-edit=99d9b6d0-2d58-4e0c-be33-20e637890446] "Edit"
+              button [type=button class=link data-status=99d9b6d0-2d58-4e0c-be33-20e637890446 data-active=false] "Archive"
+          tr [class] "  "
+            td [class=mono] "5700"
+            td
+              a [href=#/reports?type=account&account=97a7cfb7-] "Site Costs"
+            td "GSTE"
+            td [class=num mono]
+            td [class=row-acts]
+              button [type=button class=link data-edit=97a7cfb7-d639-4367-af65-2403b5ee971d] "Edit"
+              button [type=button class=link data-status=97a7cfb7-d639-4367-af65-2403b5ee971d data-active=false] "Archive"
+        tbody
+          tr [class=group]
+            th "Operating expenses"
+          tr [class] "  "
+            td [class=mono] "6000"
+            td " "
+              a [href=#/reports?type=account&account=16831ace-] "Administration Wages"
+              span [class=chip info] "System"
+            td "NG"
+            td [class=num mono]
+            td [class=row-acts]
+              button [type=button class=link data-edit=16831ace-569b-4834-9282-5665dac043ab] "Edit"
+          tr [class] "  "
+            td [class=mono] "6100"
+            td " "
+              a [href=#/reports?type=account&account=def9c8ef-] "Employer Superannuation"
+              span [class=chip info] "System"
+            td "NG"
+            td [class=num mono] "1,791.21"
+            td [class=row-acts]
+              button [type=button class=link data-edit=def9c8ef-bf40-4773-83a9-aa7ff30120a4] "Edit"
+          tr [class] "  "
+            td [class=mono] "6200"
+            td
+              a [href=#/reports?type=account&account=1a745a74-] "Workers Compensation"
+            td
+            td [class=num mono] "1,250.00"
+            td [class=row-acts]
+              button [type=button class=link data-edit=1a745a74-5d01-4c3c-9dbe-982c1a086eb9] "Edit"
+              button [type=button class=link data-status=1a745a74-5d01-4c3c-9dbe-982c1a086eb9 data-active=false] "Archive"
+          tr [class] "  "
+            td [class=mono] "6300"
+            td
+              a [href=#/reports?type=account&account=0ccec777-] "Vehicle Expenses"
+            td "GSTE"
+            td [class=num mono]
+            td [class=row-acts]
+              button [type=button class=link data-edit=0ccec777-e7a2-413f-937b-19623d193f65] "Edit"
+              button [type=button class=link data-status=0ccec777-e7a2-413f-937b-19623d193f65 data-active=false] "Archive"
+          tr [class] "  "
+            td [class=mono] "6400"
+            td
+              a [href=#/reports?type=account&account=9957d656-] "Fuel"
+            td "GSTE"
+            td [class=num mono] "169.45"
+            td [class=row-acts]
+              button [type=button class=link data-edit=9957d656-a789-498e-b496-678fe9dc653e] "Edit"
+              button [type=button class=link data-status=9957d656-a789-498e-b496-678fe9dc653e data-active=false] "Archive"
+          tr [class] "  "
+            td [class=mono] "6500"
+            td
+              a [href=#/reports?type=account&account=641caada-] "Repairs and Maintenance"
+            td "GSTE"
+            td [class=num mono]
+            td [class=row-acts]
+              button [type=button class=link data-edit=641caada-627c-477b-acdd-d42522c0ed25] "Edit"
+              button [type=button class=link data-status=641caada-627c-477b-acdd-d42522c0ed25 data-active=false] "Archive"
+          tr [class] "  "
+            td [class=mono] "6600"
+            td
+              a [href=#/reports?type=account&account=0c97786e-] "PPE"
+            td "GSTE"
+            td [class=num mono] "486.00"
+            td [class=row-acts]
+              button [type=button class=link data-edit=0c97786e-e3e4-4a6c-9ef7-f4ee8b3e9523] "Edit"
+              button [type=button class=link data-status=0c97786e-e3e4-4a6c-9ef7-f4ee8b3e9523 data-active=false] "Archive"
+          tr [class] "  "
+            td [class=mono] "6700"
+            td
+              a [href=#/reports?type=account&account=3c5a12d0-] "Tools"
+            td "GSTE"
+            td [class=num mono]
+            td [class=row-acts]
+              button [type=button class=link data-edit=3c5a12d0-3734-4241-9cb1-c5c9978ca8a3] "Edit"
+              button [type=button class=link data-status=3c5a12d0-3734-4241-9cb1-c5c9978ca8a3 data-active=false] "Archive"
+          tr [class] "  "
+            td [class=mono] "6800"
+            td
+              a [href=#/reports?type=account&account=5856d36a-] "Insurance"
+            td
+            td [class=num mono]
+            td [class=row-acts]
+              button [type=button class=link data-edit=5856d36a-1f53-44c2-8157-f5a1193bca0f] "Edit"
+              button [type=button class=link data-status=5856d36a-1f53-44c2-8157-f5a1193bca0f data-active=false] "Archive"
+          tr [class] "  "
+            td [class=mono] "6900"
+            td
+              a [href=#/reports?type=account&account=46c31f3f-] "Rent"
+            td "GSTE"
+            td [class=num mono]
+            td [class=row-acts]
+              button [type=button class=link data-edit=46c31f3f-a230-40ec-8c85-a79f271e7ccb] "Edit"
+              button [type=button class=link data-status=46c31f3f-a230-40ec-8c85-a79f271e7ccb data-active=false] "Archive"
+          tr [class] "  "
+            td [class=mono] "7000"
+            td
+              a [href=#/reports?type=account&account=3432a10a-] "Utilities"
+            td "GSTE"
+            td [class=num mono]
+            td [class=row-acts]
+              button [type=button class=link data-edit=3432a10a-a61e-420e-8aa6-87a6a07c300f] "Edit"
+              button [type=button class=link data-status=3432a10a-a61e-420e-8aa6-87a6a07c300f data-active=false] "Archive"
+          tr [class] "  "
+            td [class=mono] "7100"
+            td
+              a [href=#/reports?type=account&account=68852ccd-] "Software"
+            td "GSTE"
+            td [class=num mono]
+            td [class=row-acts]
+              button [type=button class=link data-edit=68852ccd-bad1-4a48-bd1e-51ba6b9ea993] "Edit"
+              button [type=button class=link data-status=68852ccd-bad1-4a48-bd1e-51ba6b9ea993 data-active=false] "Archive"
+          tr [class] "  "
+            td [class=mono] "7200"
+            td
+              a [href=#/reports?type=account&account=7f16bca7-] "Accounting and Legal"
+            td "GSTE"
+            td [class=num mono]
+            td [class=row-acts]
+              button [type=button class=link data-edit=7f16bca7-0254-4d3f-800d-693bed888c5c] "Edit"
+              button [type=button class=link data-status=7f16bca7-0254-4d3f-800d-693bed888c5c data-active=false] "Archive"
+          tr [class] "  "
+            td [class=mono] "7300"
+            td
+              a [href=#/reports?type=account&account=5f212447-] "Training"
+            td "GSTE"
+            td [class=num mono]
+            td [class=row-acts]
+              button [type=button class=link data-edit=5f212447-817c-4cdc-935e-1d7def3582ab] "Edit"
+              button [type=button class=link data-status=5f212447-817c-4cdc-935e-1d7def3582ab data-active=false] "Archive"
+          tr [class] "  "
+            td [class=mono] "7400"
+            td
+              a [href=#/reports?type=account&account=22b7583e-] "Recruitment"
+            td "GSTE"
+            td [class=num mono]
+            td [class=row-acts]
+              button [type=button class=link data-edit=22b7583e-09a1-48e7-be91-ece2597b5ada] "Edit"
+              button [type=button class=link data-status=22b7583e-09a1-48e7-be91-ece2597b5ada data-active=false] "Archive"
+          tr [class] "  "
+            td [class=mono] "7500"
+            td
+              a [href=#/reports?type=account&account=431a9bff-] "Telephone and Internet"
+            td "GSTE"
+            td [class=num mono]
+            td [class=row-acts]
+              button [type=button class=link data-edit=431a9bff-62ec-4e43-8356-12c986f6d69e] "Edit"
+              button [type=button class=link data-status=431a9bff-62ec-4e43-8356-12c986f6d69e data-active=false] "Archive"
+          tr [class] "  "
+            td [class=mono] "7600"
+            td
+              a [href=#/reports?type=account&account=c7ecdfda-] "Advertising"
+            td "GSTE"
+            td [class=num mono]
+            td [class=row-acts]
+              button [type=button class=link data-edit=c7ecdfda-64de-43ff-9546-d033b487ce12] "Edit"
+              button [type=button class=link data-status=c7ecdfda-64de-43ff-9546-d033b487ce12 data-active=false] "Archive"
+          tr [class] "  "
+            td [class=mono] "7700"
+            td
+              a [href=#/reports?type=account&account=d306f517-] "Bank Charges"
+            td
+            td [class=num mono] "37.50"
+            td [class=row-acts]
+              button [type=button class=link data-edit=d306f517-89d4-4893-83d5-c79c6c4369fb] "Edit"
+              button [type=button class=link data-status=d306f517-89d4-4893-83d5-c79c6c4369fb data-active=false] "Archive"
+          tr [class] "  "
+            td [class=mono] "7800"
+            td
+              a [href=#/reports?type=account&account=59629ad7-] "Depreciation"
+            td "NG"
+            td [class=num mono] "3,713.72"
+            td [class=row-acts]
+              button [type=button class=link data-edit=59629ad7-ef06-41c2-9d23-5ab2d5e084fa] "Edit"
+              button [type=button class=link data-status=59629ad7-ef06-41c2-9d23-5ab2d5e084fa data-active=false] "Archive"
+          tr [class] "  "
+            td [class=mono] "7850"
+            td
+              a [href=#/reports?type=account&account=f57e3083-] "ATO Interest and Penalties (non-deductible)"
+            td "NG"
+            td [class=num mono]
+            td [class=row-acts]
+              button [type=button class=link data-edit=f57e3083-aff1-42fe-b8e5-73a9446f71d2] "Edit"
+              button [type=button class=link data-status=f57e3083-aff1-42fe-b8e5-73a9446f71d2 data-active=false] "Archive"
+          tr [class] "  "
+            td [class=mono] "7900"
+            td
+              a [href=#/reports?type=account&account=4bafd31c-] "Miscellaneous Expenses"
+            td
+            td [class=num mono]
+            td [class=row-acts]
+              button [type=button class=link data-edit=4bafd31c-1981-4fd4-8bc3-1246bd65a337] "Edit"
+              button [type=button class=link data-status=4bafd31c-1981-4fd4-8bc3-1246bd65a337 data-active=false] "Archive"
+          tr [class] "  "
+            td [class=mono] "7950"
+            td " "
+              a [href=#/reports?type=account&account=4a0f0d1d-] "BAS Rounding"
+              span [class=chip info] "System"
+              small "Cents dropped when BAS labels are reported in whole dollars."
+            td "NG"
+            td [class=num mono]
+            td [class=row-acts]
+              button [type=button class=link data-edit=4a0f0d1d-3321-4dca-8a6b-e1ac5f675d6e] "Edit"
+        tbody
+          tr [class=group]
+            th "Other income"
+          tr [class] "  "
+            td [class=mono] "4850"
+            td " "
+              a [href=#/reports?type=account&account=a5763063-] "Fuel Tax Credits"
+              span [class=chip info] "System"
+              small "Fuel tax credits claimed on the BAS (label 7D)."
+            td "NG"
+            td [class=num mono]
+            td [class=row-acts]
+              button [type=button class=link data-edit=a5763063-cf68-4ac3-9770-98585a349ef4] "Edit"
+          tr [class] "  "
+            td [class=mono] "4950"
+            td " "
+              a [href=#/reports?type=account&account=6f41d56e-] "Proceeds from Sale of Assets"
+              span [class=chip info] "System"
+              small "What fixed assets were sold for (before GST)."
+            td "GST"
+            td [class=num mono]
+            td [class=row-acts]
+              button [type=button class=link data-edit=6f41d56e-f07d-48e1-ad13-b1dca8c464d2] "Edit"
+        tbody
+          tr [class=group]
+            th "Other expenses"
+          tr [class] "  "
+            td [class=mono] "7810"
+            td " "
+              a [href=#/reports?type=account&account=f80b552e-] "Book Value of Assets Disposed"
+              span [class=chip info] "System"
+              small "Cost less accumulated depreciation of assets sold or written"
+            td "NG"
+            td [class=num mono]
+            td [class=row-acts]
+              button [type=button class=link data-edit=f80b552e-0839-481b-acb0-f5fda6a16395] "Edit"
+  p [class=msg data-msg]

@@ -1,0 +1,120 @@
+p [class=msg id=app-msg]
+div [data-view] "    "
+  header [class=page-head]
+    div
+      p [class=eyebrow] "ADMINISTRATION"
+      h1 "Approvals"
+      p [class=muted] "Some changes need a second person: you can never approve you"
+  section [class=panel]
+    h2 "Waiting for you (2)"
+    article [class=approval] " "
+      header
+        div
+          h3 "Bank details for Casey Rigger"
+          p [class=muted small] "Requested by Pat Payroll · 8 Oct 2026, 5:56 am"
+        span [class=chip pending] "Waiting"
+      div [class=actions]
+        button [type=button class=btn primary data-approve=8eafb4ce-3dba-4988-8e93-d7bfcab97932] "Approve"
+        button [type=button class=btn danger data-reject=8eafb4ce-3dba-4988-8e93-d7bfcab97932] "Reject"
+    article [class=approval] "   "
+      header
+        div
+          h3 "Bank details for supplier Demo NDT Inspections Pty Ltd"
+          p [class=muted small] "Requested by Fran Finance · 8 Oct 2026, 5:56 am"
+        span [class=chip pending] "Waiting"
+      dl [class=facts] " "
+        dt "Account name"
+        dd "Demo NDT Inspections"
+        dt "BSB"
+        dd [class=mono] "068-000"
+        dt "Account number"
+        dd [class=mono] "70809010"
+        dt "Replaces"
+        dd "No bank details on file"
+      p [class=note small] "Changed supplier bank details are the most common way busine"
+      div [class=actions]
+        button [type=button class=btn primary data-approve=9804d1a8-e7e6-4173-89a0-d2537e89edb7] "Approve"
+        button [type=button class=btn danger data-reject=9804d1a8-e7e6-4173-89a0-d2537e89edb7] "Reject"
+  section [class=panel]
+    h2 "Your requests"
+    p [class=muted] "You have not requested anything."
+  section [class=panel]
+    h2 "Recent decisions"
+    article [class=approval] " "
+      header
+        div
+          h3 "Bank details for supplier Demo Industrial Tools Pty Ltd"
+          p [class=muted small] "Requested by Fran Finance · 8 Oct 2026, 5:56 am · approved b"
+        span [class=chip good] "Approved"
+      p [class=small] "Comment: Verified by phone on a known number (training)"
+    article [class=approval] " "
+      header
+        div
+          h3 "Bank details for supplier Demo Motors Pty Ltd"
+          p [class=muted small] "Requested by Fran Finance · 8 Oct 2026, 5:56 am · approved b"
+        span [class=chip good] "Approved"
+      p [class=small] "Comment: Verified by phone on a known number (training)"
+    article [class=approval] " "
+      header
+        div
+          h3 "Bank details for supplier Demo Rigging Services (no ABN)"
+          p [class=muted small] "Requested by Fran Finance · 8 Oct 2026, 5:56 am · approved b"
+        span [class=chip good] "Approved"
+      p [class=small] "Comment: Verified by phone on a known number (training)"
+    article [class=approval] " "
+      header
+        div
+          h3 "Bank details for supplier Demo Crane Hire Pty Ltd"
+          p [class=muted small] "Requested by Fran Finance · 8 Oct 2026, 5:56 am · approved b"
+        span [class=chip good] "Approved"
+      p [class=small] "Comment: Verified by phone on a known number (training)"
+    article [class=approval] " "
+      header
+        div
+          h3 "Bank details for supplier Demo Welding Consumables Pty Ltd"
+          p [class=muted small] "Requested by Fran Finance · 8 Oct 2026, 5:56 am · approved b"
+        span [class=chip good] "Approved"
+      p [class=small] "Comment: Verified by phone on a known number (training)"
+    article [class=approval] " "
+      header
+        div
+          h3 "Bank details for supplier Demo Steel Supplies Pty Ltd"
+          p [class=muted small] "Requested by Fran Finance · 8 Oct 2026, 5:56 am · approved b"
+        span [class=chip good] "Approved"
+      p [class=small] "Comment: Verified by phone on a known number (training)"
+    article [class=approval] " "
+      header
+        div
+          h3 "Bank details for Casey Rigger"
+          p [class=muted small] "Requested by Pat Payroll · 8 Oct 2026, 5:56 am · approved by"
+        span [class=chip good] "Approved"
+      p [class=small] "Comment: Confirmed in person (training)"
+    article [class=approval] " "
+      header
+        div
+          h3 "Bank details for Tom Welder"
+          p [class=muted small] "Requested by Pat Payroll · 8 Oct 2026, 5:56 am · approved by"
+        span [class=chip good] "Approved"
+      p [class=small] "Comment: Confirmed in person (training)"
+    article [class=approval] " "
+      header
+        div
+          h3 "Bank details for Jamie Apprentice"
+          p [class=muted small] "Requested by Pat Payroll · 8 Oct 2026, 5:56 am · approved by"
+        span [class=chip good] "Approved"
+      p [class=small] "Comment: Confirmed in person (training)"
+    article [class=approval] " "
+      header
+        div
+          h3 "Bank details for Olivia Office"
+          p [class=muted small] "Requested by Pat Payroll · 8 Oct 2026, 5:56 am · approved by"
+        span [class=chip good] "Approved"
+      p [class=small] "Comment: Confirmed in person (training)"
+    article [class=approval] " "
+      header
+        div
+          h3 "New company bank account: Operating account (BSB 062-000)"
+          p [class=muted small] "Requested by Alex Admin · 8 Oct 2026, 5:56 am · approved by "
+        span [class=chip good] "Approved"
+      p [class=small] "Comment: Checked against the bank letter (training)"
+  p [class=msg data-msg]

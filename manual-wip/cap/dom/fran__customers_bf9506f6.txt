@@ -1,0 +1,145 @@
+p [class=msg id=app-msg]
+div [data-view] "      "
+  header [class=page-head]
+    div
+      p [class=eyebrow] "SALES · CUSTOMERS"
+      h1 "Demo Minerals Processing Pty Ltd"
+      p [class=muted] "ABN 10 000 000 032 · 100 Mill Road, Seymour VIC 3660"
+    div [class=actions tight]
+      a [class=btn href=#/customers/bf9506f6-3e3e-49a9-a1f3-4156] "Edit"
+      a [class=btn primary href=#/invoices/new?customer=bf9506f6-3e3e-49] "New invoice"
+      a [class=btn href=#/receipts/new?customer=bf9506f6-3e3e-49] "Record payment"
+  div [class=cards figures] "   "
+    section [class=card]
+      h2 "Balance owing"
+      p [class=big mono] "44,627.00"
+      p [class=muted small] "3 unpaid invoices"
+    section [class=card]
+      h2 "Terms"
+      p [class=big] "30 days"
+      p [class=muted small] "No credit limit · PO number required"
+    section [class=card]
+      h2 "Contact"
+      p "Accounts payable"
+      p [class=muted small] "ap@demo-minerals.training.test · 03 5000 1000"
+  section [class=panel]
+    h2 "Invoices and credit notes"
+    div [class=tbl-wrap]
+      table [class=tbl]
+        thead
+          tr
+            th "Number"
+            th "Date"
+            th "Due"
+            th "Reference"
+            th "Status"
+            th [class=num] "Total"
+            th [class=num] "Owing"
+        tbody " "
+          tr "  "
+            td [class=mono]
+              a [href=#/invoices/6fba41c4-04b6-4cd9-81e6-87f9f] "Draft"
+            td [class=nowrap] "6 Oct 2026"
+            td [class=nowrap] "5 Nov 2026"
+            td "PO 4500-2231"
+            td
+              span [class=chip pending] "Draft"
+            td [class=num mono] "34,650.00"
+            td [class=num mono]
+          tr "  "
+            td [class=mono]
+              a [href=#/invoices/0af4da9e-f163-47de-8d3e-2b2dc] "INV-1008"
+            td [class=nowrap] "30 Sept 2026"
+            td [class=nowrap] "30 Oct 2026"
+            td "PO 4500-2240"
+            td
+              span [class=chip good] "Approved"
+            td [class=num mono] "5,852.00"
+            td [class=num mono] "5,852.00"
+          tr "  "
+            td [class=mono]
+              a [href=#/invoices/fb33e0b1-6e99-4b73-92c6-37c59] "INV-1006"
+            td [class=nowrap] "15 Sept 2026"
+            td [class=nowrap] "15 Oct 2026"
+            td "PO 4500-2231"
+            td
+              span [class=chip good] "Approved"
+            td [class=num mono] "33,000.00"
+            td [class=num mono] "33,000.00"
+          tr "  "
+            td [class=mono]
+              a [href=#/invoices/21f0060f-1125-45b3-ad19-5a05f] "INV-1005"
+            td [class=nowrap] "31 Aug 2026"
+            td [class=nowrap] "30 Sept 2026"
+            td "PO 4500-2240"
+            td
+              span [class=chip good] "Approved"
+              span [class=chip bad] "Overdue"
+            td [class=num mono] "5,775.00"
+            td [class=num mono] "5,775.00"
+          tr "  "
+            td [class=mono]
+              a [href=#/invoices/542ae06a-2468-447f-a26d-7fdc2] "INV-1002"
+            td [class=nowrap] "31 July 2026"
+            td [class=nowrap] "30 Aug 2026"
+            td "PO 4500-2240"
+            td
+              span [class=chip good] "Approved"
+            td [class=num mono] "5,929.00"
+            td [class=num mono]
+          tr "  "
+            td [class=mono]
+              a [href=#/invoices/8a16f8b8-1bf9-4ff3-ace4-1f261] "INV-1001"
+            td [class=nowrap] "24 July 2026"
+            td [class=nowrap] "23 Aug 2026"
+            td "PO 4500-2231"
+            td
+              span [class=chip good] "Approved"
+            td [class=num mono] "27,500.00"
+            td [class=num mono]
+  section [class=panel]
+    h2 "Payments received"
+    div [class=tbl-wrap]
+      table [class=tbl]
+        thead
+          tr
+            th "Date"
+            th "Reference"
+            th "Status"
+            th [class=num] "Amount"
+            th [class=num] "Not yet applied"
+        tbody " "
+          tr
+            td
+              a [href=#/receipts/15b17668-2ad5-44d6-9c6b-e5a08] "28 Aug 2026"
+            td "DEMO MINERALS EFT 51244"
+            td
+              span [class=chip good] "Banked"
+            td [class=num mono] "5,929.00"
+            td [class=num mono]
+          tr
+            td
+              a [href=#/receipts/9d8d16b3-484e-4628-a354-f9d7d] "20 Aug 2026"
+            td "DEMO MINERALS EFT 51120"
+            td
+              span [class=chip good] "Banked"
+            td [class=num mono] "27,500.00"
+            td [class=num mono]
+  section [class=panel] " "
+    h2 "Statement"
+    form [class=toolbar data-statement] "  "
+      div [class=fld]
+        label "From"
+        input [id=st-from type=date]
+      div [class=fld]
+        label "To"
+        input [id=st-to type=date]
+      button [class=btn type=submit data-kind=view] "Show"
+      button [class=btn type=submit data-kind=pdf] "Download PDF"
+    div [data-statement-body]
+  section [class=panel data-attachments data-entity=customer data-entity-id=bf9506f6-3e3e-49a9-a1f3-4156f3300581] "   "
+    h2 "Attachments"
+    p [class=muted small] "Nothing attached."
+    label [class=btn file] "Attach a PDF or photo"
+      input [type=file data-attach]
+  p [class=msg data-msg]

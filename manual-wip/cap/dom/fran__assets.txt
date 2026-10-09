@@ -1,0 +1,92 @@
+p [class=msg id=app-msg]
+div [data-view] "    "
+  header [class=page-head]
+    div
+      p [class=eyebrow] "ACCOUNTING"
+      h1 "Fixed assets"
+      p [class=muted] "Tools, vehicles, plant and office equipment, with depreciati"
+    div [class=actions]
+      a [class=btn primary href=#/assets/new] "Add an asset"
+  div [class=tabs]
+    button [type=button class=on data-tab=register] "Register"
+    button [type=button class data-tab=depreciation] "Depreciation"
+    button [type=button class data-tab=categories] "Categories"
+    button [type=button class data-tab=reconciliation] "Reconciliation"
+  form [class=panel toolbar data-filter] "  "
+    div [class=fld]
+      label "Search"
+      input [id=af-q type=search]
+    div [class=fld]
+      label "Show"
+      select [id=af-s]
+    button [type=button class=btn data-csv] "Download CSV"
+  section [class=panel]
+    div [class=tbl-wrap]
+      table [class=tbl]
+        thead
+          tr
+            th "Asset"
+            th "Category"
+            th "In service"
+            th "Location"
+            th [class=num] "Cost"
+            th [class=num] "Depreciation"
+            th [class=num] "Book value"
+            th "Status"
+        tbody " "
+          tr "  "
+            td
+              a [href=#/assets/dae35c52-7fe8-4093-a189-73f70ad]
+              small [class=mono] "FA-0001 · MPW400-22871"
+            td "Tools and equipment"
+            td [class=nowrap] "15 July 2026"
+            td "Workshop bay 2"
+            td [class=num mono] "8,900.00"
+            td [class=num mono] "378.00"
+            td [class=num mono] "8,522.00"
+            td
+              span [class=chip good] "In use"
+          tr "  "
+            td
+              a [href=#/assets/8c043455-36d8-4db1-bd6c-99bc85e]
+              small [class=mono] "FA-0002 · RL-7Q3K9"
+            td "Office equipment"
+            td [class=nowrap] "20 July 2026"
+            td "Workshop office"
+            td [class=num mono] "2,400.00"
+            td [class=num mono] "159.15"
+            td [class=num mono] "2,240.85"
+            td
+              span [class=chip good] "In use"
+          tr "  "
+            td
+              a [href=#/assets/1280aa6e-8ed9-4b9a-9649-ead0f15]
+              small [class=mono] "FA-0003 · 1TRN-UTE-26"
+            td "Vehicles"
+            td [class=nowrap] "1 Aug 2026"
+            td "Site fleet"
+            td [class=num mono] "54,000.00"
+            td [class=num mono] "2,226.56"
+            td [class=num mono] "51,773.44"
+            td
+              span [class=chip good] "In use"
+          tr "  "
+            td
+              a [href=#/assets/11f6b67b-3aac-4cf6-b9f1-822fe8d]
+              small [class=mono] "FA-0004 · FL25-0091"
+            td "Plant and machinery"
+            td [class=nowrap] "1 July 2024"
+            td "Workshop yard"
+            td [class=num mono] "38,000.00"
+            td [class=num mono] "10,450.01"
+            td [class=num mono] "27,549.99"
+            td
+              span [class=chip good] "In use"
+        tfoot
+          tr
+            th "Total"
+            td [class=num mono] "103,300.00"
+            td [class=num mono] "13,213.72"
+            td [class=num mono] "90,086.28"
+            td
+  p [class=msg data-msg]

@@ -1,0 +1,489 @@
+p [class=msg id=app-msg]
+div [data-view] " "
+  header [class=page-head]
+    div
+      p [class=eyebrow] "ACCOUNTING"
+      h1 "Journals"
+      p [class=muted] "Every posted entry in the general ledger. Posted journals ca"
+    a [class=btn primary href=#/journals/new] "New journal"
+  section [class=panel] "   "
+    form [class=toolbar data-filter] "    "
+      div [class=fld]
+        label "Status"
+        select [id=j-st]
+      div [class=fld]
+        label "From"
+        input [id=j-from type=date]
+      div [class=fld]
+        label "To"
+        input [id=j-to type=date]
+      div [class=fld]
+        label "Narration contains"
+        input [id=j-q]
+      button [class=btn type=submit] "Filter"
+    div [class=tbl-wrap]
+      table [class=tbl]
+        thead
+          tr
+            th "Number"
+            th "Date"
+            th "Narration"
+            th "Source"
+            th [class=num] "Amount"
+            th "Status"
+        tbody " "
+          tr "  "
+            td [class=mono]
+              a [href=#/journals/57c80cef-6dec-4ef1-9d27-6291e] "Draft"
+            td [class=nowrap] "30 Sept 2026"
+            td "Reclassify fuel used on the Mill 2 shutdown to site costs"
+              small "by Chris Accountant"
+            td "Manual journal"
+            td [class=num mono] "186.40"
+            td
+              span [class=chip pending] "Draft"
+          tr "  "
+            td [class=mono]
+              a [href=#/journals/7af755ea-f35b-4e87-8fbc-aeeca] "JE-000044"
+            td [class=nowrap] "30 Sept 2026"
+            td "Accrue September workers compensation premium instalment"
+              small "by Fran Finance"
+            td "Manual journal"
+            td [class=num mono] "1,250.00"
+            td
+              span [class=chip good] "Posted"
+          tr "  "
+            td [class=mono]
+              a [href=#/journals/6ad7dd57-025d-47b1-859f-7de41] "JE-000043"
+            td [class=nowrap] "30 Sept 2026"
+            td "Bank: MONTHLY ACCOUNT FEE"
+              small "by Fran Finance"
+            td "bank_transaction"
+            td [class=num mono] "12.50"
+            td
+              span [class=chip good] "Posted"
+          tr "  "
+            td [class=mono]
+              a [href=#/journals/45fc139b-8893-4041-b4ec-d51f8] "JE-000038"
+            td [class=nowrap] "30 Sept 2026"
+            td "Net pay for PR-00003"
+              small "by Fran Finance"
+            td "PR-00003"
+            td [class=num mono] "4,000.62"
+            td
+              span [class=chip good] "Posted"
+          tr "  "
+            td [class=mono]
+              a [href=#/journals/89634a4a-70c8-4498-a106-fec4b] "JE-000037"
+            td [class=nowrap] "30 Sept 2026"
+            td "Pay run PR-00003 (21 Sep to 27 Sep 2026)"
+              small "by Dana Director"
+            td "PR-00003"
+            td [class=num mono] "5,572.69"
+            td
+              span [class=chip good] "Posted"
+          tr "  "
+            td [class=mono]
+              a [href=#/journals/db875e52-2c3a-4249-b53c-1f358] "JE-000032"
+            td [class=nowrap] "30 Sept 2026"
+            td "Depreciation to 30 Sep 2026"
+              small "by Fran Finance"
+            td "Sep 2026"
+            td [class=num mono] "1,633.23"
+            td
+              span [class=chip good] "Posted"
+          tr "  "
+            td [class=mono]
+              a [href=#/journals/70bed641-96ba-478e-a466-fa34b] "JE-000015"
+            td [class=nowrap] "30 Sept 2026"
+            td "Bill BILL-1002 · DWC-118842 · Demo Welding Consumables Pty L"
+              small "by Fran Finance"
+            td "DWC-118842"
+            td [class=num mono] "1,955.80"
+            td
+              span [class=chip good] "Posted"
+          tr "  "
+            td [class=mono]
+              a [href=#/journals/bfee6059-b148-44be-ace5-95a78] "JE-000009"
+            td [class=nowrap] "30 Sept 2026"
+            td "Invoice INV-1008"
+              small "by Fran Finance"
+            td "INV-1008"
+            td [class=num mono] "5,852.00"
+            td
+              span [class=chip good] "Posted"
+          tr "  "
+            td [class=mono]
+              a [href=#/journals/5c588b82-da39-4a69-b56b-d1f10] "JE-000008"
+            td [class=nowrap] "30 Sept 2026"
+            td "Invoice INV-1007"
+              small "by Fran Finance"
+            td "INV-1007"
+            td [class=num mono] "39,050.00"
+            td
+              span [class=chip good] "Posted"
+          tr "  "
+            td [class=mono]
+              a [href=#/journals/6761d00d-fa5d-4287-86cb-1768a] "JE-000029"
+            td [class=nowrap] "29 Sept 2026"
+            td "Payment to Demo Industrial Tools Pty Ltd · DIT-21402"
+              small "by Fran Finance"
+            td "DIT-21402"
+            td [class=num mono] "534.60"
+            td
+              span [class=chip good] "Posted"
+          tr "  "
+            td [class=mono]
+              a [href=#/journals/51687536-97c9-4d91-86d6-aab25] "JE-000013"
+            td [class=nowrap] "29 Sept 2026"
+            td "Receipt from Demo Port Terminals Pty Ltd · DEMO PORT EFT 661"
+              small "by Fran Finance"
+            td "DEMO PORT EFT 66102"
+            td [class=num mono] "46,860.00"
+            td
+              span [class=chip good] "Posted"
+          tr "  "
+            td [class=mono]
+              a [href=#/journals/2dfa2038-b5d6-4219-9bb7-c782f] "JE-000028"
+            td [class=nowrap] "26 Sept 2026"
+            td "Payment to Demo Rigging Services (no ABN) · Week 38 net of w"
+              small "by Fran Finance"
+            td "Week 38 net of withholding"
+            td [class=num mono] "636.00"
+            td
+              span [class=chip good] "Posted"
+          tr "  "
+            td [class=mono]
+              a [href=#/journals/032c3510-e2d7-415d-9728-28727] "JE-000039"
+            td [class=nowrap] "25 Sept 2026"
+            td "Super contributions for PR-00001"
+              small "by Fran Finance"
+            td "PR-00001"
+            td [class=num mono] "597.07"
+            td
+              span [class=chip good] "Posted"
+          tr "  "
+            td [class=mono]
+              a [href=#/journals/25a0828c-d9f4-4116-8d5e-07ee0] "JE-000022"
+            td [class=nowrap] "25 Sept 2026"
+            td "Bill BILL-1009 · DSS-INV-41520 · Demo Steel Supplies Pty Ltd"
+              small "by Fran Finance"
+            td "DSS-INV-41520"
+            td [class=num mono] "20,416.00"
+            td
+              span [class=chip good] "Posted"
+          tr "  "
+            td [class=mono]
+              a [href=#/journals/c45f23e0-2d76-4d74-98f4-c13a2] "JE-000036"
+            td [class=nowrap] "23 Sept 2026"
+            td "Net pay for PR-00002"
+              small "by Fran Finance"
+            td "PR-00002"
+            td [class=num mono] "4,087.12"
+            td
+              span [class=chip good] "Posted"
+          tr "  "
+            td [class=mono]
+              a [href=#/journals/cfc110ae-0029-4fa7-ba0a-def70] "JE-000035"
+            td [class=nowrap] "23 Sept 2026"
+            td "Pay run PR-00002 (14 Sep to 20 Sep 2026)"
+              small "by Dana Director"
+            td "PR-00002"
+            td [class=num mono] "5,700.19"
+            td
+              span [class=chip good] "Posted"
+          tr "  "
+            td [class=mono]
+              a [href=#/journals/3214dde3-1a99-4e52-bcc3-029c5] "JE-000021"
+            td [class=nowrap] "19 Sept 2026"
+            td "Bill BILL-1008 · Week 38 · Demo Rigging Services (no ABN)"
+              small "by Fran Finance"
+            td "Week 38"
+            td [class=num mono] "1,200.00"
+            td
+              span [class=chip good] "Posted"
+          tr "  "
+            td [class=mono]
+              a [href=#/journals/a4f62732-9477-4124-b254-2180e] "JE-000042"
+            td [class=nowrap] "18 Sept 2026"
+            td "Demo Servo: DEMO SERVO FUEL 4471 BROADFORD"
+              small "by Fran Finance"
+            td "bank_transaction"
+            td [class=num mono] "186.40"
+            td
+              span [class=chip good] "Posted"
+          tr "  "
+            td [class=mono]
+              a [href=#/journals/09644f6e-6833-4d97-af7e-d1353] "JE-000034"
+            td [class=nowrap] "16 Sept 2026"
+            td "Net pay for PR-00001"
+              small "by Fran Finance"
+            td "PR-00001"
+            td [class=num mono] "4,000.62"
+            td
+              span [class=chip good] "Posted"
+          tr "  "
+            td [class=mono]
+              a [href=#/journals/4e63542e-2878-4bca-80d1-f9e5d] "JE-000033"
+            td [class=nowrap] "16 Sept 2026"
+            td "Pay run PR-00001 (07 Sep to 13 Sep 2026)"
+              small "by Dana Director"
+            td "PR-00001"
+            td [class=num mono] "5,572.69"
+            td
+              span [class=chip good] "Posted"
+          tr "  "
+            td [class=mono]
+              a [href=#/journals/c506cba6-138a-4042-ab15-524fb] "JE-000007"
+            td [class=nowrap] "15 Sept 2026"
+            td "Invoice INV-1006"
+              small "by Fran Finance"
+            td "INV-1006"
+            td [class=num mono] "33,000.00"
+            td
+              span [class=chip good] "Posted"
+          tr "  "
+            td [class=mono]
+              a [href=#/journals/4564c36f-4958-4c72-af87-0612c] "JE-000020"
+            td [class=nowrap] "12 Sept 2026"
+            td "Bill BILL-1007 · DCH-30418 · Demo Crane Hire Pty Ltd"
+              small "by Fran Finance"
+            td "DCH-30418"
+            td [class=num mono] "4,620.00"
+            td
+              span [class=chip good] "Posted"
+          tr "  "
+            td [class=mono]
+              a [href=#/journals/817f4462-6bf3-4745-bd29-13d38] "JE-000023"
+            td [class=nowrap] "8 Sept 2026"
+            td "Bill BILL-1010 · DIT-21402 · Demo Industrial Tools Pty Ltd"
+              small "by Fran Finance"
+            td "DIT-21402"
+            td [class=num mono] "534.60"
+            td
+              span [class=chip good] "Posted"
+          tr "  "
+            td [class=mono]
+              a [href=#/journals/2b816720-736d-4454-82b2-8587d] "JE-000012"
+            td [class=nowrap] "3 Sept 2026"
+            td "Receipt from Demo Water Authority · DEMO WATER EFT 9031"
+              small "by Fran Finance"
+            td "DEMO WATER EFT 9031"
+            td [class=num mono] "10,593.00"
+            td
+              span [class=chip good] "Posted"
+          tr "  "
+            td [class=mono]
+              a [href=#/journals/03db6492-9173-49e3-b65d-2e155] "JE-000027"
+            td [class=nowrap] "1 Sept 2026"
+            td "Payment to Demo NDT Inspections Pty Ltd · NDT-5521"
+              small "by Fran Finance"
+            td "NDT-5521"
+            td [class=num mono] "1,760.00"
+            td
+              span [class=chip good] "Posted"
+          tr "  "
+            td [class=mono]
+              a [href=#/journals/d9504955-063f-467e-abf0-f048b] "JE-000041"
+            td [class=nowrap] "31 Aug 2026"
+            td "Bank: MONTHLY ACCOUNT FEE"
+              small "by Fran Finance"
+            td "bank_transaction"
+            td [class=num mono] "12.50"
+            td
+              span [class=chip good] "Posted"
+          tr "  "
+            td [class=mono]
+              a [href=#/journals/84ce2b8f-295a-4987-a1a9-a2414] "JE-000031"
+            td [class=nowrap] "31 Aug 2026"
+            td "Depreciation to 31 Aug 2026"
+              small "by Fran Finance"
+            td "Aug 2026"
+            td [class=num mono] "1,656.67"
+            td
+              span [class=chip good] "Posted"
+          tr "  "
+            td [class=mono]
+              a [href=#/journals/de9ee2e7-feb8-4b7b-892a-1ef1f] "JE-000006"
+            td [class=nowrap] "31 Aug 2026"
+            td "Invoice INV-1005"
+              small "by Fran Finance"
+            td "INV-1005"
+            td [class=num mono] "5,775.00"
+            td
+              span [class=chip good] "Posted"
+          tr "  "
+            td [class=mono]
+              a [href=#/journals/8dba7772-efd4-4307-ad49-74fd7] "JE-000005"
+            td [class=nowrap] "31 Aug 2026"
+            td "Invoice INV-1004"
+              small "by Fran Finance"
+            td "INV-1004"
+            td [class=num mono] "46,860.00"
+            td
+              span [class=chip good] "Posted"
+          tr "  "
+            td [class=mono]
+              a [href=#/journals/588f544c-180c-4fdd-8c1f-d169d] "JE-000011"
+            td [class=nowrap] "28 Aug 2026"
+            td "Receipt from Demo Minerals Processing Pty Ltd · DEMO MINERAL"
+              small "by Fran Finance"
+            td "DEMO MINERALS EFT 51244"
+            td [class=num mono] "5,929.00"
+            td
+              span [class=chip good] "Posted"
+          tr "  "
+            td [class=mono]
+              a [href=#/journals/06b8f1d3-1551-4a2f-9cc1-2c521] "JE-000004"
+            td [class=nowrap] "21 Aug 2026"
+            td "Invoice INV-1003"
+              small "by Fran Finance"
+            td "INV-1003"
+            td [class=num mono] "10,593.00"
+            td
+              span [class=chip good] "Posted"
+          tr "  "
+            td [class=mono]
+              a [href=#/journals/006d68a7-c8b9-4e06-a075-4bf1d] "JE-000026"
+            td [class=nowrap] "20 Aug 2026"
+            td "Payment to Demo Steel Supplies Pty Ltd · DSS July"
+              small "by Fran Finance"
+            td "DSS July"
+            td [class=num mono] "8,729.60"
+            td
+              span [class=chip good] "Posted"
+          tr "  "
+            td [class=mono]
+              a [href=#/journals/d041dd6e-1886-4996-9a64-6c873] "JE-000010"
+            td [class=nowrap] "20 Aug 2026"
+            td "Receipt from Demo Minerals Processing Pty Ltd · DEMO MINERAL"
+              small "by Fran Finance"
+            td "DEMO MINERALS EFT 51120"
+            td [class=num mono] "27,500.00"
+            td
+              span [class=chip good] "Posted"
+          tr "  "
+            td [class=mono]
+              a [href=#/journals/eb91bc08-9a46-47bd-9744-4a86f] "JE-000019"
+            td [class=nowrap] "18 Aug 2026"
+            td "Bill BILL-1006 · NDT-5521 · Demo NDT Inspections Pty Ltd"
+              small "by Fran Finance"
+            td "NDT-5521"
+            td [class=num mono] "1,760.00"
+            td
+              span [class=chip good] "Posted"
+          tr "  "
+            td [class=mono]
+              a [href=#/journals/be03ed7c-6692-49ca-9005-323b7] "JE-000024"
+            td [class=nowrap] "12 Aug 2026"
+            td "Payment to Demo Industrial Tools Pty Ltd · DIT July"
+              small "by Fran Finance"
+            td "DIT July"
+            td [class=num mono] "12,430.00"
+            td
+              span [class=chip good] "Posted"
+          tr "  "
+            td [class=mono]
+              a [href=#/journals/157d41c2-e203-47cb-bb44-37ba1] "JE-000025"
+            td [class=nowrap] "5 Aug 2026"
+            td "Payment to Demo Motors Pty Ltd · Ute purchase"
+              small "by Fran Finance"
+            td "Ute purchase"
+            td [class=num mono] "59,400.00"
+            td
+              span [class=chip good] "Posted"
+          tr "  "
+            td [class=mono]
+              a [href=#/journals/9e1f45bb-8355-4714-b3fe-cb67b] "JE-000018"
+            td [class=nowrap] "1 Aug 2026"
+            td "Bill BILL-1005 · DM-1182 · Demo Motors Pty Ltd"
+              small "by Fran Finance"
+            td "DM-1182"
+            td [class=num mono] "59,400.00"
+            td
+              span [class=chip good] "Posted"
+          tr "  "
+            td [class=mono]
+              a [href=#/journals/8284c1aa-8f59-436c-b866-10eb1] "JE-000040"
+            td [class=nowrap] "31 July 2026"
+            td "Bank: MONTHLY ACCOUNT FEE"
+              small "by Fran Finance"
+            td "bank_transaction"
+            td [class=num mono] "12.50"
+            td
+              span [class=chip good] "Posted"
+          tr "  "
+            td [class=mono]
+              a [href=#/journals/9b1f18c3-225b-4871-ab71-ce46f] "JE-000030"
+            td [class=nowrap] "31 July 2026"
+            td "Depreciation to 31 Jul 2026"
+              small "by Fran Finance"
+            td "Jul 2026"
+            td [class=num mono] "423.82"
+            td
+              span [class=chip good] "Posted"
+          tr "  "
+            td [class=mono]
+              a [href=#/journals/b5046be0-08e7-4985-84cb-f7923] "JE-000003"
+            td [class=nowrap] "31 July 2026"
+            td "Invoice INV-1002"
+              small "by Fran Finance"
+            td "INV-1002"
+            td [class=num mono] "5,929.00"
+            td
+              span [class=chip good] "Posted"
+          tr "  "
+            td [class=mono]
+              a [href=#/journals/aab820d9-ed49-4e8c-9bc6-3c3d7] "JE-000014"
+            td [class=nowrap] "28 July 2026"
+            td "Bill BILL-1001 · DSS-INV-40871 · Demo Steel Supplies Pty Ltd"
+              small "by Fran Finance"
+            td "DSS-INV-40871"
+            td [class=num mono] "8,729.60"
+            td
+              span [class=chip good] "Posted"
+          tr "  "
+            td [class=mono]
+              a [href=#/journals/28f0f588-5ff8-47d6-8dea-0b8a9] "JE-000002"
+            td [class=nowrap] "24 July 2026"
+            td "Invoice INV-1001"
+              small "by Fran Finance"
+            td "INV-1001"
+            td [class=num mono] "27,500.00"
+            td
+              span [class=chip good] "Posted"
+          tr "  "
+            td [class=mono]
+              a [href=#/journals/06062be5-af2e-41fc-b20c-e8d19] "JE-000017"
+            td [class=nowrap] "20 July 2026"
+            td "Bill BILL-1004 · DIT-20977 · Demo Industrial Tools Pty Ltd"
+              small "by Fran Finance"
+            td "DIT-20977"
+            td [class=num mono] "2,640.00"
+            td
+              span [class=chip good] "Posted"
+          tr "  "
+            td [class=mono]
+              a [href=#/journals/85275792-a59d-41ec-bc34-28c54] "JE-000016"
+            td [class=nowrap] "15 July 2026"
+            td "Bill BILL-1003 · DIT-20931 · Demo Industrial Tools Pty Ltd"
+              small "by Fran Finance"
+            td "DIT-20931"
+            td [class=num mono] "9,790.00"
+            td
+              span [class=chip good] "Posted"
+          tr "  "
+            td [class=mono]
+              a [href=#/journals/66477c32-dba5-4d61-af35-3f483] "JE-000001"
+            td [class=nowrap] "1 July 2026"
+            td "Opening balances 1 July 2026 (training data)"
+              small "by Fran Finance"
+            td "Manual journal"
+            td [class=num mono] "223,000.00"
+            td
+              span [class=chip good] "Posted"
+    div [class=pager]
+      button [type=button class=btn data-page=-1] "Newer"
+      span [class=muted small] "Page 1 of 1"
+      button [type=button class=btn data-page=1] "Older"
+  p [class=msg data-msg]

@@ -1,0 +1,74 @@
+{
+ "C": {
+  "minerals": "7f845c11-696c-48a7-be39-6eda49a24308",
+  "port": "8e22773b-a9dc-4bd8-a7cc-757fa4ffbd78",
+  "water": "cb4a313f-4048-4549-9a9e-83c08f7ab2f3",
+  "energy": "f2aeca65-cb43-443a-b891-116e0a3ae565"
+ },
+ "SP": {
+  "steel": "496b5edb-aaf3-42d3-8ff8-58f0667423b6",
+  "consumables": "1b11d97a-a7d0-4ce5-9e15-f60afe601b69",
+  "crane": "0a82354b-f405-45a1-92fe-a3979114935d",
+  "ndt": "1af7fc37-07f2-4efb-b545-24e154ed849e",
+  "rigging": "0b536ce0-d792-4b7a-b74e-123cacd6275c",
+  "motors": "a2905ba7-925d-4660-b679-784eefe1140e",
+  "tools": "6ad99cf2-3e6e-41b6-b1c8-96bd965e6ab3"
+ },
+ "PR": {
+  "shutdown": "deca288f-4d4f-4aa0-93c3-2ed414080408",
+  "wharf": "2eda224e-21ca-4be9-aa45-87e7227ef76d",
+  "pump": "c4c36f22-9b5a-4fd7-a736-65d6f3a026ee",
+  "maint": "781a4639-6f52-42ef-b31d-cfb426d17fce",
+  "tender": "b94a6c5e-c65a-4825-9fb1-9b91680b459a"
+ },
+ "CC": {
+  "100": "e67ce196-a19d-4554-991d-3d7c080d1353",
+  "110": "e33c918c-3503-4d10-91fb-28a78479703d",
+  "120": "e2627c88-12e1-4d2e-a2b3-a5c79098c2c8",
+  "130": "0ce54c55-7661-4995-99a1-bb0c23c4e2ab",
+  "140": "b89bd728-67ee-4f97-80ba-347d2a9c25f9",
+  "200": "1d915523-f25a-493e-8793-ecb41df019f1",
+  "210": "396b0ff6-e650-4a6b-b23b-388d1ea223e9",
+  "300": "b3eaf2c4-a591-4f90-b681-69b10dcd0abc",
+  "400": "25c60c46-31fb-4e91-97ea-ca73d7136cb0",
+  "410": "27bee5e5-bc66-4ecb-b053-0fe97bc2d46e",
+  "500": "e4ba378e-6d06-431f-886d-ef5467728602",
+  "600": "688b154b-7bfd-408d-907e-9d438f556266",
+  "900": "164276d2-e277-4b47-8548-97b06007d7d5"
+ },
+ "BANK": "aa3fa9fd-da14-4958-a0ae-c53a72405bc9",
+ "CBA": "bfa95e7d-3914-4cb3-80b1-b9668894a825",
+ "INV": {
+  "sd1": "656e39cf-4d48-4243-b79d-2d7c43fbe5c5",
+  "m7": "43b0470a-e6fd-43f3-a771-c2bf6ad6d114",
+  "pump": "cec081b0-b2d9-4500-a0b9-82940dce3a08",
+  "w1": "6017516f-44c2-4b75-b148-556fb0cad20c",
+  "m8": "f92c9f47-3123-4ee7-bead-60fcba2bea4a",
+  "sd2": "56aa4f0f-bf1e-4122-9094-606646ad15fa",
+  "w2": "4a76f2f6-8c1c-4f08-bb37-95a214dc5cb3",
+  "m9": "c0e52a53-93fd-49e3-8334-75ce8cb54f01",
+  "sd3": "f7411b59-2dbe-44d0-bdc2-b1a627b05b1e"
+ },
+ "B": {
+  "po1": "255a1fca-86a7-4086-9a70-64e6583b5722",
+  "po2": "bc5f72c0-32be-4d18-9faf-3a600913ba7c",
+  "welder": "77f9a326-22d7-4505-bd6a-0da1b853b95a",
+  "laptop": "15062c96-da1b-43af-b1d4-0f37cccf2fee",
+  "ute": "3d844af2-2877-463b-8977-0a4c0cb68588",
+  "ndt1": "94c6687b-7593-468a-a36c-7857a6ce3440",
+  "crane": "02dab211-a34b-4df9-ad00-c0508ddc5d4a",
+  "rig": "7fe90a3c-bd88-4c6a-a32f-3e15602ec5dd",
+  "steel2": "1bd24965-6aec-4c86-8ef4-29ae0677136d",
+  "fuel": "17a23d71-7e1d-4edb-a171-26ef19e577fc",
+  "ndt2": "45968265-fd24-4608-a75b-30b406e04f19"
+ },
+ "Q": {
+  "q1": "f7e3623b-46c5-430b-83d6-be381979d43a",
+  "q2": "865d1de3-a275-4533-83bc-d1fc4dec3678"
+ },
+ "PO": {
+  "po1": "c858768b-87a7-4cf6-b88c-798a842f5237",
+  "po2": "a29cb7b3-416a-4e3e-9bd7-1f627adcafee",
+  "po3": "912bbd94-3f19-4320-9a24-4c268819fd4a"
+ }
+}

@@ -1,0 +1,29 @@
+p [class=msg id=app-msg]
+div [data-view] " "
+  header [class=page-head]
+    div
+      p [class=eyebrow] "PURCHASES · PAYMENTS"
+      h1 "Pay bills"
+      p [class=muted] "Choose the supplier and how much of each approved bill was p"
+  form [class=panel data-pay] "  "
+    div [class=grid3] "     "
+      div [class=fld]
+        label "Supplier"
+          span [class=req] "*"
+        select [id=sp-sup]
+      div [class=fld]
+        label "Payment date"
+        input [id=sp-date type=date]
+      div [class=fld]
+        label "Paid from"
+        select [id=sp-bank]
+      div [class=fld]
+        label "Method"
+        select [id=sp-method]
+      div [class=fld]
+        label "Reference"
+        input [id=sp-ref]
+    div [class=actions]
+      button [class=btn primary type=submit] "Record payment"
+      a [class=btn href=#/supplier-payments] "Cancel"
+  p [class=msg data-msg]

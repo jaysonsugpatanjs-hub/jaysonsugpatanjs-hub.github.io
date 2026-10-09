@@ -1,0 +1,54 @@
+p [class=msg id=app-msg]
+div [data-view] "    "
+  header [class=page-head]
+    div
+      p [class=eyebrow] "TAX"
+      h1 "Taxable payments annual report"
+      p [class=muted] "Payments made in the financial year to contractors marked "R"
+    div [class=top-actions]
+      div [class=fld]
+        label "Financial year"
+        select [id=tp-y]
+  div [class=cards figures] "    "
+    section [class=card]
+      h2 "Contractors"
+      p [class=big mono] "0"
+    section [class=card]
+      h2 "Gross paid"
+      p [class=big mono] "0.00"
+      p [class=muted small] "Including GST and any tax withheld"
+    section [class=card]
+      h2 "GST"
+      p [class=big mono] "0.00"
+    section [class=card]
+      h2 "Due"
+      p [class=big] "28 Aug 2026"
+      p [class=muted small] "Not marked lodged"
+  section [class=panel] " "
+    div [class=tbl-wrap]
+      table [class=tbl]
+        thead
+          tr
+            th "Contractor"
+            th "ABN"
+            th "Address"
+            th [class=num] "Gross paid"
+            th [class=num] "GST"
+            th [class=num] "Tax withheld (no ABN)"
+        tbody " "
+          tr
+            td [class=muted] "No payments to reportable contractors in this year."
+    div [class=actions]
+      button [type=button class=btn data-csv] "Download (CSV)"
+    p [class=muted small] "Amounts are the share of each bill paid in the year, so part"
+  form [class=panel toolbar data-lodge] " "
+    div [class=fld] " "
+      label "Date lodged with the ATO"
+      input [id=tp-on name=tp-on type=date]
+      small [class=err data-err=tp-on]
+    div [class=fld] " "
+      label "Reference (optional)"
+      input [id=tp-ref name=tp-ref type=text]
+      small [class=err data-err=tp-ref]
+    button [class=btn primary type=submit] "Mark lodged"
+  p [class=msg data-msg]

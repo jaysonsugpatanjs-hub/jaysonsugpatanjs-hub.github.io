@@ -1,0 +1,61 @@
+p [class=msg id=app-msg]
+div [data-view] " "
+  header [class=page-head]
+    div
+      p [class=eyebrow] "SALES"
+      h1 "Payments received"
+      p [class=muted] "Money customers have paid in. Each payment is banked to the "
+    a [class=btn primary href=#/receipts/new] "Record a payment"
+  section [class=panel]
+    div [class=tbl-wrap]
+      table [class=tbl]
+        thead
+          tr
+            th "Date"
+            th "Customer"
+            th "Reference"
+            th "Method"
+            th "Status"
+            th [class=num] "Amount"
+            th [class=num] "Not applied"
+        tbody " "
+          tr " "
+            td [class=nowrap]
+              a [href=#/receipts/2bec45bf-65bf-4d44-9cda-30f9a] "29 Sept 2026"
+            td "Demo Port Terminals Pty Ltd"
+            td "DEMO PORT EFT 66102"
+            td "Bank transfer"
+            td
+              span [class=chip good] "Banked"
+            td [class=num mono] "46,860.00"
+            td [class=num mono]
+          tr " "
+            td [class=nowrap]
+              a [href=#/receipts/e7506b49-cffe-4f81-971f-a2476] "3 Sept 2026"
+            td "Demo Water Authority"
+            td "DEMO WATER EFT 9031"
+            td "Bank transfer"
+            td
+              span [class=chip good] "Banked"
+            td [class=num mono] "10,593.00"
+            td [class=num mono]
+          tr " "
+            td [class=nowrap]
+              a [href=#/receipts/15b17668-2ad5-44d6-9c6b-e5a08] "28 Aug 2026"
+            td "Demo Minerals Processing Pty Ltd"
+            td "DEMO MINERALS EFT 51244"
+            td "Bank transfer"
+            td
+              span [class=chip good] "Banked"
+            td [class=num mono] "5,929.00"
+            td [class=num mono]
+          tr " "
+            td [class=nowrap]
+              a [href=#/receipts/9d8d16b3-484e-4628-a354-f9d7d] "20 Aug 2026"
+            td "Demo Minerals Processing Pty Ltd"
+            td "DEMO MINERALS EFT 51120"
+            td "Bank transfer"
+            td
+              span [class=chip good] "Banked"
+            td [class=num mono] "27,500.00"
+            td [class=num mono]

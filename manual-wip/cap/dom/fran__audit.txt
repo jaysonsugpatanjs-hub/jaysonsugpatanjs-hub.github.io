@@ -1,0 +1,1206 @@
+p [class=msg id=app-msg]
+div [data-view] " "
+  header [class=page-head]
+    div
+      p [class=eyebrow] "ADMINISTRATION"
+      h1 "Audit log"
+      p [class=muted] "Every change across the portal and Panalo Accounts. Records "
+  section [class=panel] "    "
+    form [class=toolbar data-filter] "    "
+      div [class=fld]
+        label "Area"
+        select [id=a-ent]
+      div [class=fld]
+        label "Event contains"
+        input [id=a-ev]
+      div [class=fld]
+        label "From"
+        input [id=a-from type=date]
+      div [class=fld]
+        label "To"
+        input [id=a-to type=date]
+      button [class=btn type=submit] "Filter"
+    div [class=tbl-wrap]
+      table [class=tbl]
+        thead
+          tr
+            th "When"
+            th "Who"
+            th "Event"
+            th "Record"
+            th "Change"
+        tbody " "
+          tr
+            td [class=nowrap] "8 Oct 2026, 5:56 am"
+            td "Fran Finance"
+            td
+              code "period_status_changed"
+            td "accounting_period"
+              small [class=mono] "c7486c14"
+            td
+              ul [class=diff]
+                li " →"
+                  span [class=k] "status"
+                  del "open"
+                  ins "soft_locked"
+                li
+                  span [class=k] "reason"
+                  ins "Month reviewed and reconciled"
+          tr
+            td [class=nowrap] "8 Oct 2026, 5:56 am"
+            td "Fran Finance"
+            td
+              code "period_status_changed"
+            td "accounting_period"
+              small [class=mono] "65fadcaa"
+            td
+              ul [class=diff]
+                li " →"
+                  span [class=k] "status"
+                  del "open"
+                  ins "soft_locked"
+                li
+                  span [class=k] "reason"
+                  ins "Month reviewed and reconciled"
+          tr
+            td [class=nowrap] "8 Oct 2026, 5:56 am"
+            td "Pat Payroll"
+            td
+              code "approval_requested"
+            td "approval"
+              small [class=mono] "8eafb4ce"
+            td
+              ul [class=diff]
+                li " →"
+                  span [class=k] "bsb"
+                  del "062000"
+                  ins "069000"
+                li " →"
+                  span [class=k] "accountName"
+                  del "C Rigger"
+                  ins "C Rigger"
+                li " →"
+                  span [class=k] "accountNumber"
+                  del "***666"
+                  ins "***212"
+          tr
+            td [class=nowrap] "8 Oct 2026, 5:56 am"
+            td "Fran Finance"
+            td
+              code "approval_requested"
+            td "approval"
+              small [class=mono] "9804d1a8"
+            td
+              ul [class=diff]
+                li " →"
+                  span [class=k] "bsb"
+                  del
+                  ins "068000"
+                li " →"
+                  span [class=k] "accountName"
+                  del
+                  ins "Demo NDT Inspections"
+                li " →"
+                  span [class=k] "accountNumber"
+                  del
+                  ins "***010"
+          tr
+            td [class=nowrap] "8 Oct 2026, 5:56 am"
+            td "Fran Finance"
+            td
+              code "bas_created"
+            td "bas_return"
+              small [class=mono] "57da130e"
+            td
+              ul [class=diff]
+                li
+                  span [class=k] "to"
+                  ins "2026-09-30"
+                li
+                  span [class=k] "from"
+                  ins "2026-07-01"
+                li
+                  span [class=k] "basis"
+                  ins "accrual"
+                li
+                  span [class=k] "frequency"
+                  ins "quarterly"
+          tr
+            td [class=nowrap] "8 Oct 2026, 5:56 am"
+            td "Chris Accountant"
+            td
+              code "journal_draft_created"
+            td "journal"
+              small [class=mono] "57c80cef"
+            td
+              ul [class=diff]
+                li
+                  span [class=k] "date"
+                  ins "2026-09-30"
+                li
+                  span [class=k] "debit"
+                  ins "186.4"
+                li
+                  span [class=k] "credit"
+                  ins "186.4"
+          tr
+            td [class=nowrap] "8 Oct 2026, 5:56 am"
+            td "Fran Finance"
+            td
+              code "journal_posted"
+            td "journal"
+              small [class=mono] "7af755ea"
+            td
+              ul [class=diff]
+                li " →"
+                  span [class=k] "status"
+                  del "draft"
+                  ins "posted"
+                li
+                  span [class=k] "total"
+                  ins "1250"
+                li
+                  span [class=k] "number"
+                  ins "JE-000044"
+                li
+                  span [class=k] "createdBy"
+                  ins "6d6ea0dd-8245-48e7-97de-c7ec50cbe81a"
+          tr
+            td [class=nowrap] "8 Oct 2026, 5:56 am"
+            td "Fran Finance"
+            td
+              code "journal_draft_created"
+            td "journal"
+              small [class=mono] "7af755ea"
+            td
+              ul [class=diff]
+                li
+                  span [class=k] "date"
+                  ins "2026-09-30"
+                li
+                  span [class=k] "debit"
+                  ins "1250"
+                li
+                  span [class=k] "credit"
+                  ins "1250"
+          tr
+            td [class=nowrap] "8 Oct 2026, 5:56 am"
+            td "Fran Finance"
+            td
+              code "payment_batch_created"
+            td "payment_batch"
+              small [class=mono] "fec558e0"
+            td
+              ul [class=diff]
+                li
+                  span [class=k] "date"
+                  ins "2026-10-09"
+                li
+                  span [class=k] "items"
+                  ins "3"
+                li
+                  span [class=k] "total"
+                  ins "26991.8"
+                li
+                  span [class=k] "number"
+                  ins "PB-0001"
+          tr
+            td [class=nowrap] "8 Oct 2026, 5:56 am"
+            td "Fran Finance"
+            td
+              code "bank_statement_imported"
+            td "bank_import"
+              small [class=mono] "fdde7ffe"
+            td
+              ul [class=diff]
+                li
+                  span [class=k] "file"
+                  ins "operating-oct-week1.csv"
+                li
+                  span [class=k] "added"
+                  ins "4"
+                li
+                  span [class=k] "lines"
+                  ins "4"
+                li
+                  span [class=k] "account"
+                  ins "1000"
+          tr
+            td [class=nowrap] "8 Oct 2026, 5:56 am"
+            td "Fran Finance"
+            td
+              code "bank_reconciled"
+            td "bank_reconciliation"
+              small [class=mono] "d447e3ed"
+            td
+              ul [class=diff]
+                li
+                  span [class=k] "date"
+                  ins "2026-09-30"
+                li
+                  span [class=k] "account"
+                  ins "1000"
+                li
+                  span [class=k] "balance"
+                  ins "179482.47"
+                li
+                  span [class=k] "unpresented"
+                  ins "0"
+                li
+                  span [class=k] "clearedBefore"
+                  ins "2026-07-02"
+          tr
+            td [class=nowrap] "8 Oct 2026, 5:56 am"
+            td "Fran Finance"
+            td
+              code "journal_posted"
+            td "journal"
+              small [class=mono] "6ad7dd57"
+            td
+              ul [class=diff]
+                li
+                  span [class=k] "ref"
+                  ins
+                li
+                  span [class=k] "date"
+                  ins "2026-09-30"
+                li
+                  span [class=k] "total"
+                  ins "12.5"
+                li
+                  span [class=k] "number"
+                  ins "JE-000043"
+                li
+                  span [class=k] "source"
+                  ins "bank_transaction"
+          tr
+            td [class=nowrap] "8 Oct 2026, 5:56 am"
+            td "Fran Finance"
+            td
+              code "bank_line_matched"
+            td "bank_transaction"
+              small [class=mono] "99df70b3"
+            td
+              ul [class=diff]
+                li
+                  span [class=k] "date"
+                  ins "2026-09-30"
+                li
+                  span [class=k] "kind"
+                  ins "created"
+                li
+                  span [class=k] "amount"
+                  ins "-12.5"
+                li
+                  span [class=k] "journals"
+                  ins "["JE-000043"]"
+          tr
+            td [class=nowrap] "8 Oct 2026, 5:56 am"
+            td "Fran Finance"
+            td
+              code "bank_line_matched"
+            td "bank_transaction"
+              small [class=mono] "ed56b8c3"
+            td
+              ul [class=diff]
+                li
+                  span [class=k] "date"
+                  ins "2026-09-30"
+                li
+                  span [class=k] "kind"
+                  ins "existing"
+                li
+                  span [class=k] "amount"
+                  ins "-4000.62"
+                li
+                  span [class=k] "journals"
+                  ins "["JE-000038"]"
+          tr
+            td [class=nowrap] "8 Oct 2026, 5:56 am"
+            td "Fran Finance"
+            td
+              code "bank_line_matched"
+            td "bank_transaction"
+              small [class=mono] "70f0e24e"
+            td
+              ul [class=diff]
+                li
+                  span [class=k] "date"
+                  ins "2026-09-29"
+                li
+                  span [class=k] "kind"
+                  ins "existing"
+                li
+                  span [class=k] "amount"
+                  ins "-534.6"
+                li
+                  span [class=k] "journals"
+                  ins "["JE-000029"]"
+          tr
+            td [class=nowrap] "8 Oct 2026, 5:56 am"
+            td "Fran Finance"
+            td
+              code "bank_line_matched"
+            td "bank_transaction"
+              small [class=mono] "71b3578b"
+            td
+              ul [class=diff]
+                li
+                  span [class=k] "date"
+                  ins "2026-09-29"
+                li
+                  span [class=k] "kind"
+                  ins "existing"
+                li
+                  span [class=k] "amount"
+                  ins "46860"
+                li
+                  span [class=k] "journals"
+                  ins "["JE-000013"]"
+          tr
+            td [class=nowrap] "8 Oct 2026, 5:56 am"
+            td "Fran Finance"
+            td
+              code "bank_line_matched"
+            td "bank_transaction"
+              small [class=mono] "11620c93"
+            td
+              ul [class=diff]
+                li
+                  span [class=k] "date"
+                  ins "2026-09-26"
+                li
+                  span [class=k] "kind"
+                  ins "existing"
+                li
+                  span [class=k] "amount"
+                  ins "-636"
+                li
+                  span [class=k] "journals"
+                  ins "["JE-000028"]"
+          tr
+            td [class=nowrap] "8 Oct 2026, 5:56 am"
+            td "Fran Finance"
+            td
+              code "bank_line_matched"
+            td "bank_transaction"
+              small [class=mono] "fcfbe5ef"
+            td
+              ul [class=diff]
+                li
+                  span [class=k] "date"
+                  ins "2026-09-25"
+                li
+                  span [class=k] "kind"
+                  ins "existing"
+                li
+                  span [class=k] "amount"
+                  ins "-597.07"
+                li
+                  span [class=k] "journals"
+                  ins "["JE-000039"]"
+          tr
+            td [class=nowrap] "8 Oct 2026, 5:56 am"
+            td "Fran Finance"
+            td
+              code "bank_line_matched"
+            td "bank_transaction"
+              small [class=mono] "b2a074d8"
+            td
+              ul [class=diff]
+                li
+                  span [class=k] "date"
+                  ins "2026-09-23"
+                li
+                  span [class=k] "kind"
+                  ins "existing"
+                li
+                  span [class=k] "amount"
+                  ins "-4087.12"
+                li
+                  span [class=k] "journals"
+                  ins "["JE-000036"]"
+          tr
+            td [class=nowrap] "8 Oct 2026, 5:56 am"
+            td "Fran Finance"
+            td
+              code "journal_posted"
+            td "journal"
+              small [class=mono] "a4f62732"
+            td
+              ul [class=diff]
+                li
+                  span [class=k] "ref"
+                  ins
+                li
+                  span [class=k] "date"
+                  ins "2026-09-18"
+                li
+                  span [class=k] "total"
+                  ins "186.4"
+                li
+                  span [class=k] "number"
+                  ins "JE-000042"
+                li
+                  span [class=k] "source"
+                  ins "bank_transaction"
+          tr
+            td [class=nowrap] "8 Oct 2026, 5:56 am"
+            td "Fran Finance"
+            td
+              code "bank_line_matched"
+            td "bank_transaction"
+              small [class=mono] "783daf2a"
+            td
+              ul [class=diff]
+                li
+                  span [class=k] "date"
+                  ins "2026-09-18"
+                li
+                  span [class=k] "kind"
+                  ins "created"
+                li
+                  span [class=k] "amount"
+                  ins "-186.4"
+                li
+                  span [class=k] "journals"
+                  ins "["JE-000042"]"
+          tr
+            td [class=nowrap] "8 Oct 2026, 5:56 am"
+            td "Fran Finance"
+            td
+              code "bank_line_matched"
+            td "bank_transaction"
+              small [class=mono] "354ec6ac"
+            td
+              ul [class=diff]
+                li
+                  span [class=k] "date"
+                  ins "2026-09-16"
+                li
+                  span [class=k] "kind"
+                  ins "existing"
+                li
+                  span [class=k] "amount"
+                  ins "-4000.62"
+                li
+                  span [class=k] "journals"
+                  ins "["JE-000034"]"
+          tr
+            td [class=nowrap] "8 Oct 2026, 5:56 am"
+            td "Fran Finance"
+            td
+              code "bank_line_matched"
+            td "bank_transaction"
+              small [class=mono] "9d14dadc"
+            td
+              ul [class=diff]
+                li
+                  span [class=k] "date"
+                  ins "2026-09-03"
+                li
+                  span [class=k] "kind"
+                  ins "existing"
+                li
+                  span [class=k] "amount"
+                  ins "10593"
+                li
+                  span [class=k] "journals"
+                  ins "["JE-000012"]"
+          tr
+            td [class=nowrap] "8 Oct 2026, 5:56 am"
+            td "Fran Finance"
+            td
+              code "bank_line_matched"
+            td "bank_transaction"
+              small [class=mono] "783fb411"
+            td
+              ul [class=diff]
+                li
+                  span [class=k] "date"
+                  ins "2026-09-01"
+                li
+                  span [class=k] "kind"
+                  ins "existing"
+                li
+                  span [class=k] "amount"
+                  ins "-1760"
+                li
+                  span [class=k] "journals"
+                  ins "["JE-000027"]"
+          tr
+            td [class=nowrap] "8 Oct 2026, 5:56 am"
+            td "Fran Finance"
+            td
+              code "journal_posted"
+            td "journal"
+              small [class=mono] "d9504955"
+            td
+              ul [class=diff]
+                li
+                  span [class=k] "ref"
+                  ins
+                li
+                  span [class=k] "date"
+                  ins "2026-08-31"
+                li
+                  span [class=k] "total"
+                  ins "12.5"
+                li
+                  span [class=k] "number"
+                  ins "JE-000041"
+                li
+                  span [class=k] "source"
+                  ins "bank_transaction"
+          tr
+            td [class=nowrap] "8 Oct 2026, 5:56 am"
+            td "Fran Finance"
+            td
+              code "bank_line_matched"
+            td "bank_transaction"
+              small [class=mono] "72bdd0b2"
+            td
+              ul [class=diff]
+                li
+                  span [class=k] "date"
+                  ins "2026-08-31"
+                li
+                  span [class=k] "kind"
+                  ins "created"
+                li
+                  span [class=k] "amount"
+                  ins "-12.5"
+                li
+                  span [class=k] "journals"
+                  ins "["JE-000041"]"
+          tr
+            td [class=nowrap] "8 Oct 2026, 5:56 am"
+            td "Fran Finance"
+            td
+              code "bank_line_matched"
+            td "bank_transaction"
+              small [class=mono] "164ceeb5"
+            td
+              ul [class=diff]
+                li
+                  span [class=k] "date"
+                  ins "2026-08-28"
+                li
+                  span [class=k] "kind"
+                  ins "existing"
+                li
+                  span [class=k] "amount"
+                  ins "5929"
+                li
+                  span [class=k] "journals"
+                  ins "["JE-000011"]"
+          tr
+            td [class=nowrap] "8 Oct 2026, 5:56 am"
+            td "Fran Finance"
+            td
+              code "bank_line_matched"
+            td "bank_transaction"
+              small [class=mono] "6c144eef"
+            td
+              ul [class=diff]
+                li
+                  span [class=k] "date"
+                  ins "2026-08-20"
+                li
+                  span [class=k] "kind"
+                  ins "existing"
+                li
+                  span [class=k] "amount"
+                  ins "-8729.6"
+                li
+                  span [class=k] "journals"
+                  ins "["JE-000026"]"
+          tr
+            td [class=nowrap] "8 Oct 2026, 5:56 am"
+            td "Fran Finance"
+            td
+              code "bank_line_matched"
+            td "bank_transaction"
+              small [class=mono] "37b2b9a3"
+            td
+              ul [class=diff]
+                li
+                  span [class=k] "date"
+                  ins "2026-08-20"
+                li
+                  span [class=k] "kind"
+                  ins "existing"
+                li
+                  span [class=k] "amount"
+                  ins "27500"
+                li
+                  span [class=k] "journals"
+                  ins "["JE-000010"]"
+          tr
+            td [class=nowrap] "8 Oct 2026, 5:56 am"
+            td "Fran Finance"
+            td
+              code "bank_line_matched"
+            td "bank_transaction"
+              small [class=mono] "603199a4"
+            td
+              ul [class=diff]
+                li
+                  span [class=k] "date"
+                  ins "2026-08-12"
+                li
+                  span [class=k] "kind"
+                  ins "existing"
+                li
+                  span [class=k] "amount"
+                  ins "-12430"
+                li
+                  span [class=k] "journals"
+                  ins "["JE-000024"]"
+          tr
+            td [class=nowrap] "8 Oct 2026, 5:56 am"
+            td "Fran Finance"
+            td
+              code "bank_line_matched"
+            td "bank_transaction"
+              small [class=mono] "46f484d9"
+            td
+              ul [class=diff]
+                li
+                  span [class=k] "date"
+                  ins "2026-08-05"
+                li
+                  span [class=k] "kind"
+                  ins "existing"
+                li
+                  span [class=k] "amount"
+                  ins "-59400"
+                li
+                  span [class=k] "journals"
+                  ins "["JE-000025"]"
+          tr
+            td [class=nowrap] "8 Oct 2026, 5:56 am"
+            td "Fran Finance"
+            td
+              code "journal_posted"
+            td "journal"
+              small [class=mono] "8284c1aa"
+            td
+              ul [class=diff]
+                li
+                  span [class=k] "ref"
+                  ins
+                li
+                  span [class=k] "date"
+                  ins "2026-07-31"
+                li
+                  span [class=k] "total"
+                  ins "12.5"
+                li
+                  span [class=k] "number"
+                  ins "JE-000040"
+                li
+                  span [class=k] "source"
+                  ins "bank_transaction"
+          tr
+            td [class=nowrap] "8 Oct 2026, 5:56 am"
+            td "Fran Finance"
+            td
+              code "bank_line_matched"
+            td "bank_transaction"
+              small [class=mono] "7bb4ebf1"
+            td
+              ul [class=diff]
+                li
+                  span [class=k] "date"
+                  ins "2026-07-31"
+                li
+                  span [class=k] "kind"
+                  ins "created"
+                li
+                  span [class=k] "amount"
+                  ins "-12.5"
+                li
+                  span [class=k] "journals"
+                  ins "["JE-000040"]"
+          tr
+            td [class=nowrap] "8 Oct 2026, 5:56 am"
+            td "Fran Finance"
+            td
+              code "bank_statement_imported"
+            td "bank_import"
+              small [class=mono] "bc4de091"
+            td
+              ul [class=diff]
+                li
+                  span [class=k] "file"
+                  ins "operating-jul-sep-2026.csv"
+                li
+                  span [class=k] "added"
+                  ins "18"
+                li
+                  span [class=k] "lines"
+                  ins "18"
+                li
+                  span [class=k] "account"
+                  ins "1000"
+          tr
+            td [class=nowrap] "8 Oct 2026, 5:56 am"
+            td "Fran Finance"
+            td
+              code "bank_rule_created"
+            td "bank_rule"
+              small [class=mono] "9fbc47d9"
+            td
+              ul [class=diff]
+                li
+                  span [class=k] "id"
+                  ins "9fbc47d9-4db5-458d-a4d9-8bd86beb159c"
+                li
+                  span [class=k] "name"
+                  ins "Monthly account fee"
+                li
+                  span [class=k] "payee"
+                  ins "Bank"
+                li
+                  span [class=k] "active"
+                  ins "true"
+                li
+                  span [class=k] "priority"
+                  ins "20"
+                li
+                  span [class=k] "direction"
+                  ins "out"
+                li
+                  span [class=k] "amount_max"
+                  ins
+                li
+                  span [class=k] "amount_min"
+                  ins
+                li
+                  span [class=k] "created_at"
+                  ins "2026-10-07T18:56:50.840748+00:00"
+                li
+                  span [class=k] "created_by"
+                  ins "6d6ea0dd-8245-48e7-97de-c7ec50cbe81a"
+                li
+                  span [class=k] "match_text"
+                  ins "ACCOUNT FEE"
+                li
+                  span [class=k] "updated_at"
+                  ins "2026-10-07T18:56:50.840748+00:00"
+                li
+                  span [class=k] "tax_code_id"
+                  ins "722c41f1-e7ab-4ec3-a6ac-b4cd18f3f67e"
+                li
+                  span [class=k] "bank_account_id"
+                  ins "abf5a6be-47f8-4dc0-a43c-e040e4994c8c"
+                li
+                  span [class=k] "organization_id"
+                  ins "00000000-0000-4000-8000-000000000001"
+                li
+                  span [class=k] "target_account_id"
+                  ins "d306f517-89d4-4893-83d5-c79c6c4369fb"
+          tr
+            td [class=nowrap] "8 Oct 2026, 5:56 am"
+            td "Fran Finance"
+            td
+              code "bank_rule_created"
+            td "bank_rule"
+              small [class=mono] "f9fc096f"
+            td
+              ul [class=diff]
+                li
+                  span [class=k] "id"
+                  ins "f9fc096f-3208-4895-8e8f-6e33e56a432c"
+                li
+                  span [class=k] "name"
+                  ins "Fuel - Demo Servo fuel card"
+                li
+                  span [class=k] "payee"
+                  ins "Demo Servo"
+                li
+                  span [class=k] "active"
+                  ins "true"
+                li
+                  span [class=k] "priority"
+                  ins "10"
+                li
+                  span [class=k] "direction"
+                  ins "out"
+                li
+                  span [class=k] "amount_max"
+                  ins
+                li
+                  span [class=k] "amount_min"
+                  ins
+                li
+                  span [class=k] "created_at"
+                  ins "2026-10-07T18:56:50.830409+00:00"
+                li
+                  span [class=k] "created_by"
+                  ins "6d6ea0dd-8245-48e7-97de-c7ec50cbe81a"
+                li
+                  span [class=k] "match_text"
+                  ins "DEMO SERVO"
+                li
+                  span [class=k] "updated_at"
+                  ins "2026-10-07T18:56:50.830409+00:00"
+                li
+                  span [class=k] "tax_code_id"
+                  ins "d238567a-096c-4b86-9256-ab4bce2209e3"
+                li
+                  span [class=k] "bank_account_id"
+                  ins "abf5a6be-47f8-4dc0-a43c-e040e4994c8c"
+                li
+                  span [class=k] "organization_id"
+                  ins "00000000-0000-4000-8000-000000000001"
+                li
+                  span [class=k] "target_account_id"
+                  ins "9957d656-a789-498e-b496-678fe9dc653e"
+          tr
+            td [class=nowrap] "8 Oct 2026, 5:56 am"
+            td "Pat Payroll"
+            td
+              code "stp_event_created"
+            td "stp_event"
+              small [class=mono] "b1f671e1"
+            td
+              ul [class=diff]
+                li
+                  span [class=k] "kind"
+                  ins "pay"
+                li
+                  span [class=k] "payRun"
+                  ins "PR-00003"
+          tr
+            td [class=nowrap] "8 Oct 2026, 5:56 am"
+            td "Pat Payroll"
+              small "about Casey Rigger"
+            td
+              code "payroll_employee_stp_saved"
+            td "payroll_employee"
+              small [class=mono] "3ba8df5a"
+            td
+              ul [class=diff]
+                li " →"
+                  span [class=k] "family_name"
+                  del "Rigger"
+                  ins "Rigger"
+                li " →"
+                  span [class=k] "given_names"
+                  del "Casey"
+                  ins "Casey"
+                li " →"
+                  span [class=k] "stp_country"
+                  del
+                  ins
+                li " →"
+                  span [class=k] "cessation_type"
+                  del
+                  ins
+                li " →"
+                  span [class=k] "stp_income_type"
+                  del "SAW"
+                  ins "SAW"
+                li
+                  span [class=k] "addressChanged"
+                  ins "true"
+          tr
+            td [class=nowrap] "8 Oct 2026, 5:56 am"
+            td "Dana Director"
+            td
+              code "stp_event_ready"
+            td "stp_event"
+              small [class=mono] "d6560f22"
+            td
+              ul [class=diff]
+                li " →"
+                  span [class=k] "status"
+                  del "validated"
+                  ins "ready"
+          tr
+            td [class=nowrap] "8 Oct 2026, 5:56 am"
+            td "Pat Payroll"
+            td
+              code "stp_event_created"
+            td "stp_event"
+              small [class=mono] "d6560f22"
+            td
+              ul [class=diff]
+                li
+                  span [class=k] "kind"
+                  ins "pay"
+                li
+                  span [class=k] "payRun"
+                  ins "PR-00002"
+          tr
+            td [class=nowrap] "8 Oct 2026, 5:56 am"
+            td "Dana Director"
+            td
+              code "stp_event_ready"
+            td "stp_event"
+              small [class=mono] "d3e4569b"
+            td
+              ul [class=diff]
+                li " →"
+                  span [class=k] "status"
+                  del "validated"
+                  ins "ready"
+          tr
+            td [class=nowrap] "8 Oct 2026, 5:56 am"
+            td "Pat Payroll"
+            td
+              code "stp_event_created"
+            td "stp_event"
+              small [class=mono] "d3e4569b"
+            td
+              ul [class=diff]
+                li
+                  span [class=k] "kind"
+                  ins "pay"
+                li
+                  span [class=k] "payRun"
+                  ins "PR-00001"
+          tr
+            td [class=nowrap] "8 Oct 2026, 5:56 am"
+            td "Pat Payroll"
+              small "about Jamie Apprentice"
+            td
+              code "payroll_employee_stp_saved"
+            td "payroll_employee"
+              small [class=mono] "60773234"
+            td
+              ul [class=diff]
+                li " →"
+                  span [class=k] "family_name"
+                  del
+                  ins "Apprentice"
+                li " →"
+                  span [class=k] "given_names"
+                  del
+                  ins "Jamie"
+                li " →"
+                  span [class=k] "stp_country"
+                  del
+                  ins
+                li " →"
+                  span [class=k] "cessation_type"
+                  del
+                  ins
+                li " →"
+                  span [class=k] "stp_income_type"
+                  del "SAW"
+                  ins "SAW"
+                li
+                  span [class=k] "addressChanged"
+                  ins "true"
+          tr
+            td [class=nowrap] "8 Oct 2026, 5:56 am"
+            td "Pat Payroll"
+              small "about Casey Rigger"
+            td
+              code "payroll_employee_stp_saved"
+            td "payroll_employee"
+              small [class=mono] "3ba8df5a"
+            td
+              ul [class=diff]
+                li " →"
+                  span [class=k] "family_name"
+                  del
+                  ins "Rigger"
+                li " →"
+                  span [class=k] "given_names"
+                  del
+                  ins "Casey"
+                li " →"
+                  span [class=k] "stp_country"
+                  del
+                  ins
+                li " →"
+                  span [class=k] "cessation_type"
+                  del
+                  ins
+                li " →"
+                  span [class=k] "stp_income_type"
+                  del "SAW"
+                  ins "SAW"
+                li
+                  span [class=k] "addressChanged"
+                  ins "true"
+          tr
+            td [class=nowrap] "8 Oct 2026, 5:56 am"
+            td "Pat Payroll"
+              small "about Olivia Office"
+            td
+              code "payroll_employee_stp_saved"
+            td "payroll_employee"
+              small [class=mono] "c8bf1617"
+            td
+              ul [class=diff]
+                li " →"
+                  span [class=k] "family_name"
+                  del
+                  ins "Office"
+                li " →"
+                  span [class=k] "given_names"
+                  del
+                  ins "Olivia"
+                li " →"
+                  span [class=k] "stp_country"
+                  del
+                  ins
+                li " →"
+                  span [class=k] "cessation_type"
+                  del
+                  ins
+                li " →"
+                  span [class=k] "stp_income_type"
+                  del "SAW"
+                  ins "SAW"
+                li
+                  span [class=k] "addressChanged"
+                  ins "true"
+          tr
+            td [class=nowrap] "8 Oct 2026, 5:56 am"
+            td "Pat Payroll"
+              small "about Tom Welder"
+            td
+              code "payroll_employee_stp_saved"
+            td "payroll_employee"
+              small [class=mono] "7ff4b594"
+            td
+              ul [class=diff]
+                li " →"
+                  span [class=k] "family_name"
+                  del
+                  ins "Welder"
+                li " →"
+                  span [class=k] "given_names"
+                  del
+                  ins "Tom"
+                li " →"
+                  span [class=k] "stp_country"
+                  del
+                  ins
+                li " →"
+                  span [class=k] "cessation_type"
+                  del
+                  ins
+                li " →"
+                  span [class=k] "stp_income_type"
+                  del "SAW"
+                  ins "SAW"
+                li
+                  span [class=k] "addressChanged"
+                  ins "true"
+          tr
+            td [class=nowrap] "8 Oct 2026, 5:56 am"
+            td "Pat Payroll"
+            td
+              code "stp_settings_saved"
+            td "stp_settings"
+              small [class=mono] "00000000"
+            td
+              ul [class=diff]
+                li " →"
+                  span [class=k] "branch"
+                  del "001"
+                  ins "001"
+                li " →"
+                  span [class=k] "updated_at"
+                  del "2026-10-07T18:56:44.260812+00:00"
+                  ins "2026-10-07T18:56:50.582238+00:00"
+                li " →"
+                  span [class=k] "updated_by"
+                  del
+                  ins "b16b95d7-2c42-440e-8362-cba600d224ef"
+                li " →"
+                  span [class=k] "contact_name"
+                  del
+                  ins "Pat Payroll"
+                li " →"
+                  span [class=k] "contact_email"
+                  del
+                  ins "pat.payroll@training.panalo.test"
+                li " →"
+                  span [class=k] "contact_phone"
+                  del
+                  ins "03 5700 0001"
+                li " →"
+                  span [class=k] "organization_id"
+                  del "00000000-0000-4000-8000-000000000001"
+                  ins "00000000-0000-4000-8000-000000000001"
+                li " →"
+                  span [class=k] "transmission_enabled"
+                  del "false"
+                  ins "false"
+          tr
+            td [class=nowrap] "8 Oct 2026, 5:56 am"
+            td "Olivia Office"
+              small "about Olivia Office"
+            td
+              code "leave_requested"
+            td "leave_request"
+              small [class=mono] "567d90c3"
+            td
+              ul [class=diff]
+                li
+                  span [class=k] "end"
+                  ins "2026-11-03"
+                li
+                  span [class=k] "type"
+                  ins "ANNUAL"
+                li
+                  span [class=k] "hours"
+                  ins "15.2"
+                li
+                  span [class=k] "start"
+                  ins "2026-11-02"
+          tr
+            td [class=nowrap] "8 Oct 2026, 5:56 am"
+            td "Fran Finance"
+            td
+              code "journal_posted"
+            td "journal"
+              small [class=mono] "032c3510"
+            td
+              ul [class=diff]
+                li
+                  span [class=k] "ref"
+                  ins "PR-00001"
+                li
+                  span [class=k] "date"
+                  ins "2026-09-25"
+                li
+                  span [class=k] "total"
+                  ins "597.07"
+                li
+                  span [class=k] "number"
+                  ins "JE-000039"
+                li
+                  span [class=k] "source"
+                  ins "super_payment"
+          tr
+            td [class=nowrap] "8 Oct 2026, 5:56 am"
+            td "Fran Finance"
+            td
+              code "super_paid"
+            td "pay_run"
+              small [class=mono] "a122686e"
+            td
+              ul [class=diff]
+                li
+                  span [class=k] "dueBy"
+                  ins "2026-09-25"
+                li
+                  span [class=k] "super"
+                  ins "597.07"
+                li
+                  span [class=k] "paidOn"
+                  ins "2026-09-25"
+    div [class=pager] " "
+      button [type=button class=btn data-page=-1] "Newer"
+      span [class=muted small] "Page 1 of 6"
+      button [type=button class=btn data-page=1] "Older"
+    p [class=msg data-msg]

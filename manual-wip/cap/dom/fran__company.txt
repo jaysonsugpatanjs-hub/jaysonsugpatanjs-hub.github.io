@@ -1,0 +1,73 @@
+p [class=msg id=app-msg]
+div [data-view] "  "
+  header [class=page-head]
+    div
+      p [class=eyebrow] "ADMINISTRATION"
+      h1 "Company settings"
+      p [class=muted] "Setup completed 8 Oct 2026. Changes save straight away and a"
+    span [class=chip ] "Read only"
+  section [class=panel data-step-panel] "  "
+    h2 "Review"
+    p [class=msg good] "Setup complete."
+    table [class=tbl kv]
+      tbody "        "
+        tr
+          th "Legal name"
+          td "Panalo Pipes & Structurals Pty Ltd"
+        tr
+          th "Trading name"
+          td "Panalo Pipes & Structurals"
+        tr
+          th "ABN"
+          td "40 650 463 102"
+        tr
+          th "ACN"
+          td "650 463 102"
+        tr
+          th "Business address"
+          td "1 Training Workshop Road, Broadford VIC 3658"
+        tr
+          th "Postal address"
+          td
+            span [class=muted] "—"
+        tr
+          th "Phone"
+          td "03 5700 0000"
+        tr
+          th "Email"
+          td "accounts@training.panalo.test"
+        tr
+          th "Website"
+          td "https://jaysonsugpatanjs-hub.github.io"
+        tr
+          th "GST"
+          td "Registered, accrual basis, BAS quarterly"
+        tr
+          th "Financial year"
+          td "Starts July"
+        tr
+          th "Accounting basis"
+          td "accrual"
+        tr
+          th "States"
+          td "VIC, NSW"
+        tr
+          th "Pay cycle"
+          td "weekly, paid Wednesday"
+        tr
+          th "Payroll contact"
+          td "Pat Payroll · pat.payroll@training.panalo.test · 03 5700 000"
+        tr
+          th "Super clearing house"
+          td
+            span [class=muted] "—"
+        tr
+          th "Workers compensation"
+          td "VIC: WorkSafe Victoria agent (training)"
+        tr
+          th "Payment terms"
+          td "30 days"
+        tr
+          th "Active bank accounts"
+          td "1"
+  p [class=msg data-msg]

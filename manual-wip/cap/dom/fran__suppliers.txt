@@ -1,0 +1,108 @@
+p [class=msg id=app-msg]
+div [data-view] " "
+  header [class=page-head]
+    div
+      p [class=eyebrow] "PURCHASES"
+      h1 "Suppliers"
+      p [class=muted] "Suppliers and subcontractors. Warnings show missing ABNs (47"
+    a [class=btn primary href=#/suppliers/new] "New supplier"
+  section [class=panel] " "
+    form [class=toolbar data-filter] "  "
+      div [class=fld]
+        label "Name contains"
+        input [id=s-q]
+      div [class=fld]
+        label "Show"
+        select [id=s-st]
+      button [class=btn type=submit] "Filter"
+    div [class=tbl-wrap]
+      table [class=tbl]
+        thead
+          tr
+            th "Supplier"
+            th "ABN"
+            th "Trade"
+            th "Insurance"
+            th "Licence"
+            th [class=num] "Owing"
+        tbody " "
+          tr "  "
+            td "  "
+              a [href=#/suppliers/b5ced7e0-05ce-458d-a779-7f04] "Demo Crane Hire Pty Ltd"
+              span [class=chip info] "Subcontractor"
+              span [class=chip ] "TPAR"
+              small [class=warn-text] "Insurance expires within 30 days"
+            td [class=mono nowrap] "16 000 000 091"
+            td
+            td [class=nowrap] "31 Oct 2026"
+              span [class=chip pending] "23 days"
+            td [class=nowrap]
+              span [class=muted] "—"
+            td [class=num mono] "4,620.00"
+          tr "  "
+            td
+              a [href=#/suppliers/d9a9daaa-4881-4f42-97fc-95de] "Demo Industrial Tools Pty Ltd"
+            td [class=mono nowrap] "21 000 000 027"
+            td
+            td [class=nowrap]
+              span [class=muted] "—"
+            td [class=nowrap]
+              span [class=muted] "—"
+            td [class=num mono]
+          tr "  "
+            td
+              a [href=#/suppliers/07602741-1c79-4ec9-a82e-a65b] "Demo Motors Pty Ltd"
+            td [class=mono nowrap] "19 000 000 018"
+            td
+            td [class=nowrap]
+              span [class=muted] "—"
+            td [class=nowrap]
+              span [class=muted] "—"
+            td [class=num mono]
+          tr "  "
+            td "  "
+              a [href=#/suppliers/c9bcc3e9-f433-4858-ad97-bbb8] "Demo NDT Inspections Pty Ltd"
+              span [class=chip info] "Subcontractor"
+              span [class=chip ] "TPAR"
+            td [class=mono nowrap] "17 000 000 009"
+            td
+            td [class=nowrap] "31 Mar 2027"
+            td [class=nowrap]
+              span [class=muted] "—"
+            td [class=num mono]
+          tr "  "
+            td "  "
+              a [href=#/suppliers/cfdd1ada-7d79-4d15-8ccd-a99f] "Demo Rigging Services (no ABN)"
+              span [class=chip info] "Subcontractor"
+              span [class=chip ] "TPAR"
+              small [class=warn-text] "No ABN: 47% must be withheld from payments over $75"
+              small [class=warn-text] "No insurance on file"
+            td [class=mono nowrap]
+              span [class=chip bad] "No ABN"
+            td
+            td [class=nowrap]
+              span [class=muted] "—"
+            td [class=nowrap]
+              span [class=muted] "—"
+            td [class=num mono]
+          tr "  "
+            td
+              a [href=#/suppliers/142838bb-c337-4c84-b29b-475e] "Demo Steel Supplies Pty Ltd"
+            td [class=mono nowrap] "12 000 000 041"
+            td
+            td [class=nowrap]
+              span [class=muted] "—"
+            td [class=nowrap]
+              span [class=muted] "—"
+            td [class=num mono] "20,416.00"
+          tr "  "
+            td
+              a [href=#/suppliers/4ed044b3-bde1-49f5-a853-0a37] "Demo Welding Consumables Pty Ltd"
+            td [class=mono nowrap] "14 000 000 050"
+            td
+            td [class=nowrap]
+              span [class=muted] "—"
+            td [class=nowrap]
+              span [class=muted] "—"
+            td [class=num mono] "1,955.80"
+  p [class=msg data-msg]

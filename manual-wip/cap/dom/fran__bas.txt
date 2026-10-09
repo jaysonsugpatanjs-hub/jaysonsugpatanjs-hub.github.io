@@ -1,0 +1,59 @@
+p [class=msg id=app-msg]
+div [data-view] "    "
+  header [class=page-head]
+    div
+      p [class=eyebrow] "TAX"
+      h1 "BAS"
+      p [class=muted] "Workpapers for each activity statement, worked out from the "
+  section [class=panel]
+    h2 "Settings"
+    p "Registered for GST, basis, BAS lodged ."
+      span [class=muted small] "Change these in . A BAS keeps the basis it was made with."
+        a [href=#/company] "Company settings"
+  form [class=panel data-new] " "
+    h2 "Prepare a BAS"
+    div [class=grid3] "    "
+      div [class=fld]
+        label "Lodged"
+        select [id=bn-f]
+      div [class=fld] " "
+        label "Period from"
+        input [id=bn-from name=bn-from type=date]
+        small [class=err data-err=bn-from]
+      div [class=fld] " "
+        label "Period to"
+        input [id=bn-to name=bn-to type=date]
+        small [class=err data-err=bn-to]
+      div [class=fld]
+        label "GST reporting"
+        select [id=bn-m]
+        small "Simpler BAS is for turnover under $10 million. Check which o"
+    div [class=actions]
+      button [class=btn primary type=submit] "Prepare"
+  section [class=panel]
+    div [class=tbl-wrap]
+      table [class=tbl]
+        thead
+          tr
+            th "Period"
+            th "Status"
+            th "Due"
+            th [class=num] "Payable (refund)"
+            th "Prepared"
+            th "Reviewed"
+            th "Lodged"
+        tbody " "
+          tr "  "
+            td
+              a [href=#/bas/57da130e-d41e-48a7-ba6b-1a97e73a90]
+              small "Quarterly · accrual basis"
+            td
+              span [class=chip pending] "Being prepared"
+            td [class=nowrap] "28 Oct 2026"
+            td [class=num mono]
+              span [class=muted] "—"
+            td "Fran Finance"
+            td
+            td
+    p [class=muted small] "Due dates are for lodging yourself. Tax agents may have late"
+  p [class=msg data-msg]

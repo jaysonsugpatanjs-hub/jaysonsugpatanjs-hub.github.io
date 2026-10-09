@@ -1,0 +1,94 @@
+p [class=msg id=app-msg]
+div [data-view] " "
+  header [class=page-head]
+    div
+      p [class=eyebrow] "PURCHASES · SUPPLIERS"
+      h1 "New supplier"
+      p [class=muted] "Bank details are added separately, from the supplier's page,"
+  form [class=panel data-sup] "      "
+    div [class=grid2] "        "
+      div [class=fld] " "
+        label "Legal or business name"
+          span [class=req] "*"
+        input [id=su-name name=su-name type=text]
+        small [class=err data-err=su-name]
+      div [class=fld] " "
+        label "Trading name"
+        input [id=su-trading name=su-trading type=text]
+        small [class=err data-err=su-trading]
+      div [class=fld] " "
+        label "ABN"
+        input [id=su-abn name=su-abn type=text]
+        small "If a supplier doesn't quote an ABN, 47% of payments over $75"
+        small [class=err data-err=su-abn]
+      div [class=fld] " "
+        label "Trade or category"
+        input [id=su-trade name=su-trade type=text]
+        small "For example: steel supply, rigging, NDT"
+        small [class=err data-err=su-trade]
+      div [class=fld] " "
+        label "Contact"
+        input [id=su-contact name=su-contact type=text]
+        small [class=err data-err=su-contact]
+      div [class=fld] " "
+        label "Accounts email"
+        input [id=su-email name=su-email type=email]
+        small [class=err data-err=su-email]
+      div [class=fld] " "
+        label "Phone"
+        input [id=su-phone name=su-phone type=tel]
+        small [class=err data-err=su-phone]
+      div [class=fld] " "
+        label "Payment terms (days)"
+        input [id=su-terms name=su-terms type=text]
+        small "Blank means 30 days"
+        small [class=err data-err=su-terms]
+    fieldset [class=addr]
+      legend "Address"
+      div [class=grid4 addr-grid] "    "
+        div [class=fld]
+          label "Street"
+          input [id=su-addr-street]
+        div [class=fld]
+          label "Suburb"
+          input [id=su-addr-suburb]
+        div [class=fld]
+          label "State"
+          select [id=su-addr-state]
+        div [class=fld]
+          label "Postcode"
+          input [id=su-addr-postcode]
+    div [class=grid2] "  "
+      div [class=fld]
+        label "Default expense account"
+        select [id=su-acc]
+      div [class=fld]
+        label "Default tax code"
+        select [id=su-tax]
+    fieldset [class=addr] "    "
+      legend "Tax and compliance"
+      label [class=check] "Registered for GST"
+        input [type=checkbox id=su-gst]
+      label [class=check] "Subcontractor"
+        input [type=checkbox id=su-sub]
+      label [class=check] "Report on the Taxable Payments Annual Report (TPAR)"
+        input [type=checkbox id=su-tpar]
+      label [class=check] "No-ABN withholding doesn't apply (for example, a hobbyist or"
+        input [type=checkbox id=su-exempt]
+      div [class=grid2] "  "
+        div [class=fld] " "
+          label "Insurance expires"
+          input [id=su-ins name=su-ins type=date]
+          small "Public liability / workers compensation for subcontractors"
+          small [class=err data-err=su-ins]
+        div [class=fld] " "
+          label "Licence expires"
+          input [id=su-lic name=su-lic type=date]
+          small [class=err data-err=su-lic]
+    div [class=fld]
+      label "Notes"
+      textarea [id=su-notes]
+    div [class=actions]
+      button [class=btn primary type=submit] "Save supplier"
+      a [class=btn href=#/suppliers] "Cancel"
+  p [class=msg data-msg]

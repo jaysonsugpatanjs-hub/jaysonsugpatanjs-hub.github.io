@@ -1,0 +1,17 @@
+from common import *
+with sync_playwright() as p:
+    s = S(p, "dana", height=1900); s.go("dashboard"); s.page.wait_for_timeout(1500)
+    nav = s.page.locator("[data-nav]").bounding_box(); print(nav)
+    last = s.page.locator("[data-nav] a.nav-item").last.bounding_box()
+    s.shot("4.3", "Menu count badges (Dana Director)", callouts=[("a.nav-item[href='#/pay-runs'] .count", "Pay runs to approve"), ("a.nav-item[href='#/bas'] .count", "BAS to review"), ("a.nav-item[href='#/reconciliation'] .count", "Bank lines to match"), ("a.nav-item[href='#/payment-batches'] .count", "Batches to approve"), ("a.nav-item[href='#/approvals'] .count", "Approvals waiting")], clip={"x": 0, "y": 62, "width": 236, "height": last["y"] + last["height"] - 50})
+    s.close()
+    s = S(p, "dana"); s.go("dashboard"); s.page.wait_for_timeout(1500)
+    s.shot("4.1", "The header bar", callouts=[(".brand", "Home (dashboard)"), ("[data-bell]", "Notifications bell"), ("a.top-link[href='../training/']", "Portal")], clip={"x": 0, "y": 0, "width": 1360, "height": 62})
+    s.close()
+    s = S(p, "fran", height=1700); s.go("dashboard"); s.page.wait_for_timeout(1000)
+    last = s.page.locator("[data-nav] a.nav-item").last.bounding_box()
+    s.shot("4.2", "The menu for a finance administrator (Fran Finance)", callouts=[(".nav-item.active", "Current screen"), (".nav-title:text-is('Sales')", "Menu group"), ("a.nav-item[href='#/bills']", "A menu item"), (".nav-title:text-is('Administration')", "Administration group")], clip={"x": 0, "y": 62, "width": 236, "height": last["y"] + last["height"] - 50})
+    s.close()
+    s = S(p, "fran"); s.go("bills/10bc5260-a7e0-4a9c-b799-f1ee3ca33997"); s.page.wait_for_selector("[data-approve]")
+    s.shot("4.6", "A record with its action buttons and attachments (a bill for review)", callouts=[("h1 .chip", "Status chip"), (".panel .actions", "Edit · Approve · Delete"), ("[data-attachments] h2", "Attachments panel"), ("[data-attachments] label.btn.file", "Attach a PDF or photo")])
+    s.close()

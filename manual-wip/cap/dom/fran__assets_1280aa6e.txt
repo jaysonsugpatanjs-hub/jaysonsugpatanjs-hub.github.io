@@ -1,0 +1,77 @@
+p [class=msg id=app-msg]
+div [data-view] "       "
+  header [class=page-head]
+    div
+      p [class=eyebrow] "·"
+        a [href=#/assets] "FIXED ASSETS"
+        span [class=mono] "FA-0003"
+      h1 "Dual-cab ute 4x4 (site vehicle)"
+      p
+        span [class=chip good] "In use"
+        span [class=muted] "Vehicles"
+    div [class=actions]
+      a [class=btn href=#/assets/1280aa6e-8ed9-4b9a-9649-ead0f15] "Edit"
+      button [type=button class=btn data-dispose] "Sell or write off"
+  section [class=panel]
+    div [class=asset-sum] "  "
+      div
+        span [class=muted small] "Cost (before GST)"
+      div
+        span [class=muted small] "Accumulated depreciation"
+      div
+        span [class=muted small] "Book value"
+  section [class=panel]
+    h2 "Details"
+    dl [class=facts] "     "
+      dt "Purchased"
+      dd "1 Aug 2026 from Demo Motors Pty Ltd · bill"
+        span [class=mono] "BILL-1005"
+      dt "In service"
+      dd "1 Aug 2026"
+      dt "GST paid"
+      dd [class=mono] "5,400.00"
+      dt "Serial or rego"
+      dd [class=mono] "1TRN-UTE-26"
+      dt "Location"
+      dd "Site fleet"
+  section [class=panel]
+    h2 "Accounting depreciation"
+    dl [class=facts] " "
+      dt "Method"
+      dd "Diminishing value"
+      dt "Useful life"
+      dd "8 years"
+      dt "Residual value"
+      dd [class=mono] "0.00"
+    table [class=tbl compact]
+      thead
+        tr
+          th "Period"
+          th [class=num] "Amount"
+          th "Journal"
+      tbody
+        tr
+          td "1 Aug 2026 – 31 Aug 2026"
+          td [class=num mono] "1,125.00"
+          td
+            a [class=mono href=#/journals/84ce2b8f-295a-4987-a1a9-a2414] "JE-000031"
+        tr
+          td "1 Sept 2026 – 30 Sept 2026"
+          td [class=num mono] "1,101.56"
+          td
+            a [class=mono href=#/journals/db875e52-2c3a-4249-b53c-1f358] "JE-000032"
+  section [class=panel]
+    h2 "Tax treatment (for the accountant)"
+    dl [class=facts] " "
+      dt "Method"
+      dd "Diminishing value"
+      dt "Effective life"
+      dd "8 years"
+    p [class=muted small] "Recorded only: tax depreciation, write-offs and pooling are "
+  div [data-dispose-form]
+  section [class=panel data-attachments data-entity=asset data-entity-id=1280aa6e-8ed9-4b9a-9649-ead0f156a4eb] "   "
+    h2 "Attachments"
+    p [class=muted small] "Nothing attached."
+    label [class=btn file] "Attach a PDF or photo"
+      input [type=file data-attach]
+  p [class=msg data-msg]

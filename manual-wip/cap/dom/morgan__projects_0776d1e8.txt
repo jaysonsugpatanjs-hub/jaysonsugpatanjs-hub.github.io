@@ -1,0 +1,266 @@
+p [class=msg id=app-msg]
+div [data-view] "       "
+  header [class=page-head]
+    div
+      p [class=eyebrow] "PROJECTS ·"
+        span [class=mono] "JOB-1001"
+      h1 "Mill 2 shutdown pipework"
+        span [class=chip good] "Active"
+      p [class=muted] "· Mill 2, Demo Minerals processing plant · managed by Morgan"
+        a [href=#/customers/bf9506f6-3e3e-49a9-a1f3-4156] "Demo Minerals Processing Pty Ltd"
+    div [class=actions tight]
+      a [class=btn href=#/projects/0776d1e8-c7df-412c-a757-c9281] "Edit"
+  div [class=cards figures] "     "
+    section [class=card]
+      h2 "Contract"
+      p [class=big mono] "86,500.00"
+      p [class=muted small] "Fixed price · PO 4500-2231"
+    section [class=card]
+      h2 "Cost to date"
+      p [class=big mono] "25,144.00"
+      p [class=muted small] "of 70,100.00 budget · 290.00 committed"
+    section [class=card]
+      h2 "Invoiced"
+      p [class=big mono] "55,000.00"
+      p [class=muted small] "31,500.00 left to invoice"
+    section [class=card ]
+      h2 "Margin so far"
+      p [class=big mono] "29,856.00"
+      p [class=muted small] "54.3% of invoiced · budgeted 19%"
+    section [class=card]
+      h2 "Progress"
+      p [class=big] "35.9%"
+      p [class=muted small] "Over-billed 23,973.52"
+  section [class=panel] "   "
+    div [class=head-row]
+      h2 "Budget and costs by cost code"
+      form [class=toolbar inline data-asat]
+        div [class=fld]
+          label "As at"
+          input [id=pj-asat type=date]
+        button [class=btn type=submit] "Update"
+    div [class=tbl-wrap]
+      table [class=tbl report]
+        thead
+          tr " "
+            th "Cost code"
+            th [class=num] "Budget hrs"
+            th [class=num] "Actual hrs"
+            th [class=num] "Budget"
+            th [class=num] "Labour"
+            th [class=num] "Other"
+            th [class=num] "Actual"
+            th [class=num] "Committed"
+            th [class=num] "Remaining"
+            th "Used"
+        tbody " "
+          tr "    "
+            td "Labour - welding"
+              span [class=mono] "110"
+            td [class=num mono] "320"
+            td [class=num mono ] "95.2"
+            td [class=num mono] "20,800.00"
+            td [class=num mono] "6,318.00"
+            td [class=num mono]
+            td [class=num mono] "6,318.00"
+            td [class=num mono]
+            td [class=num mono ] "14,482.00"
+            td [class=nowrap]
+              span [class=small muted] "30.4%"
+          tr "    "
+            td "Labour - shutdown and maintenance"
+              span [class=mono] "140"
+            td [class=num mono] "260"
+            td [class=num mono ] "64"
+            td [class=num mono] "16,900.00"
+            td [class=num mono] "3,712.00"
+            td [class=num mono]
+            td [class=num mono] "3,712.00"
+            td [class=num mono]
+            td [class=num mono ] "13,188.00"
+            td [class=nowrap]
+              span [class=small muted] "22%"
+          tr "    "
+            td "Materials - pipe, steel and fittings"
+              span [class=mono] "200"
+            td [class=num mono]
+            td [class=num mono ]
+            td [class=num mono] "18,500.00"
+            td [class=num mono]
+            td [class=num mono] "7,936.00"
+            td [class=num mono] "7,936.00"
+            td [class=num mono]
+            td [class=num mono ] "10,564.00"
+            td [class=nowrap]
+              span [class=small muted] "42.9%"
+          tr "    "
+            td "Welding consumables and gases"
+              span [class=mono] "210"
+            td [class=num mono]
+            td [class=num mono ]
+            td [class=num mono] "3,200.00"
+            td [class=num mono]
+            td [class=num mono] "1,778.00"
+            td [class=num mono] "1,778.00"
+            td [class=num mono] "290.00"
+            td [class=num mono ] "1,132.00"
+            td [class=nowrap]
+              span [class=small muted] "55.6%"
+          tr "    "
+            td "Equipment and plant hire"
+              span [class=mono] "300"
+            td [class=num mono]
+            td [class=num mono ]
+            td [class=num mono] "6,500.00"
+            td [class=num mono]
+            td [class=num mono] "4,200.00"
+            td [class=num mono] "4,200.00"
+            td [class=num mono]
+            td [class=num mono ] "2,300.00"
+            td [class=nowrap]
+              span [class=small muted] "64.6%"
+          tr "    "
+            td "Subcontractors"
+              span [class=mono] "400"
+            td [class=num mono]
+            td [class=num mono ]
+            td [class=num mono]
+            td [class=num mono]
+            td [class=num mono] "1,200.00"
+            td [class=num mono] "1,200.00"
+            td [class=num mono]
+            td [class=num mono bad-text] "(1,200.00)"
+            td [class=nowrap]
+              span [class=muted small] "No budget"
+          tr "    "
+            td "Testing and inspection (NDT)"
+              span [class=mono] "410"
+            td [class=num mono]
+            td [class=num mono ]
+            td [class=num mono] "4,200.00"
+            td [class=num mono]
+            td [class=num mono]
+            td [class=num mono]
+            td [class=num mono]
+            td [class=num mono ] "4,200.00"
+            td [class=nowrap]
+              span [class=small muted] "0%"
+        tfoot
+          tr [class=grand] " "
+            th "Total"
+            td [class=num mono] "580"
+            td [class=num mono] "159.2"
+            td [class=num mono] "70,100.00"
+            td [class=num mono] "10,030.00"
+            td [class=num mono] "15,114.00"
+            td [class=num mono] "25,144.00"
+            td [class=num mono] "290.00"
+            td [class=num mono] "44,666.00"
+            td
+    p [class=muted small] "Labour: approved timesheet hours at the labour rate when app"
+  div [class=grid2 align-top] "  "
+    section [class=panel] " "
+      h2 "Labour"
+      table [class=tbl]
+        thead
+          tr
+            th "Person"
+            th [class=num] "Approved hrs"
+            th [class=num] "Cost"
+            th [class=num] "Waiting"
+        tbody " "
+          tr
+            td "Tom Welder"
+            td [class=num mono] "95.2"
+            td [class=num mono] "6,318.00"
+            td [class=num mono muted] "22.8"
+          tr
+            td "Casey Rigger"
+            td [class=num mono] "64"
+            td [class=num mono] "3,712.00"
+            td [class=num mono muted] "16"
+      a [class=link href=#/timesheets] "Timesheets"
+    section [class=panel] " "
+      h2 "Invoices"
+      table [class=tbl]
+        tbody
+          tr
+            td [class=mono]
+              a [href=#/invoices/6fba41c4-04b6-4cd9-81e6-87f9f] "Draft"
+            td "6 Oct 2026"
+            td
+              span [class=chip pending] "Draft"
+            td [class=num mono] "31,500.00"
+          tr
+            td [class=mono]
+              a [href=#/invoices/fb33e0b1-6e99-4b73-92c6-37c59] "INV-1006"
+            td "15 Sept 2026"
+            td
+            td [class=num mono] "30,000.00"
+          tr
+            td [class=mono]
+              a [href=#/invoices/8a16f8b8-1bf9-4ff3-ace4-1f261] "INV-1001"
+            td "24 July 2026"
+            td
+            td [class=num mono] "25,000.00"
+  section [class=panel] " "
+    h2 "Bills and supplier credits"
+    div [class=tbl-wrap]
+      table [class=tbl]
+        thead
+          tr
+            th "Bill"
+            th "Supplier"
+            th "Their reference"
+            th "Date"
+            th "Status"
+            th [class=num] "On this project (ex GST)"
+        tbody
+          tr
+            td [class=mono]
+              a [href=#/bills/f8df3413-6942-4a3c-baa7-807c074f] "BILL-1002"
+            td "Demo Welding Consumables Pty Ltd"
+            td "DWC-118842"
+            td "30 Sept 2026"
+            td
+              span [class=chip good] "Approved"
+            td [class=num mono] "1,778.00"
+          tr
+            td [class=mono]
+              a [href=#/bills/40c5e637-0792-4a28-a3af-ae0547f7] "BILL-1008"
+            td "Demo Rigging Services (no ABN)"
+            td "Week 38"
+            td "19 Sept 2026"
+            td
+              span [class=chip good] "Approved"
+            td [class=num mono] "1,200.00"
+          tr
+            td [class=mono]
+              a [href=#/bills/10c54321-7bd6-4c44-9564-3cd90eb8] "BILL-1007"
+            td "Demo Crane Hire Pty Ltd"
+            td "DCH-30418"
+            td "12 Sept 2026"
+            td
+              span [class=chip good] "Approved"
+            td [class=num mono] "4,200.00"
+          tr
+            td [class=mono]
+              a [href=#/bills/95695139-164d-471f-97e1-bb46bae5] "BILL-1001"
+            td "Demo Steel Supplies Pty Ltd"
+            td "DSS-INV-40871"
+            td "28 July 2026"
+            td
+              span [class=chip good] "Approved"
+            td [class=num mono] "7,936.00"
+    div [class=actions]
+      a [class=btn href=#/purchase-orders/new?project=0776d1e8-c] "Purchase order for this project"
+  section [class=panel]
+    h2 "Status"
+    div [class=actions]
+      button [type=button class=btn data-status=on_hold] "Put on hold"
+      button [type=button class=btn data-status=completed] "Mark completed"
+    p [class=muted small] "A project can't be closed while timesheets with hours on it "
+  section [class=panel]
+    h2 "Notes"
+    p [class=prewrap] "Replace DN150 and DN200 slurry spools during the October shu"
+  p [class=msg data-msg]

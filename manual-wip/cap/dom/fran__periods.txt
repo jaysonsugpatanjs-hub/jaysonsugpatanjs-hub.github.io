@@ -1,0 +1,254 @@
+p [class=msg id=app-msg]
+div [data-view] "  "
+  header [class=page-head]
+    div
+      p [class=eyebrow] "ACCOUNTING"
+      h1 "Accounting periods"
+      p [class=muted] "Lock a month once its figures are checked: only people who c"
+    button [class=btn type=button data-add-year=2027-07-01] "Add the next financial year"
+  section [class=panel]
+    h2 "FY2026-27"
+      span [class=muted small] "1 July 2026 to 30 June 2027"
+    div [class=tbl-wrap]
+      table [class=tbl]
+        thead
+          tr
+            th "Month"
+            th "Dates"
+            th "Status"
+            th "Last changed"
+            th
+              span [class=sr-only] "Actions"
+        tbody
+          tr [class] " "
+            td
+            td [class=muted] "1 July 2026 – 31 July 2026"
+            td
+              span [class=chip pending] "Locked"
+            td [class=muted small] "Fran Finance · 8 Oct 2026, 5:56 am"
+            td [class=row-acts]
+              button [class=link type=button data-set=65fadcaa-45ad-4c0d-bca9-213b430cd4b9 data-to=open] "Unlock"
+              button [class=link type=button data-set=65fadcaa-45ad-4c0d-bca9-213b430cd4b9 data-to=closed] "Close"
+          tr [class] " "
+            td
+            td [class=muted] "1 Aug 2026 – 31 Aug 2026"
+            td
+              span [class=chip pending] "Locked"
+            td [class=muted small] "Fran Finance · 8 Oct 2026, 5:56 am"
+            td [class=row-acts]
+              button [class=link type=button data-set=c7486c14-efb4-4845-a574-483cf348a6af data-to=open] "Unlock"
+              button [class=link type=button data-set=c7486c14-efb4-4845-a574-483cf348a6af data-to=closed] "Close"
+          tr [class] " "
+            td
+            td [class=muted] "1 Sept 2026 – 30 Sept 2026"
+            td
+              span [class=chip good] "Open"
+            td [class=muted small] "—"
+            td [class=row-acts]
+              button [class=link type=button data-set=82c05f80-eafb-4698-85f7-1f4241eef3f4 data-to=soft_locked] "Lock"
+              button [class=link type=button data-set=82c05f80-eafb-4698-85f7-1f4241eef3f4 data-to=closed] "Close"
+          tr [class=current] " "
+            td
+              span [class=chip info] "This month"
+            td [class=muted] "1 Oct 2026 – 31 Oct 2026"
+            td
+              span [class=chip good] "Open"
+            td [class=muted small] "—"
+            td [class=row-acts]
+              button [class=link type=button data-set=49d50354-d007-4cc5-9a34-05590a64536c data-to=soft_locked] "Lock"
+              button [class=link type=button data-set=49d50354-d007-4cc5-9a34-05590a64536c data-to=closed] "Close"
+          tr [class] " "
+            td
+            td [class=muted] "1 Nov 2026 – 30 Nov 2026"
+            td
+              span [class=chip good] "Open"
+            td [class=muted small] "—"
+            td [class=row-acts]
+              button [class=link type=button data-set=716303d1-ec3d-4e04-a4f2-7213dc258d87 data-to=soft_locked] "Lock"
+              button [class=link type=button data-set=716303d1-ec3d-4e04-a4f2-7213dc258d87 data-to=closed] "Close"
+          tr [class] " "
+            td
+            td [class=muted] "1 Dec 2026 – 31 Dec 2026"
+            td
+              span [class=chip good] "Open"
+            td [class=muted small] "—"
+            td [class=row-acts]
+              button [class=link type=button data-set=cb35729e-9b90-46d4-a000-e644b6b4b1d2 data-to=soft_locked] "Lock"
+              button [class=link type=button data-set=cb35729e-9b90-46d4-a000-e644b6b4b1d2 data-to=closed] "Close"
+          tr [class] " "
+            td
+            td [class=muted] "1 Jan 2027 – 31 Jan 2027"
+            td
+              span [class=chip good] "Open"
+            td [class=muted small] "—"
+            td [class=row-acts]
+              button [class=link type=button data-set=665ae53e-21de-4151-a153-4a3eaad9f5f7 data-to=soft_locked] "Lock"
+              button [class=link type=button data-set=665ae53e-21de-4151-a153-4a3eaad9f5f7 data-to=closed] "Close"
+          tr [class] " "
+            td
+            td [class=muted] "1 Feb 2027 – 28 Feb 2027"
+            td
+              span [class=chip good] "Open"
+            td [class=muted small] "—"
+            td [class=row-acts]
+              button [class=link type=button data-set=553bd0db-187f-4e47-b29f-f68c07ff241c data-to=soft_locked] "Lock"
+              button [class=link type=button data-set=553bd0db-187f-4e47-b29f-f68c07ff241c data-to=closed] "Close"
+          tr [class] " "
+            td
+            td [class=muted] "1 Mar 2027 – 31 Mar 2027"
+            td
+              span [class=chip good] "Open"
+            td [class=muted small] "—"
+            td [class=row-acts]
+              button [class=link type=button data-set=22339a80-ac85-42d6-ba77-153d5dbe9d36 data-to=soft_locked] "Lock"
+              button [class=link type=button data-set=22339a80-ac85-42d6-ba77-153d5dbe9d36 data-to=closed] "Close"
+          tr [class] " "
+            td
+            td [class=muted] "1 Apr 2027 – 30 Apr 2027"
+            td
+              span [class=chip good] "Open"
+            td [class=muted small] "—"
+            td [class=row-acts]
+              button [class=link type=button data-set=75ba89cb-bf5e-40dd-9044-a78e759f7d2d data-to=soft_locked] "Lock"
+              button [class=link type=button data-set=75ba89cb-bf5e-40dd-9044-a78e759f7d2d data-to=closed] "Close"
+          tr [class] " "
+            td
+            td [class=muted] "1 May 2027 – 31 May 2027"
+            td
+              span [class=chip good] "Open"
+            td [class=muted small] "—"
+            td [class=row-acts]
+              button [class=link type=button data-set=02053982-3d86-4eab-a26b-46fc2e76130e data-to=soft_locked] "Lock"
+              button [class=link type=button data-set=02053982-3d86-4eab-a26b-46fc2e76130e data-to=closed] "Close"
+          tr [class] " "
+            td
+            td [class=muted] "1 June 2027 – 30 June 2027"
+            td
+              span [class=chip good] "Open"
+            td [class=muted small] "—"
+            td [class=row-acts]
+              button [class=link type=button data-set=440148cb-14dc-4a23-ae59-8f03cd5c11a2 data-to=soft_locked] "Lock"
+              button [class=link type=button data-set=440148cb-14dc-4a23-ae59-8f03cd5c11a2 data-to=closed] "Close"
+  section [class=panel]
+    h2 "FY2025-26"
+      span [class=muted small] "1 July 2025 to 30 June 2026"
+    div [class=tbl-wrap]
+      table [class=tbl]
+        thead
+          tr
+            th "Month"
+            th "Dates"
+            th "Status"
+            th "Last changed"
+            th
+              span [class=sr-only] "Actions"
+        tbody
+          tr [class] " "
+            td
+            td [class=muted] "1 July 2025 – 31 July 2025"
+            td
+              span [class=chip good] "Open"
+            td [class=muted small] "—"
+            td [class=row-acts]
+              button [class=link type=button data-set=ca0ed20c-cfa4-44d9-b231-a3accc721cfa data-to=soft_locked] "Lock"
+              button [class=link type=button data-set=ca0ed20c-cfa4-44d9-b231-a3accc721cfa data-to=closed] "Close"
+          tr [class] " "
+            td
+            td [class=muted] "1 Aug 2025 – 31 Aug 2025"
+            td
+              span [class=chip good] "Open"
+            td [class=muted small] "—"
+            td [class=row-acts]
+              button [class=link type=button data-set=78451fb4-0788-4310-8222-1ca363e0b215 data-to=soft_locked] "Lock"
+              button [class=link type=button data-set=78451fb4-0788-4310-8222-1ca363e0b215 data-to=closed] "Close"
+          tr [class] " "
+            td
+            td [class=muted] "1 Sept 2025 – 30 Sept 2025"
+            td
+              span [class=chip good] "Open"
+            td [class=muted small] "—"
+            td [class=row-acts]
+              button [class=link type=button data-set=68f62e5f-f919-4513-8575-72fb8cf529f0 data-to=soft_locked] "Lock"
+              button [class=link type=button data-set=68f62e5f-f919-4513-8575-72fb8cf529f0 data-to=closed] "Close"
+          tr [class] " "
+            td
+            td [class=muted] "1 Oct 2025 – 31 Oct 2025"
+            td
+              span [class=chip good] "Open"
+            td [class=muted small] "—"
+            td [class=row-acts]
+              button [class=link type=button data-set=8cec393f-b3a9-4b58-9849-d86fc413cece data-to=soft_locked] "Lock"
+              button [class=link type=button data-set=8cec393f-b3a9-4b58-9849-d86fc413cece data-to=closed] "Close"
+          tr [class] " "
+            td
+            td [class=muted] "1 Nov 2025 – 30 Nov 2025"
+            td
+              span [class=chip good] "Open"
+            td [class=muted small] "—"
+            td [class=row-acts]
+              button [class=link type=button data-set=73cea5ca-5e08-4736-9081-dd45aa0a8b0f data-to=soft_locked] "Lock"
+              button [class=link type=button data-set=73cea5ca-5e08-4736-9081-dd45aa0a8b0f data-to=closed] "Close"
+          tr [class] " "
+            td
+            td [class=muted] "1 Dec 2025 – 31 Dec 2025"
+            td
+              span [class=chip good] "Open"
+            td [class=muted small] "—"
+            td [class=row-acts]
+              button [class=link type=button data-set=f5ae59f1-fb10-4d5b-aa14-424c2814c155 data-to=soft_locked] "Lock"
+              button [class=link type=button data-set=f5ae59f1-fb10-4d5b-aa14-424c2814c155 data-to=closed] "Close"
+          tr [class] " "
+            td
+            td [class=muted] "1 Jan 2026 – 31 Jan 2026"
+            td
+              span [class=chip good] "Open"
+            td [class=muted small] "—"
+            td [class=row-acts]
+              button [class=link type=button data-set=02ac8bff-e962-473c-a026-57458de9070c data-to=soft_locked] "Lock"
+              button [class=link type=button data-set=02ac8bff-e962-473c-a026-57458de9070c data-to=closed] "Close"
+          tr [class] " "
+            td
+            td [class=muted] "1 Feb 2026 – 28 Feb 2026"
+            td
+              span [class=chip good] "Open"
+            td [class=muted small] "—"
+            td [class=row-acts]
+              button [class=link type=button data-set=f2572caf-8ef5-4735-a7b5-07aaeee95a24 data-to=soft_locked] "Lock"
+              button [class=link type=button data-set=f2572caf-8ef5-4735-a7b5-07aaeee95a24 data-to=closed] "Close"
+          tr [class] " "
+            td
+            td [class=muted] "1 Mar 2026 – 31 Mar 2026"
+            td
+              span [class=chip good] "Open"
+            td [class=muted small] "—"
+            td [class=row-acts]
+              button [class=link type=button data-set=507ab809-f117-4881-80bc-c5792b1b2aa1 data-to=soft_locked] "Lock"
+              button [class=link type=button data-set=507ab809-f117-4881-80bc-c5792b1b2aa1 data-to=closed] "Close"
+          tr [class] " "
+            td
+            td [class=muted] "1 Apr 2026 – 30 Apr 2026"
+            td
+              span [class=chip good] "Open"
+            td [class=muted small] "—"
+            td [class=row-acts]
+              button [class=link type=button data-set=e111fc01-15fe-41b3-b89c-915fbe49693e data-to=soft_locked] "Lock"
+              button [class=link type=button data-set=e111fc01-15fe-41b3-b89c-915fbe49693e data-to=closed] "Close"
+          tr [class] " "
+            td
+            td [class=muted] "1 May 2026 – 31 May 2026"
+            td
+              span [class=chip good] "Open"
+            td [class=muted small] "—"
+            td [class=row-acts]
+              button [class=link type=button data-set=f8aa39db-061b-4648-85b0-c35fc5a65e20 data-to=soft_locked] "Lock"
+              button [class=link type=button data-set=f8aa39db-061b-4648-85b0-c35fc5a65e20 data-to=closed] "Close"
+          tr [class] " "
+            td
+            td [class=muted] "1 June 2026 – 30 June 2026"
+            td
+              span [class=chip good] "Open"
+            td [class=muted small] "—"
+            td [class=row-acts]
+              button [class=link type=button data-set=1a2914a4-9a92-4644-9ef2-48dfe1dcf4cd data-to=soft_locked] "Lock"
+              button [class=link type=button data-set=1a2914a4-9a92-4644-9ef2-48dfe1dcf4cd data-to=closed] "Close"
+  p [class=msg data-msg]

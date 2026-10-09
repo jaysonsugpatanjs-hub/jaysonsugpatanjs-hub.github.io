@@ -1,0 +1,60 @@
+p [class=msg id=app-msg]
+div [data-view] " "
+  header [class=page-head]
+    div
+      p [class=eyebrow] "PURCHASES"
+      h1 "Purchase orders"
+      p [class=muted] "Raise an order, have it approved, send it to the supplier, t"
+    a [class=btn primary href=#/purchase-orders/new] "New purchase order"
+  section [class=panel] " "
+    form [class=toolbar data-filter] " "
+      div [class=fld]
+        label "Status"
+        select [id=p-st]
+      div [class=fld]
+        label "Number contains"
+        input [id=p-q]
+      button [class=btn type=submit] "Filter"
+    div [class=tbl-wrap]
+      table [class=tbl]
+        thead
+          tr
+            th "Number"
+            th "Supplier"
+            th "Date"
+            th "Required by"
+            th "Raised by"
+            th "Status"
+            th [class=num] "Total"
+        tbody " "
+          tr " "
+            td [class=mono]
+              a [href=#/purchase-orders/7d664556-1a90-4e72-b5d] "PO-1003"
+            td "Demo Welding Consumables Pty Ltd"
+            td [class=nowrap] "6 Oct 2026"
+            td [class=nowrap] "—"
+            td "Morgan Project-Manager"
+            td
+              span [class=chip pending] "Awaiting approval"
+            td [class=num mono] "1,702.80"
+          tr " "
+            td [class=mono]
+              a [href=#/purchase-orders/a506ad78-aee6-483a-94c] "PO-1002"
+            td "Demo Welding Consumables Pty Ltd"
+            td [class=nowrap] "22 Sept 2026"
+            td [class=nowrap] "—"
+            td "Morgan Project-Manager"
+            td
+              span [class=chip info] "Part received"
+            td [class=num mono] "2,274.80"
+          tr " "
+            td [class=mono]
+              a [href=#/purchase-orders/a31eef14-9f88-4957-842] "PO-1001"
+            td "Demo Steel Supplies Pty Ltd"
+            td [class=nowrap] "15 July 2026"
+            td [class=nowrap] "—"
+            td "Morgan Project-Manager"
+            td
+              span [class=chip good] "Completed"
+            td [class=num mono] "8,729.60"
+  p [class=msg data-msg]

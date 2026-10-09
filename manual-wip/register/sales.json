@@ -1,0 +1,967 @@
+[
+ {
+  "figure": "5.1",
+  "title": "The customer list",
+  "file": "fig-5.1.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Sales \u203a Customers"
+   },
+   {
+    "n": 2,
+    "label": "Name contains"
+   },
+   {
+    "n": 3,
+    "label": "Show Active or Archived"
+   },
+   {
+    "n": 4,
+    "label": "Open a customer"
+   },
+   {
+    "n": 5,
+    "label": "New customer"
+   }
+  ],
+  "route": "/customers",
+  "user": "fran",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1360,
+   900
+  ]
+ },
+ {
+  "figure": "5.2",
+  "title": "Search first: no customer matches \"dairy\"",
+  "file": "fig-5.2.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Part of the name"
+   },
+   {
+    "n": 2,
+    "label": "Filter"
+   },
+   {
+    "n": 3,
+    "label": "No customers yet."
+   },
+   {
+    "n": 4,
+    "label": "New customer"
+   }
+  ],
+  "route": "/customers",
+  "user": "fran",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1124,
+   360
+  ]
+ },
+ {
+  "figure": "5.3",
+  "title": "Entering a new customer",
+  "file": "fig-5.3.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Legal or business name"
+   },
+   {
+    "n": 2,
+    "label": "ABN"
+   },
+   {
+    "n": 3,
+    "label": "Payment terms (days)"
+   },
+   {
+    "n": 4,
+    "label": "Default income account"
+   },
+   {
+    "n": 5,
+    "label": "PO number required"
+   },
+   {
+    "n": 6,
+    "label": "Save customer"
+   }
+  ],
+  "route": "/customers/new",
+  "user": "fran",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1084,
+   910
+  ]
+ },
+ {
+  "figure": "5.4",
+  "title": "A mistyped ABN is stopped before saving",
+  "file": "fig-5.4.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Check the 11 digits"
+   }
+  ],
+  "route": "/customers/new",
+  "user": "fran",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1042,
+   301
+  ]
+ },
+ {
+  "figure": "5.5",
+  "title": "The completed customer record",
+  "file": "fig-5.5.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Customer name"
+   },
+   {
+    "n": 2,
+    "label": "ABN and billing address"
+   },
+   {
+    "n": 3,
+    "label": "Terms, credit limit, PO rule"
+   },
+   {
+    "n": 4,
+    "label": "Edit / New invoice"
+   }
+  ],
+  "route": "/customers/2c33905a-3904-4c89-8327-9e6e83c3cf13",
+  "user": "fran",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1124,
+   879
+  ]
+ },
+ {
+  "figure": "5.6",
+  "title": "Editing a customer: adding a credit limit",
+  "file": "fig-5.6.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Credit limit ($)"
+   }
+  ],
+  "route": "/customers/2c33905a-3904-4c89-8327-9e6e83c3cf13/edit",
+  "user": "fran",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1042,
+   181
+  ]
+ },
+ {
+  "figure": "5.7",
+  "title": "Customer history: invoices, payments and statement",
+  "file": "fig-5.7.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Balance owing"
+   },
+   {
+    "n": 2,
+    "label": "Invoices and credit notes"
+   },
+   {
+    "n": 3,
+    "label": "Payments received"
+   },
+   {
+    "n": 4,
+    "label": "Statement From / To"
+   },
+   {
+    "n": 5,
+    "label": "Show"
+   },
+   {
+    "n": 6,
+    "label": "Download PDF"
+   }
+  ],
+  "route": "/customers/753d8e04-45f9-4a3f-b31c-bae81c8ef47c",
+  "user": "fran",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1124,
+   1471
+  ]
+ },
+ {
+  "figure": "5.8",
+  "title": "The same customer seen by the accountant (read-only)",
+  "file": "fig-5.8.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "No Edit or New invoice buttons"
+   },
+   {
+    "n": 2,
+    "label": "Attachments: view only"
+   }
+  ],
+  "route": "/customers/2c33905a-3904-4c89-8327-9e6e83c3cf13",
+  "user": "chris",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1124,
+   843
+  ]
+ },
+ {
+  "figure": "6.1",
+  "title": "The quotes list",
+  "file": "fig-6.1.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Status filter"
+   },
+   {
+    "n": 2,
+    "label": "Title contains"
+   },
+   {
+    "n": 3,
+    "label": "Status"
+   },
+   {
+    "n": 4,
+    "label": "New quote"
+   }
+  ],
+  "route": "/quotes",
+  "user": "fran",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1124,
+   363
+  ]
+ },
+ {
+  "figure": "6.2",
+  "title": "Building the quote: header and customer",
+  "file": "fig-6.2.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Customer"
+   },
+   {
+    "n": 2,
+    "label": "Valid until"
+   },
+   {
+    "n": 3,
+    "label": "Title"
+   },
+   {
+    "n": 4,
+    "label": "Amounts are"
+   }
+  ],
+  "route": "/quotes/new",
+  "user": "fran",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1042,
+   165
+  ]
+ },
+ {
+  "figure": "6.3",
+  "title": "Quote lines, GST and totals",
+  "file": "fig-6.3.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Description"
+   },
+   {
+    "n": 2,
+    "label": "Income account"
+   },
+   {
+    "n": 3,
+    "label": "Qty and Unit price"
+   },
+   {
+    "n": 4,
+    "label": "Tax code (GST)"
+   },
+   {
+    "n": 5,
+    "label": "Subtotal, GST, Total"
+   },
+   {
+    "n": 6,
+    "label": "Save draft"
+   }
+  ],
+  "route": "/quotes/new",
+  "user": "fran",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1084,
+   1101
+  ]
+ },
+ {
+  "figure": "6.4",
+  "title": "The saved draft quote",
+  "file": "fig-6.4.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Number and status"
+   },
+   {
+    "n": 2,
+    "label": "Prepared by"
+   },
+   {
+    "n": 3,
+    "label": "Edit"
+   },
+   {
+    "n": 4,
+    "label": "Approve"
+   },
+   {
+    "n": 5,
+    "label": "Cancel quote"
+   },
+   {
+    "n": 6,
+    "label": "Download PDF"
+   }
+  ],
+  "route": "/quotes/5fc47944-42c3-4151-a88f-2dde634309c5",
+  "user": "fran",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1124,
+   978
+  ]
+ },
+ {
+  "figure": "6.5",
+  "title": "An approved quote, ready to send",
+  "file": "fig-6.5.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Approved"
+   },
+   {
+    "n": 2,
+    "label": "Approved by and when"
+   },
+   {
+    "n": 3,
+    "label": "Mark as sent / Customer accepted / Back to draft"
+   },
+   {
+    "n": 4,
+    "label": "Create invoice"
+   }
+  ],
+  "route": "/quotes/5fc47944-42c3-4151-a88f-2dde634309c5",
+  "user": "fran",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1124,
+   1003
+  ]
+ },
+ {
+  "figure": "6.6",
+  "title": "A sent quote: record the customer's answer",
+  "file": "fig-6.6.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Sent"
+   },
+   {
+    "n": 2,
+    "label": "Customer accepted / Customer declined"
+   }
+  ],
+  "route": "/quotes/5fc47944-42c3-4151-a88f-2dde634309c5",
+  "user": "fran",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1124,
+   1039
+  ]
+ },
+ {
+  "figure": "6.7",
+  "title": "Quote statuses in the list",
+  "file": "fig-6.7.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Accepted"
+   },
+   {
+    "n": 2,
+    "label": "Sent"
+   },
+   {
+    "n": 3,
+    "label": "Valid until"
+   }
+  ],
+  "route": "/quotes",
+  "user": "fran",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1124,
+   457
+  ]
+ },
+ {
+  "figure": "6.8",
+  "title": "Cancel quote on an accepted quote is refused",
+  "file": "fig-6.8.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Accepted"
+   },
+   {
+    "n": 2,
+    "label": "Cancel quote"
+   },
+   {
+    "n": 3,
+    "label": "The refusal message"
+   }
+  ],
+  "route": "/quotes/5fc47944-42c3-4151-a88f-2dde634309c5",
+  "user": "fran",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1124,
+   1039
+  ]
+ },
+ {
+  "figure": "6.9",
+  "title": "Create invoice: the draft invoice built from the quote",
+  "file": "fig-6.9.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Customer from the quote"
+   },
+   {
+    "n": 2,
+    "label": "Due date from terms"
+   },
+   {
+    "n": 3,
+    "label": "Customer PO / reference"
+   },
+   {
+    "n": 4,
+    "label": "Lines copied from the quote"
+   },
+   {
+    "n": 5,
+    "label": "Notes: quote number"
+   }
+  ],
+  "route": "/invoices/38bf5f23-062e-4653-b955-1d0bbb2f027b/edit",
+  "user": "fran",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1084,
+   1075
+  ]
+ },
+ {
+  "figure": "6.10",
+  "title": "After the invoice is approved, the quote shows Invoiced",
+  "file": "fig-6.10.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Invoiced"
+   },
+   {
+    "n": 2,
+    "label": "Invoice link"
+   },
+   {
+    "n": 3,
+    "label": "Download PDF"
+   }
+  ],
+  "route": "/quotes/5fc47944-42c3-4151-a88f-2dde634309c5",
+  "user": "fran",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1124,
+   992
+  ]
+ },
+ {
+  "figure": "7.1",
+  "title": "The invoices list",
+  "file": "fig-7.1.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "All / Draft / Unpaid / Overdue / Paid / Void"
+   },
+   {
+    "n": 2,
+    "label": "Number contains"
+   },
+   {
+    "n": 3,
+    "label": "Credit notes"
+   },
+   {
+    "n": 4,
+    "label": "New invoice"
+   },
+   {
+    "n": 5,
+    "label": "Count, total and owing"
+   }
+  ],
+  "route": "/invoices",
+  "user": "fran",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1124,
+   983
+  ]
+ },
+ {
+  "figure": "7.2",
+  "title": "Invoice header: customer, dates and reference",
+  "file": "fig-7.2.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Customer"
+   },
+   {
+    "n": 2,
+    "label": "Terms note"
+   },
+   {
+    "n": 3,
+    "label": "Due date"
+   },
+   {
+    "n": 4,
+    "label": "Customer PO / reference"
+   },
+   {
+    "n": 5,
+    "label": "Invoice type"
+   },
+   {
+    "n": 6,
+    "label": "Amounts are"
+   }
+  ],
+  "route": "/invoices/new",
+  "user": "fran",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1042,
+   182
+  ]
+ },
+ {
+  "figure": "7.3",
+  "title": "Invoice lines tagged to the project, with GST and totals",
+  "file": "fig-7.3.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Description"
+   },
+   {
+    "n": 2,
+    "label": "Project"
+   },
+   {
+    "n": 3,
+    "label": "Qty \u00d7 Unit price"
+   },
+   {
+    "n": 4,
+    "label": "Tax code"
+   },
+   {
+    "n": 5,
+    "label": "Subtotal, GST, Total"
+   },
+   {
+    "n": 6,
+    "label": "Save draft"
+   }
+  ],
+  "route": "/invoices/new",
+  "user": "fran",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1084,
+   958
+  ]
+ },
+ {
+  "figure": "7.4",
+  "title": "A saved draft invoice",
+  "file": "fig-7.4.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Draft invoice"
+   },
+   {
+    "n": 2,
+    "label": "Created by"
+   },
+   {
+    "n": 3,
+    "label": "Edit"
+   },
+   {
+    "n": 4,
+    "label": "Approve and number"
+   },
+   {
+    "n": 5,
+    "label": "Delete draft"
+   },
+   {
+    "n": 6,
+    "label": "Download PDF"
+   }
+  ],
+  "route": "/invoices/4074ffeb-3f7b-42b3-ba06-27c50fcaa621",
+  "user": "fran",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1124,
+   835
+  ]
+ },
+ {
+  "figure": "7.5",
+  "title": "Approved: numbered and posted to the ledger",
+  "file": "fig-7.5.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Number and status"
+   },
+   {
+    "n": 2,
+    "label": "Approved and Ledger"
+   },
+   {
+    "n": 3,
+    "label": "Balance due"
+   },
+   {
+    "n": 4,
+    "label": "Mark as sent"
+   },
+   {
+    "n": 5,
+    "label": "Credit note"
+   },
+   {
+    "n": 6,
+    "label": "Void"
+   }
+  ],
+  "route": "/invoices/4074ffeb-3f7b-42b3-ba06-27c50fcaa621",
+  "user": "fran",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1124,
+   1084
+  ]
+ },
+ {
+  "figure": "7.6",
+  "title": "Marked as sent (nothing is emailed)",
+  "file": "fig-7.6.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Sent chip"
+   },
+   {
+    "n": 2,
+    "label": "Sent: date and time"
+   },
+   {
+    "n": 3,
+    "label": "Mark as sent has gone"
+   }
+  ],
+  "route": "/invoices/4074ffeb-3f7b-42b3-ba06-27c50fcaa621",
+  "user": "fran",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1124,
+   1109
+  ]
+ },
+ {
+  "figure": "7.7",
+  "title": "The ledger entry behind the invoice",
+  "file": "fig-7.7.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Dr 1100 Accounts Receivable \u00b7 Cr income and 2300 GST"
+   }
+  ],
+  "route": "/journals/f0102aba-ca39-47e0-9df4-a68a8ca2b514",
+  "user": "fran",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1124,
+   889
+  ]
+ },
+ {
+  "figure": "7.8",
+  "title": "Save and approve refused: the customer's PO number is missing",
+  "file": "fig-7.8.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Still a draft"
+   },
+   {
+    "n": 2,
+    "label": "No customer reference"
+   },
+   {
+    "n": 3,
+    "label": "Saved as a draft but not approved"
+   },
+   {
+    "n": 4,
+    "label": "Edit to add the PO number"
+   },
+   {
+    "n": 5,
+    "label": "Delete draft"
+   }
+  ],
+  "route": "/invoices/708298b4-c56c-48e0-8e53-195dbc820c5a?err=This%20customer%20needs%20their%20purchase%20order%20number%20on%20every%20invoice.",
+  "user": "fran",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1124,
+   669
+  ]
+ },
+ {
+  "figure": "7.9",
+  "title": "The same work invoiced twice: same customer, reference and total",
+  "file": "fig-7.9.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Duplicate"
+   },
+   {
+    "n": 2,
+    "label": "Original"
+   }
+  ],
+  "route": "/invoices",
+  "user": "fran",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1124,
+   1091
+  ]
+ },
+ {
+  "figure": "7.10",
+  "title": "The duplicate after Void: reason recorded, ledger entry reversed",
+  "file": "fig-7.10.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Void"
+   },
+   {
+    "n": 2,
+    "label": "Ledger \u00b7 reversed by"
+   },
+   {
+    "n": 3,
+    "label": "Void reason"
+   }
+  ],
+  "route": "/invoices/155c0bee-da6c-4fe3-be6b-2e2e8cd057a3",
+  "user": "fran",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1124,
+   838
+  ]
+ },
+ {
+  "figure": "7.11",
+  "title": "A credit note (adjustment note) against the invoice",
+  "file": "fig-7.11.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Same customer"
+   },
+   {
+    "n": 2,
+    "label": "Reference (invoice it adjusts)"
+   },
+   {
+    "n": 3,
+    "label": "Line being credited"
+   },
+   {
+    "n": 4,
+    "label": "Credit total incl. GST"
+   },
+   {
+    "n": 5,
+    "label": "Save and approve"
+   }
+  ],
+  "route": "/invoices/new?kind=credit_note&from=4074ffeb-3f7b-42b3-ba06-27c50fcaa621",
+  "user": "fran",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1084,
+   606
+  ]
+ },
+ {
+  "figure": "7.12",
+  "title": "Apply the approved credit note to the invoice",
+  "file": "fig-7.12.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "CN number"
+   },
+   {
+    "n": 2,
+    "label": "Left to apply"
+   },
+   {
+    "n": 3,
+    "label": "Invoice"
+   },
+   {
+    "n": 4,
+    "label": "Amount"
+   },
+   {
+    "n": 5,
+    "label": "Apply"
+   }
+  ],
+  "route": "/invoices/bd978a8b-5aa5-496c-903a-f2402e6bdae1",
+  "user": "fran",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1124,
+   972
+  ]
+ },
+ {
+  "figure": "7.13",
+  "title": "An invoice with a credit applied can't be voided",
+  "file": "fig-7.13.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Paid and credited \u00b7 Balance due"
+   },
+   {
+    "n": 2,
+    "label": "Credit note applied"
+   },
+   {
+    "n": 3,
+    "label": "Refusal message"
+   }
+  ],
+  "route": "/invoices/4074ffeb-3f7b-42b3-ba06-27c50fcaa621",
+  "user": "fran",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1124,
+   1152
+  ]
+ }
+]

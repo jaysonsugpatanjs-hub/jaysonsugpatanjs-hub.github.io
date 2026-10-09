@@ -1,0 +1,320 @@
+p [class=msg id=app-msg]
+div [data-view] "    "
+  header [class=page-head]
+    div
+      p [class=eyebrow] "PROJECTS"
+      h1 "Cost codes and labour rates"
+      p [class=muted] "Labour rates are what an hour costs Panalo (wages plus on-co"
+    a [class=btn href=#/projects] "Projects"
+  section [class=panel]
+    h2 "Labour classes"
+    div [class=tbl-wrap]
+      table [class=tbl form-tbl]
+        thead
+          tr
+            th "Code"
+            th "Name"
+            th [class=num] "Cost per hour ($)"
+            th [class=num] "Charge-out per hour ($)"
+            th "Active"
+            th
+        tbody " "
+          tr [data-class=f103a8a4-73fe-40c9-bc75-cc0ab5e75256] "     "
+            td
+              input [data-f=code aria-label=Code]
+            td
+              input [data-f=name aria-label=Name]
+            td [class=num]
+              input [class=num apply data-f=costRate aria-label=Cost per hour]
+            td [class=num]
+              input [class=num apply data-f=chargeRate aria-label=Charge-out per hour]
+            td
+              input [type=checkbox data-f=active aria-label=Active]
+            td
+              button [type=button class=btn data-save-class] "Save"
+          tr [data-class=5ead7dfb-21be-48cf-887f-ed648b2fc427] "     "
+            td
+              input [data-f=code aria-label=Code]
+            td
+              input [data-f=name aria-label=Name]
+            td [class=num]
+              input [class=num apply data-f=costRate aria-label=Cost per hour]
+            td [class=num]
+              input [class=num apply data-f=chargeRate aria-label=Charge-out per hour]
+            td
+              input [type=checkbox data-f=active aria-label=Active]
+            td
+              button [type=button class=btn data-save-class] "Save"
+          tr [data-class=92db84ff-e8df-4766-9f4a-a5b883973ba1] "     "
+            td
+              input [data-f=code aria-label=Code]
+            td
+              input [data-f=name aria-label=Name]
+            td [class=num]
+              input [class=num apply data-f=costRate aria-label=Cost per hour]
+            td [class=num]
+              input [class=num apply data-f=chargeRate aria-label=Charge-out per hour]
+            td
+              input [type=checkbox data-f=active aria-label=Active]
+            td
+              button [type=button class=btn data-save-class] "Save"
+          tr [data-class=80ae484f-b2df-4dff-9719-4b363b3e311d] "     "
+            td
+              input [data-f=code aria-label=Code]
+            td
+              input [data-f=name aria-label=Name]
+            td [class=num]
+              input [class=num apply data-f=costRate aria-label=Cost per hour]
+            td [class=num]
+              input [class=num apply data-f=chargeRate aria-label=Charge-out per hour]
+            td
+              input [type=checkbox data-f=active aria-label=Active]
+            td
+              button [type=button class=btn data-save-class] "Save"
+          tr [data-class=7132c668-4892-44c6-93db-6e78e4f44f65] "     "
+            td
+              input [data-f=code aria-label=Code]
+            td
+              input [data-f=name aria-label=Name]
+            td [class=num]
+              input [class=num apply data-f=costRate aria-label=Cost per hour]
+            td [class=num]
+              input [class=num apply data-f=chargeRate aria-label=Charge-out per hour]
+            td
+              input [type=checkbox data-f=active aria-label=Active]
+            td
+              button [type=button class=btn data-save-class] "Save"
+          tr [data-class=cee9da43-3bd3-4ebb-85e4-f13c55040337] "     "
+            td
+              input [data-f=code aria-label=Code]
+            td
+              input [data-f=name aria-label=Name]
+            td [class=num]
+              input [class=num apply data-f=costRate aria-label=Cost per hour]
+            td [class=num]
+              input [class=num apply data-f=chargeRate aria-label=Charge-out per hour]
+            td
+              input [type=checkbox data-f=active aria-label=Active]
+            td
+              button [type=button class=btn data-save-class] "Save"
+          tr [data-class] "     "
+            td
+              input [data-f=code aria-label=Code]
+            td
+              input [data-f=name aria-label=Name]
+            td [class=num]
+              input [class=num apply data-f=costRate aria-label=Cost per hour]
+            td [class=num]
+              input [class=num apply data-f=chargeRate aria-label=Charge-out per hour]
+            td
+              input [type=checkbox data-f=active aria-label=Active]
+            td
+              button [type=button class=btn data-save-class] "Add"
+  section [class=panel] " "
+    h2 "Who is costed at which rate"
+    p [class=muted small] "Everyone who can enter timesheets. A person's timesheets can"
+    div [class=tbl-wrap]
+      table [class=tbl form-tbl]
+        thead
+          tr
+            th "Person"
+            th "Labour class"
+        tbody " "
+          tr
+            td "Alex Admin"
+              small "alex.admin@training.panalo.test"
+            td
+              select [data-assign=8b7329c8-3776-4a97-8f54-4f87ab665d7a aria-label=Labour class for Alex Admin]
+          tr
+            td "Casey Rigger"
+              small "casey.rigger@training.panalo.test"
+            td
+              select [data-assign=305778bb-e63d-421c-9240-31b19c21a684 aria-label=Labour class for Casey Rigger]
+          tr
+            td "Jamie Apprentice"
+              small "jamie.apprentice@training.panalo.test"
+            td
+              select [data-assign=70ccb8dd-6e58-4c1a-97a7-db10618a556f aria-label=Labour class for Jamie Apprentice]
+          tr
+            td "Morgan Project-Manager"
+              small "morgan.pm@training.panalo.test"
+            td
+              select [data-assign=55cc34b0-3bc1-4806-9eb9-66be07920db5 aria-label=Labour class for Morgan Project-Manager]
+          tr
+            td "Sam Supervisor"
+              small "sam.supervisor@training.panalo.test"
+            td
+              select [data-assign=ac86f6f0-293a-44cf-b6a4-f8f456ed7369 aria-label=Labour class for Sam Supervisor]
+          tr
+            td "Tom Welder"
+              small "tom.welder@training.panalo.test"
+            td
+              select [data-assign=bbd9d80d-2690-4f23-ab98-f7b51485e601 aria-label=Labour class for Tom Welder]
+  section [class=panel] " "
+    h2 "Cost codes"
+    div [class=tbl-wrap]
+      table [class=tbl form-tbl]
+        thead
+          tr
+            th "Code"
+            th "Name"
+            th "Category"
+            th "Active"
+            th
+        tbody " "
+          tr [data-code=12884337-28e4-4a99-85a5-a83d1392209f] "    "
+            td
+              input [data-f=code aria-label=Code]
+            td
+              input [data-f=name aria-label=Name]
+            td
+              select [data-f=category aria-label=Category]
+            td
+              input [type=checkbox data-f=active aria-label=Active]
+            td
+              button [type=button class=btn data-save-code] "Save"
+          tr [data-code=dd719068-39d6-4e31-ad94-e106211df7e3] "    "
+            td
+              input [data-f=code aria-label=Code]
+            td
+              input [data-f=name aria-label=Name]
+            td
+              select [data-f=category aria-label=Category]
+            td
+              input [type=checkbox data-f=active aria-label=Active]
+            td
+              button [type=button class=btn data-save-code] "Save"
+          tr [data-code=8e612c8a-0e58-49fe-b506-b09c887b1613] "    "
+            td
+              input [data-f=code aria-label=Code]
+            td
+              input [data-f=name aria-label=Name]
+            td
+              select [data-f=category aria-label=Category]
+            td
+              input [type=checkbox data-f=active aria-label=Active]
+            td
+              button [type=button class=btn data-save-code] "Save"
+          tr [data-code=30256a81-0965-4c12-8bf2-5957aa3b6e0e] "    "
+            td
+              input [data-f=code aria-label=Code]
+            td
+              input [data-f=name aria-label=Name]
+            td
+              select [data-f=category aria-label=Category]
+            td
+              input [type=checkbox data-f=active aria-label=Active]
+            td
+              button [type=button class=btn data-save-code] "Save"
+          tr [data-code=ae96179b-e354-4d1e-92f9-e16b5d6bf230] "    "
+            td
+              input [data-f=code aria-label=Code]
+            td
+              input [data-f=name aria-label=Name]
+            td
+              select [data-f=category aria-label=Category]
+            td
+              input [type=checkbox data-f=active aria-label=Active]
+            td
+              button [type=button class=btn data-save-code] "Save"
+          tr [data-code=15107af5-6f49-40c3-b9a0-4e589caec166] "    "
+            td
+              input [data-f=code aria-label=Code]
+            td
+              input [data-f=name aria-label=Name]
+            td
+              select [data-f=category aria-label=Category]
+            td
+              input [type=checkbox data-f=active aria-label=Active]
+            td
+              button [type=button class=btn data-save-code] "Save"
+          tr [data-code=c57e95f3-50bf-430b-9468-07b1bd85c544] "    "
+            td
+              input [data-f=code aria-label=Code]
+            td
+              input [data-f=name aria-label=Name]
+            td
+              select [data-f=category aria-label=Category]
+            td
+              input [type=checkbox data-f=active aria-label=Active]
+            td
+              button [type=button class=btn data-save-code] "Save"
+          tr [data-code=2693b2eb-e56a-4c97-8025-3625396ef17d] "    "
+            td
+              input [data-f=code aria-label=Code]
+            td
+              input [data-f=name aria-label=Name]
+            td
+              select [data-f=category aria-label=Category]
+            td
+              input [type=checkbox data-f=active aria-label=Active]
+            td
+              button [type=button class=btn data-save-code] "Save"
+          tr [data-code=9c4866a3-e2b1-406a-a17d-dbebcda55505] "    "
+            td
+              input [data-f=code aria-label=Code]
+            td
+              input [data-f=name aria-label=Name]
+            td
+              select [data-f=category aria-label=Category]
+            td
+              input [type=checkbox data-f=active aria-label=Active]
+            td
+              button [type=button class=btn data-save-code] "Save"
+          tr [data-code=e06b73a3-a8e0-4da9-a6f0-b4a233a1795b] "    "
+            td
+              input [data-f=code aria-label=Code]
+            td
+              input [data-f=name aria-label=Name]
+            td
+              select [data-f=category aria-label=Category]
+            td
+              input [type=checkbox data-f=active aria-label=Active]
+            td
+              button [type=button class=btn data-save-code] "Save"
+          tr [data-code=784740cf-d3c0-430d-bcd1-4804425dd5d0] "    "
+            td
+              input [data-f=code aria-label=Code]
+            td
+              input [data-f=name aria-label=Name]
+            td
+              select [data-f=category aria-label=Category]
+            td
+              input [type=checkbox data-f=active aria-label=Active]
+            td
+              button [type=button class=btn data-save-code] "Save"
+          tr [data-code=4ed6667a-c58a-418f-b018-5fdb98ed0b0b] "    "
+            td
+              input [data-f=code aria-label=Code]
+            td
+              input [data-f=name aria-label=Name]
+            td
+              select [data-f=category aria-label=Category]
+            td
+              input [type=checkbox data-f=active aria-label=Active]
+            td
+              button [type=button class=btn data-save-code] "Save"
+          tr [data-code=a0ad5b1f-c2be-42c0-9c18-1bcf2be281ad] "    "
+            td
+              input [data-f=code aria-label=Code]
+            td
+              input [data-f=name aria-label=Name]
+            td
+              select [data-f=category aria-label=Category]
+            td
+              input [type=checkbox data-f=active aria-label=Active]
+            td
+              button [type=button class=btn data-save-code] "Save"
+          tr [data-code] "    "
+            td
+              input [data-f=code aria-label=Code]
+            td
+              input [data-f=name aria-label=Name]
+            td
+              select [data-f=category aria-label=Category]
+            td
+              input [type=checkbox data-f=active aria-label=Active]
+            td
+              button [type=button class=btn data-save-code] "Add"
+    p [class=muted small] "Labour cost codes are the ones offered on timesheets. Codes "
+  p [class=msg data-msg]

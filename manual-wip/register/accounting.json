@@ -1,0 +1,929 @@
+[
+ {
+  "figure": "21.1",
+  "title": "The chart of accounts, grouped by type",
+  "file": "fig-21.1.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Chart of accounts"
+   },
+   {
+    "n": 2,
+    "label": "Find an account"
+   },
+   {
+    "n": 3,
+    "label": "Show archived"
+   },
+   {
+    "n": 4,
+    "label": "Add account"
+   }
+  ],
+  "route": "/chart-of-accounts",
+  "user": "fran",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1360,
+   900
+  ]
+ },
+ {
+  "figure": "21.2",
+  "title": "System and module-only accounts in Liabilities and Equity",
+  "file": "fig-21.2.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Group heading"
+   },
+   {
+    "n": 2,
+    "label": "System account"
+   },
+   {
+    "n": 3,
+    "label": "Module entries only"
+   },
+   {
+    "n": 4,
+    "label": "Default tax code"
+   },
+   {
+    "n": 5,
+    "label": "Balance"
+   },
+   {
+    "n": 6,
+    "label": "Archive"
+   }
+  ],
+  "route": "/chart-of-accounts",
+  "user": "fran",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1042,
+   524
+  ]
+ },
+ {
+  "figure": "21.3",
+  "title": "Adding a new expense account",
+  "file": "fig-21.3.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Code"
+   },
+   {
+    "n": 2,
+    "label": "Name"
+   },
+   {
+    "n": 3,
+    "label": "Type"
+   },
+   {
+    "n": 4,
+    "label": "Kind"
+   },
+   {
+    "n": 5,
+    "label": "Default tax code"
+   },
+   {
+    "n": 6,
+    "label": "Allow manual journals"
+   }
+  ],
+  "route": "/chart-of-accounts",
+  "user": "fran",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1084,
+   383
+  ]
+ },
+ {
+  "figure": "21.4",
+  "title": "The new account saved in Operating expenses",
+  "file": "fig-21.4.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "New account"
+   },
+   {
+    "n": 2,
+    "label": "Edit"
+   },
+   {
+    "n": 3,
+    "label": "Archive"
+   }
+  ],
+  "route": "/chart-of-accounts",
+  "user": "fran",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1122,
+   258
+  ]
+ },
+ {
+  "figure": "21.5",
+  "title": "Editing a system account: type, kind and manual setting are fixed",
+  "file": "fig-21.5.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "System account note"
+   },
+   {
+    "n": 2,
+    "label": "Type locked"
+   },
+   {
+    "n": 3,
+    "label": "Kind locked"
+   },
+   {
+    "n": 4,
+    "label": "Manual setting locked"
+   }
+  ],
+  "route": "/chart-of-accounts",
+  "user": "fran",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1084,
+   432
+  ]
+ },
+ {
+  "figure": "22.1",
+  "title": "The tax codes list with BAS labels",
+  "file": "fig-22.1.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Tax codes"
+   },
+   {
+    "n": 2,
+    "label": "Name and meaning"
+   },
+   {
+    "n": 3,
+    "label": "BAS labels"
+   },
+   {
+    "n": 4,
+    "label": "No BAS label"
+   },
+   {
+    "n": 5,
+    "label": "Status"
+   }
+  ],
+  "route": "/tax-codes",
+  "user": "fran",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1124,
+   786
+  ]
+ },
+ {
+  "figure": "22.2",
+  "title": "A system tax code: code, kind and rate are locked",
+  "file": "fig-22.2.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Code locked"
+   },
+   {
+    "n": 2,
+    "label": "Kind locked"
+   },
+   {
+    "n": 3,
+    "label": "Rate locked"
+   },
+   {
+    "n": 4,
+    "label": "Name can change"
+   },
+   {
+    "n": 5,
+    "label": "Active"
+   }
+  ],
+  "route": "/tax-codes",
+  "user": "fran",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1084,
+   386
+  ]
+ },
+ {
+  "figure": "22.3",
+  "title": "The Add a tax code form (not saved)",
+  "file": "fig-22.3.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Code"
+   },
+   {
+    "n": 2,
+    "label": "Kind"
+   },
+   {
+    "n": 3,
+    "label": "Rate %"
+   },
+   {
+    "n": 4,
+    "label": "Used for"
+   },
+   {
+    "n": 5,
+    "label": "Cancel"
+   }
+  ],
+  "route": "/tax-codes",
+  "user": "fran",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1084,
+   386
+  ]
+ },
+ {
+  "figure": "24.3",
+  "title": "The director's view: a closed month can be reopened",
+  "file": "fig-24.3.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Closed"
+   },
+   {
+    "n": 2,
+    "label": "Reopen"
+   },
+   {
+    "n": 3,
+    "label": "Lock / Close"
+   }
+  ],
+  "route": "/periods",
+  "user": "dana",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1084,
+   579
+  ]
+ },
+ {
+  "figure": "24.1",
+  "title": "Accounting periods for FY2026-27",
+  "file": "fig-24.1.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Locked month"
+   },
+   {
+    "n": 2,
+    "label": "Open month"
+   },
+   {
+    "n": 3,
+    "label": "This month"
+   },
+   {
+    "n": 4,
+    "label": "Last changed"
+   },
+   {
+    "n": 5,
+    "label": "Lock / Close"
+   }
+  ],
+  "route": "/periods",
+  "user": "fran",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1084,
+   579
+  ]
+ },
+ {
+  "figure": "24.2",
+  "title": "Posting into a locked month: the journal is kept as a draft",
+  "file": "fig-24.2.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Edit draft journal"
+   },
+   {
+    "n": 2,
+    "label": "Date in August"
+   },
+   {
+    "n": 3,
+    "label": "Locked period message"
+   }
+  ],
+  "route": "/journals/183652df-05fb-4d7e-a7ea-6f1aaf9d8874/edit?err=The%20period%2001%20Aug%202026%20to%2031%20Aug%202026%20is%20locked.%20Only%20someone%20who%20can%20reopen%20periods%20can%20post%20into%20it.",
+  "user": "fran",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1124,
+   540
+  ]
+ },
+ {
+  "figure": "23.2",
+  "title": "A journal that does not balance yet",
+  "file": "fig-23.2.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Debit entered"
+   },
+   {
+    "n": 2,
+    "label": "Total debits"
+   },
+   {
+    "n": 3,
+    "label": "Out of balance"
+   }
+  ],
+  "route": "/journals/new",
+  "user": "chris",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1124,
+   504
+  ]
+ },
+ {
+  "figure": "23.3",
+  "title": "A balanced accrual journal ready to save as a draft",
+  "file": "fig-23.3.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Date"
+   },
+   {
+    "n": 2,
+    "label": "Amounts are"
+   },
+   {
+    "n": 3,
+    "label": "Narration"
+   },
+   {
+    "n": 4,
+    "label": "Account"
+   },
+   {
+    "n": 5,
+    "label": "Tax code"
+   },
+   {
+    "n": 6,
+    "label": "Balanced"
+   }
+  ],
+  "route": "/journals/new",
+  "user": "chris",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1124,
+   504
+  ]
+ },
+ {
+  "figure": "23.3b",
+  "title": "Save draft, and the note for people who cannot post",
+  "file": "fig-23.3b.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Save draft"
+   },
+   {
+    "n": 2,
+    "label": "Someone else posts"
+   }
+  ],
+  "route": "/journals/new",
+  "user": "chris",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1042,
+   52
+  ]
+ },
+ {
+  "figure": "23.4",
+  "title": "The saved draft, as the accountant sees it",
+  "file": "fig-23.4.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Draft status"
+   },
+   {
+    "n": 2,
+    "label": "Date, source, created by"
+   },
+   {
+    "n": 3,
+    "label": "Edit"
+   },
+   {
+    "n": 4,
+    "label": "Delete draft"
+   }
+  ],
+  "route": "/journals/02406e66-e131-4e53-9c5a-496d68a095b5",
+  "user": "chris",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1124,
+   493
+  ]
+ },
+ {
+  "figure": "23.5",
+  "title": "The director filters the list to drafts waiting to be posted",
+  "file": "fig-23.5.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Status: Draft"
+   },
+   {
+    "n": 2,
+    "label": "Draft to review"
+   },
+   {
+    "n": 3,
+    "label": "Created by"
+   }
+  ],
+  "route": "/journals?status=draft",
+  "user": "dana",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1124,
+   446
+  ]
+ },
+ {
+  "figure": "23.6",
+  "title": "Reviewing someone else's draft before posting",
+  "file": "fig-23.6.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Created by"
+   },
+   {
+    "n": 2,
+    "label": "Lines"
+   },
+   {
+    "n": 3,
+    "label": "Totals"
+   },
+   {
+    "n": 4,
+    "label": "Post"
+   }
+  ],
+  "route": "/journals/02406e66-e131-4e53-9c5a-496d68a095b5",
+  "user": "dana",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1124,
+   493
+  ]
+ },
+ {
+  "figure": "23.7",
+  "title": "The posted journal with its number",
+  "file": "fig-23.7.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Journal number"
+   },
+   {
+    "n": 2,
+    "label": "Posted by"
+   },
+   {
+    "n": 3,
+    "label": "Reverse"
+   },
+   {
+    "n": 4,
+    "label": "Posted message"
+   }
+  ],
+  "route": "/journals/02406e66-e131-4e53-9c5a-496d68a095b5",
+  "user": "dana",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1124,
+   553
+  ]
+ },
+ {
+  "figure": "23.8",
+  "title": "The reversal journal, linked to the accrual it reverses",
+  "file": "fig-23.8.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Reversal number"
+   },
+   {
+    "n": 2,
+    "label": "1 Oct 2026"
+   },
+   {
+    "n": 3,
+    "label": "Reverses, with reason"
+   },
+   {
+    "n": 4,
+    "label": "Mirror-image lines"
+   }
+  ],
+  "route": "/journals/9ad6a986-110c-4aef-9cb1-8207ed1043d8",
+  "user": "fran",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1124,
+   507
+  ]
+ },
+ {
+  "figure": "23.1",
+  "title": "The journals list and its filters",
+  "file": "fig-23.1.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "New journal"
+   },
+   {
+    "n": 2,
+    "label": "Status"
+   },
+   {
+    "n": 3,
+    "label": "From / To"
+   },
+   {
+    "n": 4,
+    "label": "Narration contains"
+   },
+   {
+    "n": 5,
+    "label": "Filter"
+   },
+   {
+    "n": 6,
+    "label": "Journal number"
+   }
+  ],
+  "route": "/journals",
+  "user": "fran",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1100,
+   622
+  ]
+ },
+ {
+  "figure": "23.9",
+  "title": "The list after the reversal",
+  "file": "fig-23.9.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Reversal chip"
+   },
+   {
+    "n": 2,
+    "label": "Reversed status"
+   },
+   {
+    "n": 3,
+    "label": "Source"
+   }
+  ],
+  "route": "/journals",
+  "user": "fran",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1042,
+   312
+  ]
+ },
+ {
+  "figure": "25.1",
+  "title": "Profit and loss for the September quarter",
+  "file": "fig-25.1.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Report tabs"
+   },
+   {
+    "n": 2,
+    "label": "From"
+   },
+   {
+    "n": 3,
+    "label": "To"
+   },
+   {
+    "n": 4,
+    "label": "Quick range"
+   },
+   {
+    "n": 5,
+    "label": "Run report"
+   },
+   {
+    "n": 6,
+    "label": "Export CSV"
+   }
+  ],
+  "route": "/reports?type=pl&from=2026-07-01&to=2026-09-30",
+  "user": "fran",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1124,
+   1158
+  ]
+ },
+ {
+  "figure": "25.2",
+  "title": "Reading the profit and loss: gross profit and net profit",
+  "file": "fig-25.2.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Total trading income"
+   },
+   {
+    "n": 2,
+    "label": "Total cost of sales"
+   },
+   {
+    "n": 3,
+    "label": "Gross profit and margin"
+   },
+   {
+    "n": 4,
+    "label": "Net profit"
+   }
+  ],
+  "route": "/reports?type=pl&from=2026-07-01&to=2026-09-30",
+  "user": "fran",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1042,
+   868
+  ]
+ },
+ {
+  "figure": "25.3",
+  "title": "Balance sheet as at today",
+  "file": "fig-25.3.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "As at"
+   },
+   {
+    "n": 2,
+    "label": "Net assets"
+   },
+   {
+    "n": 3,
+    "label": "Current year earnings"
+   },
+   {
+    "n": 4,
+    "label": "Total equity"
+   },
+   {
+    "n": 5,
+    "label": "Balanced check"
+   }
+  ],
+  "route": "/reports?type=bs&asAt=2026-10-08",
+  "user": "fran",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1124,
+   1221
+  ]
+ },
+ {
+  "figure": "25.4",
+  "title": "Trial balance: total debits equal total credits",
+  "file": "fig-25.4.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "As at"
+   },
+   {
+    "n": 2,
+    "label": "Debit"
+   },
+   {
+    "n": 3,
+    "label": "Credit"
+   },
+   {
+    "n": 4,
+    "label": "Totals agree"
+   },
+   {
+    "n": 5,
+    "label": "Financial year note"
+   }
+  ],
+  "route": "/reports?type=tb&asAt=2026-10-08",
+  "user": "fran",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1124,
+   1584
+  ]
+ },
+ {
+  "figure": "25.5",
+  "title": "Account transactions for 6400 Fuel in September",
+  "file": "fig-25.5.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Account"
+   },
+   {
+    "n": 2,
+    "label": "Date range"
+   },
+   {
+    "n": 3,
+    "label": "Opening balance"
+   },
+   {
+    "n": 4,
+    "label": "Journal link"
+   },
+   {
+    "n": 5,
+    "label": "Closing balance"
+   }
+  ],
+  "route": "/reports?type=account&from=2026-09-01&to=2026-09-30&account=89b81693-f7e8-4fc3-9670-5521cb0f9d61",
+  "user": "fran",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1124,
+   551
+  ]
+ },
+ {
+  "figure": "25.6",
+  "title": "Aged receivables: what customers owe Panalo",
+  "file": "fig-25.6.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "As at"
+   },
+   {
+    "n": 2,
+    "label": "Current"
+   },
+   {
+    "n": 3,
+    "label": "31\u201360 days"
+   },
+   {
+    "n": 4,
+    "label": "Total agrees to 1100"
+   },
+   {
+    "n": 5,
+    "label": "Customer link"
+   }
+  ],
+  "route": "/reports?type=ar&asAt=2026-10-08",
+  "user": "fran",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1124,
+   469
+  ]
+ },
+ {
+  "figure": "25.7",
+  "title": "Aged payables: what Panalo owes suppliers",
+  "file": "fig-25.7.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "As at"
+   },
+   {
+    "n": 2,
+    "label": "Supplier"
+   },
+   {
+    "n": 3,
+    "label": "Total agrees to 2000"
+   }
+  ],
+  "route": "/reports?type=ap&asAt=2026-10-08",
+  "user": "fran",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1124,
+   502
+  ]
+ },
+ {
+  "figure": "25.8",
+  "title": "After exporting: the export is recorded in the audit log",
+  "file": "fig-25.8.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Export CSV"
+   },
+   {
+    "n": 2,
+    "label": "Export message"
+   }
+  ],
+  "route": "/reports?type=ap&asAt=2026-10-08",
+  "user": "fran",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1360,
+   900
+  ]
+ }
+]

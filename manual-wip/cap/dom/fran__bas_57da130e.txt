@@ -1,0 +1,127 @@
+p [class=msg id=app-msg]
+div [data-view] "    "
+  header [class=page-head]
+    div
+      p [class=eyebrow] "TAX · BAS"
+      h1 "1 July 2026 to 30 Sept 2026"
+        span [class=chip pending] "Being prepared"
+      p [class=muted] "Quarterly · GST accrual basis · simpler BAS · due 28 Oct 202"
+    div [class=top-actions]
+      button [type=button class=btn data-pdf] "Workpaper (PDF)"
+      a [class=btn href=#/bas] "All BAS"
+  div [class=tabs]
+    button [type=button class=on data-tab=summary] "BAS"
+    button [type=button class data-tab=gst] "GST by tax code"
+    button [type=button class data-tab=payg] "PAYG withholding"
+    button [type=button class data-tab=rec] "Reconciliation"
+    button [type=button class data-tab=exceptions] "To check (2)"
+  section [class=panel] " "
+    div [class=grid2] "  "
+      section
+        h2 "Goods and services tax"
+        table [class=tbl bas-form]
+          tbody "  "
+            tr
+              th "Total sales (including any GST)"
+                span [class=mono label-key] "G1"
+              td [class=num mono] "$174,559"
+            tr
+              th "GST on sales"
+                span [class=mono label-key] "1A"
+              td [class=num mono] "$15,869"
+            tr
+              th "GST on purchases"
+                span [class=mono label-key] "1B"
+              td [class=num mono] "$10,002"
+                small [class=muted] "10,002.95"
+      section
+        h2 "PAYG tax withheld"
+        table [class=tbl bas-form]
+          tbody " "
+            tr
+              th "Total salary, wages and other payments"
+                span [class=mono label-key] "W1"
+              td [class=num mono] "$15,054"
+                small [class=muted] "15,054.36"
+            tr
+              th "Amount withheld from payments shown at W1"
+                span [class=mono label-key] "W2"
+              td [class=num mono] "$2,966"
+            tr
+              th "Amount withheld where no ABN is quoted"
+                span [class=mono label-key] "W4"
+              td [class=num mono] "$564"
+            tr
+              th "Other amounts withheld"
+                span [class=mono label-key] "W3"
+              td [class=num mono] "$0"
+            tr
+              th "Total amounts withheld (W2 + W4 + W3)"
+                span [class=mono label-key] "W5"
+              td [class=num mono] "$3,530"
+        h2 "Summary"
+        table [class=tbl bas-form]
+          tbody "     "
+            tr
+              th "GST on sales"
+                span [class=mono label-key] "1A"
+              td [class=num mono] "$15,869"
+            tr
+              th "PAYG tax withheld"
+                span [class=mono label-key] "4"
+              td [class=num mono] "$3,530"
+            tr
+              th "PAYG income tax instalment"
+                span [class=mono label-key] "5A"
+              td [class=num mono] "$0"
+            tr [class=total]
+              th "Amount you owe the ATO"
+                span [class=mono label-key] "8A"
+              td [class=num mono] "$19,399"
+            tr
+              th "GST on purchases"
+                span [class=mono label-key] "1B"
+              td [class=num mono] "$10,002"
+            tr
+              th "Fuel tax credit"
+                span [class=mono label-key] "7D"
+              td [class=num mono] "$0"
+            tr [class=total]
+              th "Amount the ATO owes you"
+                span [class=mono label-key] "8B"
+              td [class=num mono] "$10,002"
+            tr [class=total]
+              th "Payment due"
+                span [class=mono label-key] "9"
+              td [class=num mono]
+    p [class=muted small] "Whole dollars, as entered on the activity statement: cents a"
+  section [class=panel] "   "
+    h2 "Prepare, review, lodge, pay"
+    ol [class=steps] "    "
+      li "Prepared by Fran Finance 8 Oct 2026, 5:56 am"
+      li "Review by someone other than the preparer (Review BAS permis"
+      li "Lodge with the ATO (online services or your tax agent), then"
+      li "Pay the ATO, or receive the refund"
+    form [data-save] " "
+      div [class=grid3] "   "
+        div [class=fld] " "
+          label "5A PAYG income tax instalment ($)"
+          input [id=b-5a type=text name=i5a]
+          small "From your instalment notice, or T7 to T11 on the BAS"
+          small [class=err data-err=b-5a]
+        div [class=fld] " "
+          label "7D Fuel tax credit ($)"
+          input [id=b-7d type=text name=f7d]
+          small "From your fuel tax credit calculator"
+          small [class=err data-err=b-7d]
+        div [class=fld]
+          label "GST reporting"
+          select [id=b-m name=method]
+      div [class=fld]
+        label "Notes for the reviewer"
+        textarea [id=b-n name=notes]
+      div [class=actions]
+        button [class=btn type=submit] "Save"
+        button [type=button class=btn danger data-act=delete] "Delete draft"
+    p [class=muted small] "Waiting for review by someone with the Review BAS permission"
+  p [class=msg data-msg]

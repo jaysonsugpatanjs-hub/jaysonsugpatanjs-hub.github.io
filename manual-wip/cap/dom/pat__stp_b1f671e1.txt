@@ -1,0 +1,75 @@
+p [class=msg id=app-msg]
+div [data-view] "   "
+  header [class=page-head]
+    div
+      p [class=eyebrow] "PAYROLL · STP"
+      h1 "Pay event"
+        span [class=chip bad] "Has errors"
+      p [class=muted] "Pay run , paid 30 Sept 2026
+          · financial year 2026-"
+        a [href=#/pay-runs/b70b0fc1-4f77-4987-ad20-ce2cd] "PR-00003"
+    div [class=top-actions]
+      a [class=btn href=#/stp] "All events"
+  section [class=panel] "   "
+    p "4 employee(s), . Year to date: gross (salary and wages, afte"
+    div [class=actions] "     "
+      button [type=button class=btn data-act=check] "Check again"
+      button [type=button class=btn data-act=json] "Download (JSON)"
+      button [type=button class=btn data-act=csv] "Download (CSV)"
+      button [type=button class=btn] "Send to the ATO (off)"
+      button [type=button class=btn danger data-act=delete] "Delete"
+    p [class=muted small] "Downloads hold tax file numbers: keep them private and delet"
+  section [class=panel]
+    div [class=tbl-wrap]
+      table [class=tbl]
+        thead
+          tr
+            th "Employee"
+            th "Codes"
+            th [class=num] "Gross"
+            th "Other amounts"
+            th [class=num] "PAYG"
+            th "Super"
+        tbody " "
+          tr "  "
+            td
+              a [href=#/employees/3ba8df5a-0489-4960-b071-2e63] "Casey Rigger"
+              small "Rigger, Casey · PP-103  · TFN ••• ••• 782"
+              small [class=bad-text] "Home address is incomplete (street, suburb, state and postco"
+            td [class=mono small] "C · RNXXXX · SAW"
+            td [class=num mono] "3,135.00"
+            td [class=small]
+              span [class=muted] "—"
+            td [class=num mono] "789.00"
+            td [class=small mono] "L 376.20 OTE 3,135.00"
+          tr "  "
+            td
+              a [href=#/employees/60773234-224a-407d-80b8-8cf8] "Jamie Apprentice"
+              small "Apprentice, Jamie · PP-104  · TFN ••• ••• 782"
+            td [class=mono small] "F · RTXXXX · SAW"
+            td [class=num mono] "2,793.00"
+            td [class=small]
+              span [class=muted] "—"
+            td [class=num mono] "348.00"
+            td [class=small mono] "L 335.16 OTE 2,793.00"
+          tr "  "
+            td
+              a [href=#/employees/c8bf1617-beae-4bd5-87e6-071e] "Olivia Office"
+              small "Office, Olivia · PP-102  · TFN ••• ••• 782"
+            td [class=mono small] "F · RTXXXX · SAW"
+            td [class=num mono] "4,153.86"
+            td [class=small]
+              span [class=muted] "—"
+            td [class=num mono] "783.00"
+            td [class=small mono] "L 498.45 OTE 4,153.86"
+          tr "  "
+            td
+              a [href=#/employees/7ff4b594-d3e1-487f-a382-9a97] "Tom Welder"
+              small "Welder, Tom · PP-101  · TFN ••• ••• 782"
+            td [class=mono small] "F · RTXXXX · SAW"
+            td [class=num mono] "4,845.00"
+            td [class=small] "Overtime 127.50"
+            td [class=num mono] "1,046.00"
+            td [class=small mono] "L 581.40 OTE 4,845.00"
+    p [class=muted small] "Codes: employment basis (F full-time, P part-time, C casual)"
+  p [class=msg data-msg]

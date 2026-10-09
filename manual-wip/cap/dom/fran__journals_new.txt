@@ -1,0 +1,88 @@
+p [class=msg id=app-msg]
+div [data-view] " "
+  header [class=page-head]
+    div
+      p [class=eyebrow] "ACCOUNTING · JOURNALS"
+      h1 "New journal"
+      p [class=muted] "Enter amounts as debits and credits. Lines with a GST code g"
+  form [class=panel data-journal] "    "
+    div [class=grid3] "   "
+      div [class=fld]
+        label "Date"
+        input [id=je-date type=date]
+      div [class=fld]
+        label "Amounts are"
+        select [id=je-amounts]
+      div [class=fld]
+        label "Narration"
+        input [id=je-memo]
+    div [class=tbl-wrap]
+      table [class=tbl lines]
+        thead
+          tr
+            th "Account"
+            th "Description"
+            th "Tax"
+            th [class=num] "Debit"
+            th [class=num] "Credit"
+            th [class=num] "GST"
+            th
+              span [class=sr-only] "Remove"
+        tbody " "
+          tr [data-line=0] "      "
+            td
+              select [aria-label=Account, line 1 data-f=accountId]
+                optgroup
+                optgroup
+                optgroup
+                optgroup
+                optgroup
+                optgroup
+                optgroup
+                optgroup
+            td
+              input [aria-label=Description, line 1 data-f=description]
+            td
+              select [aria-label=Tax code, line 1 data-f=taxCodeId]
+            td
+              input [aria-label=Debit, line 1 data-f=debit class=num]
+            td
+              input [aria-label=Credit, line 1 data-f=credit class=num]
+            td [class=num mono muted data-gst]
+            td
+              button [type=button class=link data-remove=0 aria-label=Remove line 1] "✕"
+          tr [data-line=1] "      "
+            td
+              select [aria-label=Account, line 2 data-f=accountId]
+                optgroup
+                optgroup
+                optgroup
+                optgroup
+                optgroup
+                optgroup
+                optgroup
+                optgroup
+            td
+              input [aria-label=Description, line 2 data-f=description]
+            td
+              select [aria-label=Tax code, line 2 data-f=taxCodeId]
+            td
+              input [aria-label=Debit, line 2 data-f=debit class=num]
+            td
+              input [aria-label=Credit, line 2 data-f=credit class=num]
+            td [class=num mono muted data-gst]
+            td
+              button [type=button class=link data-remove=1 aria-label=Remove line 2] "✕"
+        tfoot
+          tr
+            td
+              button [type=button class=link data-add-line] "+ Add a line"
+            td [class=num mono data-tdr] "0.00"
+            td [class=num mono data-tcr] "0.00"
+            td
+    p [class=balance  data-balance]
+    div [class=actions] "  "
+      button [class=btn type=submit data-save=draft] "Save draft"
+      button [class=btn primary type=submit data-save=post] "Save and post"
+      a [class=btn href=#/journals] "Cancel"
+  p [class=msg data-msg]

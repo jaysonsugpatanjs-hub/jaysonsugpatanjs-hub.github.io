@@ -1,0 +1,50 @@
+p [class=msg id=app-msg]
+div [data-view] " "
+  header [class=page-head]
+    div
+      p [class=eyebrow] "SALES"
+      h1 "Quotes"
+      p [class=muted] "Quotes don't affect the books. Once accepted, turn one into "
+    a [class=btn primary href=#/quotes/new] "New quote"
+  section [class=panel] " "
+    form [class=toolbar data-filter] " "
+      div [class=fld]
+        label "Status"
+        select [id=q-st]
+      div [class=fld]
+        label "Title contains"
+        input [id=q-q]
+      button [class=btn type=submit] "Filter"
+    div [class=tbl-wrap]
+      table [class=tbl]
+        thead
+          tr
+            th "Number"
+            th "Customer"
+            th "Title"
+            th "Date"
+            th "Valid until"
+            th "Status"
+            th [class=num] "Total"
+        tbody " "
+          tr " "
+            td [class=mono]
+              a [href=#/quotes/6a1ce707-1e6d-4769-8855-db5967c] "QU-1002"
+            td "Demo Energy Services Pty Ltd"
+            td "Tank farm handrail upgrade"
+            td [class=nowrap] "2 Oct 2026"
+            td [class=nowrap] "1 Nov 2026"
+            td
+              span [class=chip info] "Sent"
+            td [class=num mono] "37,400.00"
+          tr " "
+            td [class=mono]
+              a [href=#/quotes/138bed6d-d6f7-4d6f-a7b6-df026ac] "QU-1001"
+            td "Demo Port Terminals Pty Ltd"
+            td "Wharf access platform - structural steel"
+            td [class=nowrap] "8 July 2026"
+            td [class=nowrap] "7 Aug 2026"
+            td
+              span [class=chip good] "Accepted"
+            td [class=num mono] "156,200.00"
+  p [class=msg data-msg]

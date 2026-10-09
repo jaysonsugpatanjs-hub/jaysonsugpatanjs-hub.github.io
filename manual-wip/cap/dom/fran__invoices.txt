@@ -1,0 +1,149 @@
+p [class=msg id=app-msg]
+div [data-view] " "
+  header [class=page-head]
+    div
+      p [class=eyebrow] "SALES"
+      h1 "Invoices"
+      p [class=muted] "Drafts aren't in the books. Approving gives the invoice its "
+    div [class=actions tight]
+      a [class=btn href=#/invoices?kind=credit_note] "Credit notes"
+      a [class=btn primary href=#/invoices/new] "New invoice"
+  section [class=panel] "    "
+    div [class=tabs]
+      button [type=button class=on data-view-tab=all] "All"
+      button [type=button class data-view-tab=draft] "Draft"
+      button [type=button class data-view-tab=unpaid] "Unpaid"
+      button [type=button class data-view-tab=overdue] "Overdue"
+      button [type=button class data-view-tab=paid] "Paid"
+      button [type=button class data-view-tab=void] "Void"
+    form [class=toolbar data-filter]
+      div [class=fld]
+        label "Number contains"
+        input [id=i-q]
+      button [class=btn type=submit] "Search"
+    div [class=tbl-wrap]
+      table [class=tbl]
+        thead
+          tr
+            th "Number"
+            th "Customer"
+            th "Date"
+            th "Due"
+            th "Status"
+            th [class=num] "Total"
+            th [class=num] "Owing"
+        tbody " "
+          tr "   "
+            td [class=mono]
+              a [href=#/invoices/6fba41c4-04b6-4cd9-81e6-87f9f] "Draft"
+              small "PO 4500-2231"
+            td "Demo Minerals Processing Pty Ltd"
+            td [class=nowrap] "6 Oct 2026"
+            td [class=nowrap] "5 Nov 2026"
+            td
+              span [class=chip pending] "Draft"
+            td [class=num mono] "34,650.00"
+            td [class=num mono]
+          tr "   "
+            td [class=mono]
+              a [href=#/invoices/0af4da9e-f163-47de-8d3e-2b2dc] "INV-1008"
+              small "PO 4500-2240"
+            td "Demo Minerals Processing Pty Ltd"
+            td [class=nowrap] "30 Sept 2026"
+            td [class=nowrap] "30 Oct 2026"
+            td
+              span [class=chip good] "Approved"
+            td [class=num mono] "5,852.00"
+            td [class=num mono] "5,852.00"
+          tr "   "
+            td [class=mono]
+              a [href=#/invoices/90a8e3e6-db93-4ac0-906d-8bf9f] "INV-1007"
+              small "DPT-26-118"
+            td "Demo Port Terminals Pty Ltd"
+            td [class=nowrap] "30 Sept 2026"
+            td [class=nowrap] "30 Oct 2026"
+            td
+              span [class=chip good] "Approved"
+            td [class=num mono] "39,050.00"
+            td [class=num mono] "39,050.00"
+          tr "   "
+            td [class=mono]
+              a [href=#/invoices/fb33e0b1-6e99-4b73-92c6-37c59] "INV-1006"
+              small "PO 4500-2231"
+            td "Demo Minerals Processing Pty Ltd"
+            td [class=nowrap] "15 Sept 2026"
+            td [class=nowrap] "15 Oct 2026"
+            td
+              span [class=chip good] "Approved"
+            td [class=num mono] "33,000.00"
+            td [class=num mono] "33,000.00"
+          tr "   "
+            td [class=mono]
+              a [href=#/invoices/21f0060f-1125-45b3-ad19-5a05f] "INV-1005"
+              small "PO 4500-2240"
+            td "Demo Minerals Processing Pty Ltd"
+            td [class=nowrap] "31 Aug 2026"
+            td [class=nowrap] "30 Sept 2026"
+              small [class=bad-text] "8 days overdue"
+            td
+              span [class=chip good] "Approved"
+            td [class=num mono] "5,775.00"
+            td [class=num mono] "5,775.00"
+          tr "   "
+            td [class=mono]
+              a [href=#/invoices/c372faa9-8a7c-4e4b-9c4e-3dae7] "INV-1004"
+              small "DPT-26-118"
+            td "Demo Port Terminals Pty Ltd"
+            td [class=nowrap] "31 Aug 2026"
+            td [class=nowrap] "30 Sept 2026"
+            td
+              span [class=chip good] "Approved"
+              span [class=chip good] "Paid"
+            td [class=num mono] "46,860.00"
+            td [class=num mono]
+          tr "   "
+            td [class=mono]
+              a [href=#/invoices/66a8acfb-0215-4999-81bf-ce931] "INV-1003"
+              small "WO 77812"
+            td "Demo Water Authority"
+            td [class=nowrap] "21 Aug 2026"
+            td [class=nowrap] "4 Sept 2026"
+            td
+              span [class=chip good] "Approved"
+              span [class=chip good] "Paid"
+            td [class=num mono] "10,593.00"
+            td [class=num mono]
+          tr "   "
+            td [class=mono]
+              a [href=#/invoices/542ae06a-2468-447f-a26d-7fdc2] "INV-1002"
+              small "PO 4500-2240"
+            td "Demo Minerals Processing Pty Ltd"
+            td [class=nowrap] "31 July 2026"
+            td [class=nowrap] "30 Aug 2026"
+            td
+              span [class=chip good] "Approved"
+              span [class=chip good] "Paid"
+            td [class=num mono] "5,929.00"
+            td [class=num mono]
+          tr "   "
+            td [class=mono]
+              a [href=#/invoices/8a16f8b8-1bf9-4ff3-ace4-1f261] "INV-1001"
+              small "PO 4500-2231"
+            td "Demo Minerals Processing Pty Ltd"
+            td [class=nowrap] "24 July 2026"
+            td [class=nowrap] "23 Aug 2026"
+            td
+              span [class=chip good] "Approved"
+              span [class=chip good] "Paid"
+            td [class=num mono] "27,500.00"
+            td [class=num mono]
+        tfoot
+          tr
+            th "9 shown"
+            td [class=num mono] "209,209.00"
+            td [class=num mono]
+    div [class=pager]
+      button [type=button class=btn data-page=-1] "Previous"
+      span [class=muted small] "Page 1 of 1"
+      button [type=button class=btn data-page=1] "Next"
+  p [class=msg data-msg]

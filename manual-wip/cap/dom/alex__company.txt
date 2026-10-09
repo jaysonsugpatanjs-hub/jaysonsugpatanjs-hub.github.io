@@ -1,0 +1,65 @@
+p [class=msg id=app-msg]
+div [data-view] "   "
+  header [class=page-head]
+    div
+      p [class=eyebrow] "ADMINISTRATION"
+      h1 "Company settings"
+      p [class=muted] "Setup completed 8 Oct 2026. Changes save straight away and a"
+  ol [class=stepper]
+    li
+      button [type=button data-step=0 class=current] "Business"
+        span "1"
+    li
+      button [type=button data-step=1 class] "Contact"
+        span "2"
+    li
+      button [type=button data-step=2 class] "Tax and reporting"
+        span "3"
+    li
+      button [type=button data-step=3 class] "Payroll"
+        span "4"
+    li
+      button [type=button data-step=4 class] "Workers comp"
+        span "5"
+    li
+      button [type=button data-step=5 class] "Banking"
+        span "6"
+    li
+      button [type=button data-step=6 class] "Numbering"
+        span "7"
+    li
+      button [type=button data-step=7 class] "Review"
+        span "8"
+  section [class=panel data-step-panel]
+    form [data-form=business] "  "
+      h2 "Business details"
+      div [class=grid2] "    "
+        div [class=fld] " "
+          label "Legal name"
+            span [class=req] "*"
+          input [id=legal_name name=legal_name type=text]
+          small "As registered with ASIC"
+          small [class=err data-err=legal_name]
+        div [class=fld] " "
+          label "Trading name"
+          input [id=trading_name name=trading_name type=text]
+          small [class=err data-err=trading_name]
+        div [class=fld] " "
+          label "ABN"
+            span [class=req] "*"
+          input [id=abn name=abn type=text]
+          small "11 digits. Checked against the ATO check-digit rule."
+          small [class=err data-err=abn]
+        div [class=fld] " "
+          label "ACN"
+          input [id=acn name=acn type=text]
+          small "9 digits, for a company"
+          small [class=err data-err=acn]
+      div [class=logo-row] " "
+        span [class=logo empty] "No logo"
+        label [class=btn file] "Upload logo"
+          input [type=file data-logo]
+        small [class=muted] "PNG, JPG, WebP or SVG, up to 2 MB. Used on invoices, quotes "
+      div [class=actions]
+        button [type=submit class=btn primary] "Save and continue"
+  p [class=msg data-msg]

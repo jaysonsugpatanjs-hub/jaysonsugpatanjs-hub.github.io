@@ -1,0 +1,26 @@
+p [class=msg id=app-msg]
+div [data-view] " "
+  header [class=page-head]
+    div
+      p [class=eyebrow] "PAYROLL · PAY RUNS"
+      h1 "New pay run"
+      p [class=muted] "Everyone on this pay frequency is included and worked out st"
+  form [class=panel data-create] "  "
+    div [class=grid3] "   "
+      div [class=fld]
+        label "Frequency"
+        select [id=pr-f]
+      div [class=fld]
+        label "Period start"
+        input [id=pr-s type=date]
+      div [class=fld]
+        label "Period end"
+        input [id=pr-e type=date]
+      div [class=fld]
+        label "Payment date"
+        input [id=pr-p type=date]
+    p [class=muted small] "Super must reach each fund within 7 business days of the pay"
+    div [class=actions]
+      button [class=btn primary type=submit] "Create and calculate"
+      a [class=btn href=#/pay-runs] "Cancel"
+  p [class=msg data-msg]

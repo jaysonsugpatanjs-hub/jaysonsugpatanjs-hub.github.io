@@ -1,0 +1,54 @@
+p [class=msg id=app-msg]
+div [data-view] "  "
+  header [class=page-head]
+    div
+      p [class=eyebrow] "PROJECTS · TIMESHEETS"
+      h1 "Approved hours"
+      p [class=muted] "Approved hours by person and type, ready for payroll. Pay ru"
+    button [class=btn type=button data-csv] "Export CSV"
+  nav [class=tabs aria-label=Timesheets]
+    a [class=tab href=#/timesheets] "My week"
+    a [class=tab href=#/timesheets/review] "Review"
+    a [class=tab on href=#/timesheets/hours] "Hours for payroll"
+  section [class=panel] " "
+    form [class=toolbar data-run]
+      div [class=fld]
+        label "From"
+        input [id=h-from type=date]
+      div [class=fld]
+        label "To"
+        input [id=h-to type=date]
+      button [class=btn primary type=submit] "Show"
+    div [class=tbl-wrap]
+      table [class=tbl]
+        thead
+          tr
+            th "Person"
+            th [class=num] "Ordinary"
+            th [class=num] "Overtime ×1.5"
+            th [class=num] "Overtime ×2"
+            th [class=num] "Travel time"
+            th [class=num] "Total"
+        tbody " "
+          tr
+            td "Casey Rigger"
+            td [class=num mono] "44"
+            td [class=num mono]
+            td [class=num mono]
+            td [class=num mono]
+            td [class=num mono]
+          tr
+            td "Jamie Apprentice"
+            td [class=num mono] "76"
+            td [class=num mono]
+            td [class=num mono]
+            td [class=num mono]
+            td [class=num mono]
+          tr
+            td "Tom Welder"
+            td [class=num mono] "76"
+            td [class=num mono] "2"
+            td [class=num mono]
+            td [class=num mono]
+            td [class=num mono]
+  p [class=msg data-msg]

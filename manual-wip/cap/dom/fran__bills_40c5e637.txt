@@ -1,0 +1,71 @@
+p [class=msg id=app-msg]
+div [data-view] "    "
+  header [class=page-head]
+    div " "
+      p [class=eyebrow] "PURCHASES · BILL"
+      h1 "BILL-1008 "
+        span [class=chip good] "Approved"
+        span [class=chip good] "Paid"
+      p [class=muted] "· their ref Week 38 · 19 Sept 2026 · due 26 Sept 2026"
+        a [href=#/suppliers/cfdd1ada-7d79-4d15-8ccd-a99f] "Demo Rigging Services (no ABN)"
+  section [class=panel] "    "
+    dl [class=facts] "   "
+      dt "Entered by"
+      dd "Fran Finance"
+      dt "Approved"
+      dd "Fran Finance · 8 Oct 2026, 5:56 am"
+      dt "Ledger"
+      dd
+        a [href=#/journals/3214dde3-1a99-4e52-bcc3-029c5] "JE-000021"
+    div [class=tbl-wrap]
+      table [class=tbl]
+        thead
+          tr " "
+            th "Description"
+            th "Account"
+            th [class=num] "Qty"
+            th [class=num] "Unit price"
+            th [class=num] "Disc"
+            th "Tax"
+            th [class=num] "GST"
+            th [class=num] "Amount (ex)"
+        tbody " "
+          tr "   "
+            td "Rigging labour, Mill 2 shutdown"
+              small "Subcontract · / 400"
+                a [href=#/projects/0776d1e8-c7df-412c-a757-c9281] "JOB-1001"
+            td "Subcontractors"
+              span [class=mono] "5300"
+            td [class=num mono] "24 h"
+            td [class=num mono] "50.00"
+            td [class=num mono]
+            td "FREE"
+            td [class=num mono]
+            td [class=num mono] "1,200.00"
+    dl [class=totals]
+      dt [class] "Subtotal (ex GST)"
+      dd [class=mono ] "1,200.00"
+      dt [class] "GST"
+      dd [class=mono ] "0.00"
+      dt [class=grand] "Total"
+      dd [class=mono grand] "1,200.00"
+      dt [class] "No-ABN withholding (to the ATO)"
+      dd [class=mono ] "(564.00)"
+      dt [class=grand] "Owing to supplier"
+      dd [class=mono grand] "0.00"
+    div [class=actions] " "
+      button [type=button class=btn danger data-void] "Void"
+  section [class=panel] " "
+    h2 "Payments and credits"
+    table [class=tbl]
+      tbody
+        tr
+          td "26 Sept 2026"
+          td "Payment"
+          td [class=num mono] "636.00"
+  section [class=panel data-attachments data-entity=bill data-entity-id=40c5e637-0792-4a28-a3af-ae0547f7a7e8] "   "
+    h2 "Attachments"
+    p [class=muted small] "Nothing attached."
+    label [class=btn file] "Attach a PDF or photo"
+      input [type=file data-attach]
+  p [class=msg data-msg]

@@ -1,0 +1,16 @@
+from common import *
+with sync_playwright() as p:
+    s = S(p, "alex"); s.go("users"); s.page.wait_for_selector("table.roles"); s.page.wait_for_timeout(400)
+    tom = uid("tom")
+    s.shot("34.1", "Users and roles: the roles matrix", callouts=[("#u-search", "Find a person"), ("a.btn[href^='../training/admin']", "People register, logins and overrides"), ("table.roles thead th.c", "Role columns"), ("table.roles tbody tr:has-text('Fran Finance') input[data-role=finance_admin]", "Role ticked"), ("table.roles tbody tr.inactive .chip.bad", "Sign-in disabled"), ("table.roles tbody tr:has-text('Alex Admin') th .chip", "System admin (own row locked)")])
+    s.page.fill("#u-search", "weld"); s.page.wait_for_timeout(400)
+    s.page.check(f"input[data-user='{tom}'][data-role=supervisor]"); s.page.wait_for_selector("[data-msg]:has-text('Added')")
+    s.shot("34.2", "Adding a role to one person", callouts=[("#u-search", "Search: weld"), (f"input[data-user='{tom}'][data-role=supervisor]", "Supervisor ticked"), ("[data-msg]", "Confirmation")], clip="section.panel")
+    print(s.msg())
+    s.page.uncheck(f"input[data-user='{tom}'][data-role=supervisor]"); s.page.wait_for_selector("[data-msg]:has-text('Removed')")
+    print(s.msg())
+    s.page.fill("#u-search", ""); s.page.wait_for_timeout(300)
+    s.page.locator(".role-cards").scroll_into_view_if_needed()
+    s.page.evaluate("window.scrollTo(0,0)")
+    s.shot("34.3", "What each role includes", callouts=[(".role-card:has(h3:text-is('Finance admin'))", "A role and its permissions"), (".role-card:has(h3:text-is('Accountant / auditor'))", "Read-mostly role"), ("section.panel:has(.role-cards) > p.small", "System admins and two-step sign-in")], clip="section.panel:has(.role-cards)")
+    s.close()

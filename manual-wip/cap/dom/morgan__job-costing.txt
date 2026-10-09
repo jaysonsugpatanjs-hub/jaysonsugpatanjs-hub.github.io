@@ -1,0 +1,111 @@
+p [class=msg id=app-msg]
+div [data-view] " "
+  header [class=page-head]
+    div
+      p [class=eyebrow] "PROJECTS"
+      h1 "Job costing"
+      p [class=muted] "Every project's budget, costs, commitments, invoicing and ma"
+  section [class=panel] "   "
+    form [class=toolbar data-filter]
+      div [class=fld]
+        label "Show"
+        select [id=jc-st]
+      button [class=btn type=submit] "Show"
+    div [class=tbl-wrap]
+      table [class=tbl report]
+        thead
+          tr " "
+            th "Project"
+            th [class=num] "Contract"
+            th [class=num] "Budget"
+            th [class=num] "Cost to date"
+            th [class=num] "Committed"
+            th [class=num] "Hours"
+            th [class=num] "Invoiced"
+            th [class=num] "Margin"
+            th [class=num] "Complete"
+            th [class=num] "Over / (under) billed"
+        tbody " "
+          tr "    "
+            td
+              a [href=#/projects/6ba38c7c-34da-41b3-b47d-cd7fa] "Tank farm handrail upgrade (tender)"
+                span [class=mono] "JOB-1005"
+            td [class=num mono] "34,000.00"
+            td [class=num mono]
+            td [class=num mono ]
+            td [class=num mono]
+            td [class=num mono]
+            td [class=num mono]
+            td [class=num mono ]
+            td [class=num] "—"
+            td [class=num mono] "—"
+          tr "    "
+            td
+              a [href=#/projects/71d0a007-bec2-4c9e-a014-d478b] "Plant maintenance contract FY27"
+                span [class=mono] "JOB-1004"
+            td [class=num mono] "120,000.00"
+            td [class=num mono]
+            td [class=num mono ] "1,392.00"
+            td [class=num mono]
+            td [class=num mono] "24"
+            td [class=num mono] "15,960.00"
+            td [class=num mono ] "14,568.00"
+              small "91.3%"
+            td [class=num] "—"
+            td [class=num mono] "—"
+          tr "    "
+            td
+              a [href=#/projects/71cecf3d-a101-4b08-99f6-ee001] "Coded welding repairs - pump station 4"
+                span [class=mono] "JOB-1003"
+            td [class=num mono] "18,400.00"
+            td [class=num mono] "7,000.00"
+            td [class=num mono ] "1,600.00"
+            td [class=num mono]
+            td [class=num mono]
+            td [class=num mono] "9,630.00"
+            td [class=num mono ] "8,030.00"
+              small "83.4%"
+            td [class=num] "22.9%"
+            td [class=num mono] "5,424.29"
+          tr "    "
+            td
+              a [href=#/projects/b418926f-5f3f-4834-8b07-7bba2] "Wharf access platform - structural steel"
+                span [class=mono] "JOB-1002"
+            td [class=num mono] "142,000.00"
+            td [class=num mono] "106,500.00"
+            td [class=num mono ] "27,832.00"
+            td [class=num mono]
+            td [class=num mono] "212.8"
+            td [class=num mono] "78,100.00"
+            td [class=num mono ] "50,268.00"
+              small "64.4%"
+            td [class=num] "26.1%"
+            td [class=num mono] "40,990.67"
+          tr "    "
+            td
+              a [href=#/projects/0776d1e8-c7df-412c-a757-c9281] "Mill 2 shutdown pipework"
+                span [class=mono] "JOB-1001"
+            td [class=num mono] "86,500.00"
+            td [class=num mono] "70,100.00"
+            td [class=num mono ] "25,144.00"
+            td [class=num mono] "290.00"
+            td [class=num mono] "159.2"
+            td [class=num mono] "55,000.00"
+            td [class=num mono ] "29,856.00"
+              small "54.3%"
+            td [class=num] "35.9%"
+            td [class=num mono] "23,973.52"
+        tfoot
+          tr [class=grand] " "
+            th "Total"
+            td [class=num mono] "400,900.00"
+            td [class=num mono] "183,600.00"
+            td [class=num mono] "55,968.00"
+            td [class=num mono] "290.00"
+            td [class=num mono] "396"
+            td [class=num mono] "158,690.00"
+            td [class=num mono] "102,722.00"
+            td
+            td
+    p [class=muted small] "Labour is costed at each person's labour rate when their tim"
+  p [class=msg data-msg]

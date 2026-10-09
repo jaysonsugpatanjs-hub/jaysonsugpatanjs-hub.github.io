@@ -1,0 +1,87 @@
+p [class=msg id=app-msg]
+div [data-view] " "
+  header [class=page-head]
+    div
+      p [class=eyebrow] "SALES · INVOICES"
+      h1 "New invoice"
+      p [class=muted] "Saved drafts don't affect the books. Approve to number the i"
+  form [class=panel data-doc] "     "
+    div [class=grid3] "      "
+      div [class=fld] " "
+        label "Customer"
+          span [class=req] "*"
+        select [id=d-party]
+        small [data-party-note]
+      div [class=fld]
+        label "Invoice date"
+        input [id=d-date type=date]
+      div [class=fld]
+        label "Due date"
+        input [id=d-due type=date]
+      div [class=fld]
+        label "Customer PO / reference"
+        input [id=d-ref]
+      div [class=fld]
+        label "Invoice type"
+        select [id=d-type]
+      div [class=fld]
+        label "Amounts are"
+        select [id=d-amounts]
+    div [class=tbl-wrap]
+      table [class=tbl lines doc-lines]
+        thead
+          tr " "
+            th "Description"
+            th "Account"
+            th [class=num] "Qty"
+            th [class=num] "Unit price"
+            th [class=num] "Disc %"
+            th "Tax"
+            th [class=num] "GST"
+            th [class=num] "Amount"
+            th
+              span [class=sr-only] "Remove"
+        tbody " "
+          tr [data-line=0] "       "
+            td [class=desc] " "
+              textarea [aria-label=Description, line 1 data-f=description]
+              div [class=line-tags] " "
+                select [aria-label=Type, line 1 data-f=kind class=kind]
+                select [aria-label=Project, line 1 data-f=projectId class=kind]
+            td
+              select [aria-label=Account, line 1 data-f=accountId]
+                optgroup
+                optgroup
+            td
+              input [aria-label=Quantity, line 1 data-f=quantity class=num qty]
+            td
+              input [aria-label=Unit price, line 1 data-f=unitPrice class=num]
+            td
+              input [aria-label=Discount percent, line 1 data-f=discountPercent class=num disc]
+            td
+              select [aria-label=Tax code, line 1 data-f=taxCodeId]
+            td [class=num mono muted data-gst]
+            td [class=num mono data-amt] "0.00"
+            td
+              button [type=button class=link data-remove=0 aria-label=Remove line 1] "✕"
+    div [class=doc-foot] "  "
+      button [type=button class=link data-add-line] "+ Add a line"
+      dl [class=totals data-totals] "  "
+        dt "Subtotal (ex GST)"
+        dd [class=mono] "0.00"
+        dt "GST"
+        dd [class=mono] "0.00"
+        dt [class=grand] "Total"
+        dd [class=mono grand] "0.00"
+    div [class=grid2] " "
+      div [class=fld]
+        label "Notes on the invoice"
+        textarea [id=d-notes]
+      div [class=fld]
+        label "Terms"
+        textarea [id=d-terms]
+    div [class=actions]
+      button [class=btn  type=submit data-act=draft] "Save draft"
+      button [class=btn primary type=submit data-act=approve] "Save and approve"
+      a [class=btn href=#/invoices] "Cancel"
+  p [class=msg data-msg]

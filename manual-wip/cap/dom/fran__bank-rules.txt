@@ -1,0 +1,38 @@
+p [class=msg id=app-msg]
+div [data-view] "  "
+  header [class=page-head]
+    div
+      p [class=eyebrow] "BANKING"
+      h1 "Bank rules"
+      p [class=muted] "Rules suggest how to code repeating statement lines (fuel, b"
+    button [type=button class=btn primary data-new] "New rule"
+  section [class=panel]
+    div [class=tbl-wrap]
+      table [class=tbl]
+        thead
+          tr
+            th "Order"
+            th "Rule"
+            th "When"
+            th "Code to"
+            th
+        tbody " "
+          tr " "
+            td [class=num] "10"
+            td
+              small "Demo Servo"
+            td ""DEMO SERVO" · out"
+            td "6400 Fuel"
+              small "GSTE"
+            td
+              button [type=button class=link data-edit=f9fc096f-3208-4895-8e8f-6e33e56a432c] "Edit"
+          tr " "
+            td [class=num] "20"
+            td
+              small "Bank"
+            td ""ACCOUNT FEE" · out"
+            td "7700 Bank Charges"
+              small "ITP"
+            td
+              button [type=button class=link data-edit=9fbc47d9-4db5-458d-a4d9-8bd86beb159c] "Edit"
+  p [class=msg data-msg]

@@ -1,0 +1,72 @@
+p [class=msg id=app-msg]
+div [data-view] " "
+  header [class=page-head]
+    div
+      p [class=eyebrow] "BANKING"
+      h1 "New payment batch"
+      p [class=muted] "Bills need an approved supplier bank account. The bank detai"
+    a [class=btn href=#/payment-batches] "Back"
+  form [class=panel data-batch] "    "
+    div [class=grid3] "    "
+      div [class=fld]
+        label "Pay from"
+        select [id=pb-src]
+      div [class=fld] " "
+        label "Payment date"
+        input [id=pb-date name=pb-date type=date]
+        small [class=err data-err=pb-date]
+      div [class=fld] " "
+        label "Description on the bank file"
+        input [id=pb-desc name=pb-desc type=text]
+        small "Up to 12 letters or numbers"
+        small [class=err data-err=pb-desc]
+      div [class=fld] " "
+        label "Show bills due by"
+        input [id=pb-due name=pb-due type=date]
+        small [class=err data-err=pb-due]
+    div [class=tbl-wrap]
+      table [class=tbl]
+        thead
+          tr
+            th
+            th "Bill"
+            th "Supplier"
+            th "Due"
+            th "Pay to"
+            th [class=num] "Owing"
+            th [class=num] "Pay"
+        tbody " "
+          tr "  "
+            td
+            td "BILL-1007"
+              small "DCH-30418"
+            td "Demo Crane Hire Pty Ltd"
+            td [class=nowrap bad-text] "26 Sept 2026"
+            td
+              span [class=muted small] "In a batch already"
+            td [class=num mono] "4,620.00"
+            td [class=num]
+          tr "  "
+            td
+            td "BILL-1009"
+              small "DSS-INV-41520"
+            td "Demo Steel Supplies Pty Ltd"
+            td [class=nowrap ] "25 Oct 2026"
+            td
+              span [class=muted small] "In a batch already"
+            td [class=num mono] "20,416.00"
+            td [class=num]
+          tr "  "
+            td
+            td "BILL-1002"
+              small "DWC-118842"
+            td "Demo Welding Consumables Pty Ltd"
+            td [class=nowrap ] "30 Oct 2026"
+            td
+              span [class=muted small] "In a batch already"
+            td [class=num mono] "1,955.80"
+            td [class=num]
+    p
+    div [class=actions]
+      button [class=btn primary type=submit] "Make the batch"
+  p [class=msg data-msg]

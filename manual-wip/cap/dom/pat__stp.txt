@@ -1,0 +1,75 @@
+p [class=msg id=app-msg]
+div [data-view] "    "
+  header [class=page-head]
+    div
+      p [class=eyebrow] "PAYROLL"
+      h1 "Single Touch Payroll"
+      p [class=muted] "STP Phase 2 information for each pay run, checked against th"
+  div [class=tabs]
+    button [type=button class=on data-tab=events] "Events"
+    button [type=button class data-tab=mapping] "Pay item mapping"
+    button [type=button class data-tab=settings] "Settings"
+  form [class=panel toolbar data-year] "   "
+    div [class=fld]
+      label "Event"
+      select [id=sy-k]
+    div [class=fld]
+      label "Financial year"
+      select [id=sy-y]
+    div [class=fld] " "
+      label "Year to date at (optional)"
+      input [id=sy-d name=sy-d type=date]
+      small [class=err data-err=sy-d]
+    button [class=btn type=submit] "Prepare"
+  section [class=panel]
+    div [class=tbl-wrap]
+      table [class=tbl]
+        thead
+          tr
+            th "Event"
+            th "Date"
+            th "Status"
+            th [class=num] "Employees"
+            th [class=num] "Gross YTD"
+            th [class=num] "PAYG YTD"
+            th "Prepared"
+            th "Ready"
+        tbody " "
+          tr " "
+            td
+              a [href=#/stp/b1f671e1-c7b2-406f-86c7-0c266e5c7e]
+              small [class=mono] "PR-00003"
+            td [class=nowrap] "30 Sept 2026"
+            td
+              span [class=chip bad] "Has errors"
+              small "1 with errors"
+            td [class=num] "4"
+            td [class=num mono] "14,926.86"
+            td [class=num mono] "2,966.00"
+            td "Pat Payroll"
+            td
+          tr " "
+            td
+              a [href=#/stp/d6560f22-f10f-424b-9104-3eccd2ecda]
+              small [class=mono] "PR-00002"
+            td [class=nowrap] "23 Sept 2026"
+            td
+              span [class=chip good] "Ready"
+            td [class=num] "4"
+            td [class=num mono] "9,951.24"
+            td [class=num mono] "1,991.00"
+            td "Pat Payroll"
+            td "Dana Director"
+          tr " "
+            td
+              a [href=#/stp/d3e4569b-5374-44ef-92e0-e94ca3a0c5]
+              small [class=mono] "PR-00001"
+            td [class=nowrap] "16 Sept 2026"
+            td
+              span [class=chip good] "Ready"
+            td [class=num] "4"
+            td [class=num mono] "4,975.62"
+            td [class=num mono] "975.00"
+            td "Pat Payroll"
+            td "Dana Director"
+  p [class=msg data-msg]

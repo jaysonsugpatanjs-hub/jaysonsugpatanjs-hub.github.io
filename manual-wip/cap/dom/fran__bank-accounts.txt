@@ -1,0 +1,68 @@
+p [class=msg id=app-msg]
+div [data-view] "   "
+  header [class=page-head]
+    div
+      p [class=eyebrow] "BANKING"
+      h1 "Bank accounts"
+      p [class=muted] "Import statements, match each line to what it pays, and reco"
+    a [class=btn href=#/bank-rules] "Bank rules"
+  section [class=panel]
+    div [class=tbl-wrap]
+      table [class=tbl]
+        thead
+          tr
+            th "Account"
+            th [class=num] "Ledger balance"
+            th [class=num] "Statement balance"
+            th [class=num] "Lines to match"
+            th "Reconciled to"
+            th
+        tbody " "
+          tr "    "
+            td
+              a [href=#/reconciliation/abf5a6be-47f8-4dc0-a43c]
+              small "Operating account"
+            td [class=num mono] "179,482.47"
+            td [class=num mono] "211,125.58"
+              small "7 Oct 2026"
+            td [class=num]
+              span [class=chip pending] "4"
+            td "30 Sept 2026"
+              small "179,482.47"
+            td [class=row-acts]
+              a [class=btn href=#/bank-accounts/abf5a6be-47f8-4dc0-a43c-] "Import statement"
+              a [class=btn href=#/reconciliation/abf5a6be-47f8-4dc0-a43c] "Reconcile"
+    p [class=muted small] "Ledger balance is as at today. Statement balance is from the"
+  section [class=panel] "  "
+    h2 "Company bank accounts and bank files"
+    p [class=muted] "Link each real account to its ledger account, and add the de"
+      a [href=#/company] "Company settings"
+    form [class=panel data-bank-settings=8b1c0a74-845d-4183-8b0f-65a553b35dd2] "    "
+      div [class=head-row]
+        h3 "Operating account"
+          span [class=chip good] "Ready for bank files"
+        span [class=mono] "BSB 062-000 · 12345678"
+      div [class=grid3] "    "
+        div [class=fld]
+          label "Ledger account"
+          select [id=bs-l-8b1c0a74-845d-4183-8b0f-65a553b35dd name=ledgerAccountId]
+        div [class=fld] " "
+          label "APCA user ID"
+          input [id=bs-a-8b1c0a74-845d-4183-8b0f-65a553b35dd type=text name=apcaUserId]
+          small "6 digits, from your bank"
+          small [class=err data-err=bs-a-8b1c0a74-845d-4183-8b0f-65a553b35dd]
+        div [class=fld] " "
+          label "Bank code"
+          input [id=bs-c-8b1c0a74-845d-4183-8b0f-65a553b35dd type=text name=abaBankCode]
+          small "e.g. CBA, WBC, NAB, ANZ"
+          small [class=err data-err=bs-c-8b1c0a74-845d-4183-8b0f-65a553b35dd]
+        div [class=fld] " "
+          label "User name for bank files"
+          input [id=bs-u-8b1c0a74-845d-4183-8b0f-65a553b35dd type=text name=abaUserName]
+          small "As registered with the bank"
+          small [class=err data-err=bs-u-8b1c0a74-845d-4183-8b0f-65a553b35dd]
+      label [class=check] "Add a balancing debit line (some banks require it; ask yours"
+        input [type=checkbox name=abaBalancing]
+      div [class=actions]
+        button [class=btn type=submit] "Save"
+  p [class=msg data-msg]

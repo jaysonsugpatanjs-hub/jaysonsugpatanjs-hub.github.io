@@ -1,0 +1,104 @@
+p [class=msg id=app-msg]
+div [data-view] " "
+  header [class=page-head]
+    div " "
+      p [class=eyebrow]
+        a [href=#/assets] "FIXED ASSETS"
+      h1 "Add an asset"
+      p [class=muted] "Adding an asset doesn't post its cost: the purchase reaches "
+  form [class=panel data-asset] "       "
+    h2 "The asset"
+    div [class=grid3] "      "
+      div [class=fld] " "
+        label "Name"
+          span [class=req] "*"
+        input [id=as-n name=as-n type=text]
+        small [class=err data-err=as-n]
+      div [class=fld]
+        label "Category"
+        select [id=as-c]
+        small [class=err data-err=as-c]
+      div [class=fld] " "
+        label "Serial or registration"
+        input [id=as-s name=as-s type=text]
+        small [class=err data-err=as-s]
+      div [class=fld] " "
+        label "Location"
+        input [id=as-l name=as-l type=text]
+        small [class=err data-err=as-l]
+      div [class=fld]
+        label "Looked after by"
+        select [id=as-k]
+      div [class=fld]
+        label "Project"
+        select [id=as-j]
+    div [class=fld wide] " "
+      label "Notes"
+      input [id=as-desc name=as-desc type=text]
+      small [class=err data-err=as-desc]
+    h2 "Purchase"
+    div [class=grid3] "     "
+      div [class=fld] " "
+        label "Purchase date"
+          span [class=req] "*"
+        input [id=as-pd name=as-pd type=date]
+        small [class=err data-err=as-pd]
+      div [class=fld] " "
+        label "In service from"
+        input [id=as-is name=as-is type=date]
+        small "Leave blank if the same as the purchase date"
+        small [class=err data-err=as-is]
+      div [class=fld]
+        label "Supplier"
+        select [id=as-sup]
+      div [class=fld] " "
+        label "Cost before GST"
+          span [class=req] "*"
+        input [id=as-cost name=as-cost type=text]
+        small [class=err data-err=as-cost]
+      div [class=fld] " "
+        label "GST paid"
+        input [id=as-gst name=as-gst type=text]
+        small "Claimed through the bill, not here"
+        small [class=err data-err=as-gst]
+    input [type=hidden id=as-bill]
+    h2 "Accounting depreciation"
+    div [class=grid3] "     "
+      div [class=fld]
+        label "Method"
+        select [id=as-m]
+      div [class=fld] " "
+        label "Useful life (months)"
+        input [id=as-life name=as-life type=number]
+        small "Blank for the category default"
+        small [class=err data-err=as-life]
+      div [class=fld] " "
+        label "Residual value"
+        input [id=as-res name=as-res type=text]
+        small [class=err data-err=as-res]
+      div [class=fld] " "
+        label "Opening depreciation"
+        input [id=as-oa name=as-oa type=text]
+        small "For an asset brought in from another system"
+        small [class=err data-err=as-oa]
+      div [class=fld] " "
+        label "Opening depreciation at"
+        input [id=as-od name=as-od type=date]
+        small [class=err data-err=as-od]
+    h2 "Tax treatment (a note for the accountant)"
+    div [class=grid3] "   "
+      div [class=fld]
+        label "Tax method"
+        select [id=as-tm]
+      div [class=fld] " "
+        label "Tax effective life (years)"
+        input [id=as-tl name=as-tl type=number]
+        small [class=err data-err=as-tl]
+      div [class=fld] " "
+        label "Tax notes"
+        input [id=as-tn name=as-tn type=text]
+        small [class=err data-err=as-tn]
+    div [class=actions]
+      button [class=btn primary type=submit] "Save"
+      a [class=btn href=#/assets] "Cancel"
+  p [class=msg data-msg]

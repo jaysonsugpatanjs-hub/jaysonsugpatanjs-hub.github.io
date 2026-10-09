@@ -1,0 +1,1195 @@
+[
+ {
+  "figure": "1.1",
+  "title": "Panalo Accounts when you are not signed in",
+  "file": "fig-1.1.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Sign-in gate"
+   },
+   {
+    "n": 2,
+    "label": "Sign in"
+   }
+  ],
+  "route": "http://localhost:8000/accounts/",
+  "user": null,
+  "masked": 0,
+  "note": "",
+  "size": [
+   1360,
+   900
+  ]
+ },
+ {
+  "figure": "2.1",
+  "title": "The Panalo portal sign-in form",
+  "file": "fig-2.1.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Email address"
+   },
+   {
+    "n": 2,
+    "label": "Password"
+   },
+   {
+    "n": 3,
+    "label": "Sign in"
+   },
+   {
+    "n": 4,
+    "label": "Forgot password?"
+   }
+  ],
+  "route": "http://localhost:8000/training/?next=/accounts/",
+  "user": null,
+  "masked": 0,
+  "note": "",
+  "size": [
+   1148,
+   504
+  ]
+ },
+ {
+  "figure": "2.2",
+  "title": "A wrong email or password",
+  "file": "fig-2.2.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Sign-in message"
+   },
+   {
+    "n": 2,
+    "label": "Forgot password?"
+   }
+  ],
+  "route": "http://localhost:8000/training/?next=/accounts/",
+  "user": null,
+  "masked": 0,
+  "note": "",
+  "size": [
+   1148,
+   504
+  ]
+ },
+ {
+  "figure": "2.3",
+  "title": "Asking for a password reset link",
+  "file": "fig-2.3.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Email address"
+   },
+   {
+    "n": 2,
+    "label": "Email me a reset link"
+   },
+   {
+    "n": 3,
+    "label": "Confirmation"
+   },
+   {
+    "n": 4,
+    "label": "Back to sign in"
+   }
+  ],
+  "route": "http://localhost:8000/training/?next=/accounts/",
+  "user": null,
+  "masked": 0,
+  "note": "",
+  "size": [
+   1148,
+   416
+  ]
+ },
+ {
+  "figure": "2.4",
+  "title": "A temporary password must be changed first",
+  "file": "fig-2.4.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "What is needed"
+   },
+   {
+    "n": 2,
+    "label": "Open the portal"
+   }
+  ],
+  "route": "http://localhost:8000/accounts/",
+  "user": "demo.temppass@training.panalo.test",
+  "masked": 0,
+  "note": "",
+  "size": [
+   576,
+   249
+  ]
+ },
+ {
+  "figure": "2.5",
+  "title": "Choosing your own password on the portal",
+  "file": "fig-2.5.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Choose your own password"
+   },
+   {
+    "n": 2,
+    "label": "Password rules"
+   },
+   {
+    "n": 3,
+    "label": "New password"
+   },
+   {
+    "n": 4,
+    "label": "Type it again"
+   },
+   {
+    "n": 5,
+    "label": "Save password"
+   }
+  ],
+  "route": "http://localhost:8000/training/",
+  "user": "demo.temppass@training.panalo.test",
+  "masked": 0,
+  "note": "training-api bootstrap answered with mustChangePassword=true (training stub)",
+  "size": [
+   1148,
+   394
+  ]
+ },
+ {
+  "figure": "2.6",
+  "title": "Setting up two-step sign-in (demo code shown, not a real one)",
+  "file": "fig-2.6.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Set up two-step sign-in"
+   },
+   {
+    "n": 2,
+    "label": "QR code (demo)"
+   },
+   {
+    "n": 3,
+    "label": "Key if you can't scan"
+   },
+   {
+    "n": 4,
+    "label": "6-digit code"
+   },
+   {
+    "n": 5,
+    "label": "Turn on two-step sign-in"
+   }
+  ],
+  "route": "http://localhost:8000/accounts/",
+  "user": "fran",
+  "masked": 0,
+  "note": "",
+  "size": [
+   576,
+   667
+  ]
+ },
+ {
+  "figure": "2.7",
+  "title": "Confirm it's you: a code that didn't work",
+  "file": "fig-2.7.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "6-digit code"
+   },
+   {
+    "n": 2,
+    "label": "Verify"
+   },
+   {
+    "n": 3,
+    "label": "Result message"
+   },
+   {
+    "n": 4,
+    "label": "Lost your phone?"
+   }
+  ],
+  "route": "http://localhost:8000/accounts/",
+  "user": "fran",
+  "masked": 0,
+  "note": "",
+  "size": [
+   576,
+   324
+  ]
+ },
+ {
+  "figure": "2.8",
+  "title": "No access to Panalo Accounts",
+  "file": "fig-2.8.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "No access"
+   },
+   {
+    "n": 2,
+    "label": "Reason from the server"
+   },
+   {
+    "n": 3,
+    "label": "Back to the portal"
+   }
+  ],
+  "route": "http://localhost:8000/accounts/",
+  "user": "demo.newstarter@training.panalo.test",
+  "masked": 0,
+  "note": "",
+  "size": [
+   576,
+   219
+  ]
+ },
+ {
+  "figure": "2.9",
+  "title": "Panalo Accounts is unavailable (sign-in disabled)",
+  "file": "fig-2.9.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Unavailable"
+   },
+   {
+    "n": 2,
+    "label": "Reason"
+   }
+  ],
+  "route": "http://localhost:8000/accounts/",
+  "user": "demo.leaver@training.panalo.test",
+  "masked": 0,
+  "note": "",
+  "size": [
+   576,
+   160
+  ]
+ },
+ {
+  "figure": "2.10",
+  "title": "Checking your access\u2026 (still waiting for the server)",
+  "file": "fig-2.10.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Checking your access\u2026"
+   }
+  ],
+  "route": "http://localhost:8000/accounts/",
+  "user": "fran",
+  "masked": 0,
+  "note": "finance-api held unanswered to show the waiting state",
+  "size": [
+   1360,
+   900
+  ]
+ },
+ {
+  "figure": "1.2",
+  "title": "The dashboard after a successful sign-in (Fran Finance)",
+  "file": "fig-1.2.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Company name"
+   },
+   {
+    "n": 2,
+    "label": "Menu for your role"
+   },
+   {
+    "n": 3,
+    "label": "Dashboard cards"
+   },
+   {
+    "n": 4,
+    "label": "Notifications bell"
+   },
+   {
+    "n": 5,
+    "label": "Sign out"
+   }
+  ],
+  "route": "/dashboard",
+  "user": "fran",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1360,
+   900
+  ]
+ },
+ {
+  "figure": "2.11",
+  "title": "A screen that fails because the sign-in has expired",
+  "file": "fig-2.11.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Something went wrong"
+   },
+   {
+    "n": 2,
+    "label": "Your sign-in has expired"
+   },
+   {
+    "n": 3,
+    "label": "Sign out, then sign in again"
+   }
+  ],
+  "route": "/audit",
+  "user": "fran",
+  "masked": 0,
+  "note": "finance-api answered 401 to simulate an expired session",
+  "size": [
+   1360,
+   900
+  ]
+ },
+ {
+  "figure": "3.1",
+  "title": "Ledger figures on the dashboard (Fran Finance)",
+  "file": "fig-3.1.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Bank"
+   },
+   {
+    "n": 2,
+    "label": "Net profit this year"
+   },
+   {
+    "n": 3,
+    "label": "GST owed (estimate)"
+   },
+   {
+    "n": 4,
+    "label": "Draft journals"
+   }
+  ],
+  "route": "/dashboard",
+  "user": "fran",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1134,
+   195
+  ]
+ },
+ {
+  "figure": "3.2",
+  "title": "Sales and purchasing figures (Fran Finance)",
+  "file": "fig-3.2.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Customers owe"
+   },
+   {
+    "n": 2,
+    "label": "Draft invoices"
+   },
+   {
+    "n": 3,
+    "label": "Panalo owes suppliers"
+   },
+   {
+    "n": 4,
+    "label": "Waiting on purchasing"
+   }
+  ],
+  "route": "/dashboard",
+  "user": "fran",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1134,
+   176
+  ]
+ },
+ {
+  "figure": "3.3",
+  "title": "Banking, BAS and payroll figures (Dana Director)",
+  "file": "fig-3.3.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Bank lines to match"
+   },
+   {
+    "n": 2,
+    "label": "Payment batches to approve"
+   },
+   {
+    "n": 3,
+    "label": "Next BAS"
+   },
+   {
+    "n": 4,
+    "label": "BAS to review"
+   },
+   {
+    "n": 5,
+    "label": "Pay runs to approve"
+   },
+   {
+    "n": 6,
+    "label": "Super not yet paid"
+   }
+  ],
+  "route": "/dashboard",
+  "user": "dana",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1134,
+   459
+  ]
+ },
+ {
+  "figure": "3.5",
+  "title": "A supervisor's dashboard (Sam Supervisor)",
+  "file": "fig-3.5.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Leave to approve"
+   },
+   {
+    "n": 2,
+    "label": "Timesheets to approve"
+   },
+   {
+    "n": 3,
+    "label": "Menu count badge"
+   }
+  ],
+  "route": "/dashboard",
+  "user": "sam",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1360,
+   900
+  ]
+ },
+ {
+  "figure": "3.4",
+  "title": "Company setup, approvals, notifications and the roadmap",
+  "file": "fig-3.4.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Company setup"
+   },
+   {
+    "n": 2,
+    "label": "Approvals waiting for you"
+   },
+   {
+    "n": 3,
+    "label": "Notifications"
+   },
+   {
+    "n": 4,
+    "label": "Roadmap (fixed text)"
+   }
+  ],
+  "route": "/dashboard",
+  "user": "fran",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1134,
+   691
+  ]
+ },
+ {
+  "figure": "3.6",
+  "title": "An employee's dashboard (Tom Welder)",
+  "file": "fig-3.6.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "My pay"
+   },
+   {
+    "n": 2,
+    "label": "Timesheets"
+   },
+   {
+    "n": 3,
+    "label": "Approvals waiting for you"
+   },
+   {
+    "n": 4,
+    "label": "Notifications"
+   }
+  ],
+  "route": "/dashboard",
+  "user": "tom",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1360,
+   900
+  ]
+ },
+ {
+  "figure": "4.4",
+  "title": "The notifications panel",
+  "file": "fig-4.4.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Unread count"
+   },
+   {
+    "n": 2,
+    "label": "Notification (opens its screen)"
+   },
+   {
+    "n": 3,
+    "label": "Mark all read"
+   }
+  ],
+  "route": "/dashboard",
+  "user": "dana",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1360,
+   900
+  ]
+ },
+ {
+  "figure": "4.5",
+  "title": "A record list: Invoices",
+  "file": "fig-4.5.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "View tabs (filters)"
+   },
+   {
+    "n": 2,
+    "label": "Search box"
+   },
+   {
+    "n": 3,
+    "label": "Search"
+   },
+   {
+    "n": 4,
+    "label": "Status chip"
+   },
+   {
+    "n": 5,
+    "label": "Open a record"
+   },
+   {
+    "n": 6,
+    "label": "New invoice"
+   }
+  ],
+  "route": "/invoices",
+  "user": "fran",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1124,
+   929
+  ]
+ },
+ {
+  "figure": "4.3",
+  "title": "Menu count badges (Dana Director)",
+  "file": "fig-4.3.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Pay runs to approve"
+   },
+   {
+    "n": 2,
+    "label": "BAS to review"
+   },
+   {
+    "n": 3,
+    "label": "Bank lines to match"
+   },
+   {
+    "n": 4,
+    "label": "Batches to approve"
+   },
+   {
+    "n": 5,
+    "label": "Approvals waiting"
+   }
+  ],
+  "route": "/dashboard",
+  "user": "dana",
+  "masked": 0,
+  "note": "",
+  "size": [
+   244,
+   1379
+  ]
+ },
+ {
+  "figure": "4.1",
+  "title": "The header bar",
+  "file": "fig-4.1.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Home (dashboard)"
+   },
+   {
+    "n": 2,
+    "label": "Notifications bell"
+   },
+   {
+    "n": 3,
+    "label": "Portal"
+   }
+  ],
+  "route": "/dashboard",
+  "user": "dana",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1360,
+   70
+  ]
+ },
+ {
+  "figure": "4.6",
+  "title": "A record with its action buttons and attachments (a bill for review)",
+  "file": "fig-4.6.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Status chip"
+   },
+   {
+    "n": 2,
+    "label": "Edit \u00b7 Approve \u00b7 Delete"
+   },
+   {
+    "n": 3,
+    "label": "Attachments panel"
+   },
+   {
+    "n": 4,
+    "label": "Attach a PDF or photo"
+   }
+  ],
+  "route": "/bills/10bc5260-a7e0-4a9c-b799-f1ee3ca33997",
+  "user": "fran",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1124,
+   588
+  ]
+ },
+ {
+  "figure": "4.2",
+  "title": "The menu for a finance administrator (Fran Finance)",
+  "file": "fig-4.2.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Current screen"
+   },
+   {
+    "n": 2,
+    "label": "Menu group"
+   },
+   {
+    "n": 3,
+    "label": "A menu item"
+   },
+   {
+    "n": 4,
+    "label": "Count badge"
+   },
+   {
+    "n": 5,
+    "label": "Administration group"
+   }
+  ],
+  "route": "/dashboard",
+  "user": "fran",
+  "masked": 0,
+  "note": "",
+  "size": [
+   293,
+   1183
+  ]
+ },
+ {
+  "figure": "35.1",
+  "title": "Company settings, step 1: Business details",
+  "file": "fig-35.1.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Steps 1 to 8"
+   },
+   {
+    "n": 2,
+    "label": "Legal name"
+   },
+   {
+    "n": 3,
+    "label": "ABN"
+   },
+   {
+    "n": 4,
+    "label": "Upload logo"
+   },
+   {
+    "n": 5,
+    "label": "Save and continue"
+   }
+  ],
+  "route": "/company?step=1",
+  "user": "alex",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1124,
+   549
+  ]
+ },
+ {
+  "figure": "35.2",
+  "title": "Step 2: Contact and addresses",
+  "file": "fig-35.2.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Business address"
+   },
+   {
+    "n": 2,
+    "label": "State"
+   },
+   {
+    "n": 3,
+    "label": "Postal address is the same"
+   },
+   {
+    "n": 4,
+    "label": "Phone"
+   },
+   {
+    "n": 5,
+    "label": "Accounts email"
+   },
+   {
+    "n": 6,
+    "label": "Save and continue"
+   }
+  ],
+  "route": "/company?step=2",
+  "user": "alex",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1124,
+   611
+  ]
+ },
+ {
+  "figure": "35.3",
+  "title": "Step 3: Tax and reporting (after saving step 2)",
+  "file": "fig-35.3.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Saved."
+   },
+   {
+    "n": 2,
+    "label": "Registered for GST"
+   },
+   {
+    "n": 3,
+    "label": "GST reporting basis"
+   },
+   {
+    "n": 4,
+    "label": "BAS lodgement"
+   },
+   {
+    "n": 5,
+    "label": "Financial year starts"
+   },
+   {
+    "n": 6,
+    "label": "Time zone"
+   }
+  ],
+  "route": "/company?step=3",
+  "user": "alex",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1124,
+   520
+  ]
+ },
+ {
+  "figure": "35.4",
+  "title": "Step 4: Payroll and operations",
+  "file": "fig-35.4.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "States"
+   },
+   {
+    "n": 2,
+    "label": "Pay frequency"
+   },
+   {
+    "n": 3,
+    "label": "Pay day"
+   },
+   {
+    "n": 4,
+    "label": "Super clearing house"
+   },
+   {
+    "n": 5,
+    "label": "Payroll contact"
+   },
+   {
+    "n": 6,
+    "label": "STP: export only"
+   }
+  ],
+  "route": "/company?step=4",
+  "user": "alex",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1124,
+   683
+  ]
+ },
+ {
+  "figure": "35.5",
+  "title": "Step 5: Workers compensation",
+  "file": "fig-35.5.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Insurer"
+   },
+   {
+    "n": 2,
+    "label": "Policy number"
+   },
+   {
+    "n": 3,
+    "label": "Expires"
+   },
+   {
+    "n": 4,
+    "label": "Save and continue"
+   }
+  ],
+  "route": "/company?step=5",
+  "user": "alex",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1124,
+   471
+  ]
+ },
+ {
+  "figure": "35.6",
+  "title": "Step 6: Banking and payment terms (bank details masked)",
+  "file": "fig-35.6.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Default payment terms"
+   },
+   {
+    "n": 2,
+    "label": "Status"
+   },
+   {
+    "n": 3,
+    "label": "Retire"
+   },
+   {
+    "n": 4,
+    "label": "Add a bank account"
+   },
+   {
+    "n": 5,
+    "label": "Send for approval"
+   }
+  ],
+  "route": "/company?step=6",
+  "user": "alex",
+  "masked": 2,
+  "note": "",
+  "size": [
+   1124,
+   919
+  ]
+ },
+ {
+  "figure": "35.7",
+  "title": "A field error: the BSB is too short",
+  "file": "fig-35.7.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "BSB field"
+   },
+   {
+    "n": 2,
+    "label": "Error message"
+   }
+  ],
+  "route": "/company?step=6",
+  "user": "alex",
+  "masked": 1,
+  "note": "",
+  "size": [
+   1042,
+   313
+  ]
+ },
+ {
+  "figure": "35.9",
+  "title": "Step 7: Document numbering",
+  "file": "fig-35.9.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Rows without labels"
+   },
+   {
+    "n": 2,
+    "label": "Prefix"
+   },
+   {
+    "n": 3,
+    "label": "Next number"
+   },
+   {
+    "n": 4,
+    "label": "Next will be"
+   },
+   {
+    "n": 5,
+    "label": "Save (per row)"
+   }
+  ],
+  "route": "/company?step=7",
+  "user": "alex",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1124,
+   861
+  ]
+ },
+ {
+  "figure": "35.10",
+  "title": "Step 8: Review",
+  "file": "fig-35.10.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Setup status"
+   },
+   {
+    "n": 2,
+    "label": "Summary"
+   },
+   {
+    "n": 3,
+    "label": "Finish setup / Saved"
+   }
+  ],
+  "route": "/company?step=8",
+  "user": "alex",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1124,
+   1040
+  ]
+ },
+ {
+  "figure": "35.11",
+  "title": "Company settings for someone without the Company settings permission (Dana Director)",
+  "file": "fig-35.11.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Read only"
+   },
+   {
+    "n": 2,
+    "label": "Review summary only"
+   }
+  ],
+  "route": "/company",
+  "user": "dana",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1124,
+   942
+  ]
+ },
+ {
+  "figure": "35.8",
+  "title": "A new bank account waiting for approval (bank details masked)",
+  "file": "fig-35.8.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Waiting for approval"
+   },
+   {
+    "n": 2,
+    "label": "Active account"
+   },
+   {
+    "n": 3,
+    "label": "Retire"
+   }
+  ],
+  "route": "/company?step=6",
+  "user": "alex",
+  "masked": 4,
+  "note": "",
+  "size": [
+   1042,
+   161
+  ]
+ },
+ {
+  "figure": "34.1",
+  "title": "Users and roles: the roles matrix",
+  "file": "fig-34.1.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Find a person"
+   },
+   {
+    "n": 2,
+    "label": "People register, logins and overrides"
+   },
+   {
+    "n": 3,
+    "label": "Role columns"
+   },
+   {
+    "n": 4,
+    "label": "Role ticked"
+   },
+   {
+    "n": 5,
+    "label": "Sign-in disabled"
+   },
+   {
+    "n": 6,
+    "label": "System admin (own row locked)"
+   }
+  ],
+  "route": "/users",
+  "user": "alex",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1124,
+   1965
+  ]
+ },
+ {
+  "figure": "34.2",
+  "title": "Adding a role to one person",
+  "file": "fig-34.2.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Search: weld"
+   },
+   {
+    "n": 2,
+    "label": "Supervisor ticked"
+   },
+   {
+    "n": 3,
+    "label": "Confirmation"
+   }
+  ],
+  "route": "/users",
+  "user": "alex",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1084,
+   267
+  ]
+ },
+ {
+  "figure": "34.3",
+  "title": "What each role includes",
+  "file": "fig-34.3.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "A role and its permissions"
+   },
+   {
+    "n": 2,
+    "label": "Read-mostly role"
+   },
+   {
+    "n": 3,
+    "label": "System admins and two-step sign-in"
+   }
+  ],
+  "route": "/users",
+  "user": "alex",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1084,
+   827
+  ]
+ }
+]

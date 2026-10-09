@@ -1,0 +1,319 @@
+p [class=msg id=app-msg]
+div [data-view] "  "
+  header [class=page-head]
+    div
+      p [class=eyebrow] "ADMINISTRATION"
+      h1 "Users and roles"
+      p [class=muted] "Roles add permissions on top of a person's position. Changes"
+  section [class=panel] "   "
+    div [class=toolbar]
+      div [class=fld]
+        label "Find a person"
+        input [id=u-search type=search]
+      a [class=btn href=../training/admin/?view=people-managemen] "People register, logins and personal overrides"
+    div [class=tbl-wrap]
+      table [class=tbl roles]
+        thead
+          tr
+            th "Person"
+            th [class=c] "Super admin"
+            th [class=c] "Director / owner"
+            th [class=c] "Finance admin"
+            th [class=c] "Payroll admin"
+            th [class=c] "Project manager"
+            th [class=c] "Supervisor"
+            th [class=c] "Accountant / auditor"
+        tbody " "
+          tr [class]
+            th "Alex Admin "
+              small "alex.admin@training.panalo.test · Systems administrator"
+              span [class=chip info] "System admin"
+            td [class=c]
+              input [type=checkbox aria-label=Super admin for Alex Admin data-user=8b7329c8-3776-4a97-8f54-4f87ab665d7a data-role=super_admin]
+            td [class=c]
+              input [type=checkbox aria-label=Director / owner for Alex Admin data-user=8b7329c8-3776-4a97-8f54-4f87ab665d7a data-role=director]
+            td [class=c]
+              input [type=checkbox aria-label=Finance admin for Alex Admin data-user=8b7329c8-3776-4a97-8f54-4f87ab665d7a data-role=finance_admin]
+            td [class=c]
+              input [type=checkbox aria-label=Payroll admin for Alex Admin data-user=8b7329c8-3776-4a97-8f54-4f87ab665d7a data-role=payroll_admin]
+            td [class=c]
+              input [type=checkbox aria-label=Project manager for Alex Admin data-user=8b7329c8-3776-4a97-8f54-4f87ab665d7a data-role=project_manager]
+            td [class=c]
+              input [type=checkbox aria-label=Supervisor for Alex Admin data-user=8b7329c8-3776-4a97-8f54-4f87ab665d7a data-role=supervisor]
+            td [class=c]
+              input [type=checkbox aria-label=Accountant / auditor for Alex Admin data-user=8b7329c8-3776-4a97-8f54-4f87ab665d7a data-role=accountant]
+          tr [class]
+            th "Casey Rigger "
+              small "casey.rigger@training.panalo.test · Rigger / dogman"
+            td [class=c]
+              input [type=checkbox aria-label=Super admin for Casey Rigger data-user=305778bb-e63d-421c-9240-31b19c21a684 data-role=super_admin]
+            td [class=c]
+              input [type=checkbox aria-label=Director / owner for Casey Rigger data-user=305778bb-e63d-421c-9240-31b19c21a684 data-role=director]
+            td [class=c]
+              input [type=checkbox aria-label=Finance admin for Casey Rigger data-user=305778bb-e63d-421c-9240-31b19c21a684 data-role=finance_admin]
+            td [class=c]
+              input [type=checkbox aria-label=Payroll admin for Casey Rigger data-user=305778bb-e63d-421c-9240-31b19c21a684 data-role=payroll_admin]
+            td [class=c]
+              input [type=checkbox aria-label=Project manager for Casey Rigger data-user=305778bb-e63d-421c-9240-31b19c21a684 data-role=project_manager]
+            td [class=c]
+              input [type=checkbox aria-label=Supervisor for Casey Rigger data-user=305778bb-e63d-421c-9240-31b19c21a684 data-role=supervisor]
+            td [class=c]
+              input [type=checkbox aria-label=Accountant / auditor for Casey Rigger data-user=305778bb-e63d-421c-9240-31b19c21a684 data-role=accountant]
+          tr [class]
+            th "Chris Accountant "
+              small "chris.accountant@training.panalo.test"
+            td [class=c]
+              input [type=checkbox aria-label=Super admin for Chris Accountant data-user=9e9eec85-e3ee-4ef9-bad6-fa9b9a0ee398 data-role=super_admin]
+            td [class=c]
+              input [type=checkbox aria-label=Director / owner for Chris Accountant data-user=9e9eec85-e3ee-4ef9-bad6-fa9b9a0ee398 data-role=director]
+            td [class=c]
+              input [type=checkbox aria-label=Finance admin for Chris Accountant data-user=9e9eec85-e3ee-4ef9-bad6-fa9b9a0ee398 data-role=finance_admin]
+            td [class=c]
+              input [type=checkbox aria-label=Payroll admin for Chris Accountant data-user=9e9eec85-e3ee-4ef9-bad6-fa9b9a0ee398 data-role=payroll_admin]
+            td [class=c]
+              input [type=checkbox aria-label=Project manager for Chris Accountant data-user=9e9eec85-e3ee-4ef9-bad6-fa9b9a0ee398 data-role=project_manager]
+            td [class=c]
+              input [type=checkbox aria-label=Supervisor for Chris Accountant data-user=9e9eec85-e3ee-4ef9-bad6-fa9b9a0ee398 data-role=supervisor]
+            td [class=c]
+              input [type=checkbox aria-label=Accountant / auditor for Chris Accountan data-user=9e9eec85-e3ee-4ef9-bad6-fa9b9a0ee398 data-role=accountant]
+          tr [class]
+            th "Dana Director "
+              small "dana.director@training.panalo.test · Managing director"
+            td [class=c]
+              input [type=checkbox aria-label=Super admin for Dana Director data-user=865d6a2e-8abc-4ed0-a3ea-f7e066fc3879 data-role=super_admin]
+            td [class=c]
+              input [type=checkbox aria-label=Director / owner for Dana Director data-user=865d6a2e-8abc-4ed0-a3ea-f7e066fc3879 data-role=director]
+            td [class=c]
+              input [type=checkbox aria-label=Finance admin for Dana Director data-user=865d6a2e-8abc-4ed0-a3ea-f7e066fc3879 data-role=finance_admin]
+            td [class=c]
+              input [type=checkbox aria-label=Payroll admin for Dana Director data-user=865d6a2e-8abc-4ed0-a3ea-f7e066fc3879 data-role=payroll_admin]
+            td [class=c]
+              input [type=checkbox aria-label=Project manager for Dana Director data-user=865d6a2e-8abc-4ed0-a3ea-f7e066fc3879 data-role=project_manager]
+            td [class=c]
+              input [type=checkbox aria-label=Supervisor for Dana Director data-user=865d6a2e-8abc-4ed0-a3ea-f7e066fc3879 data-role=supervisor]
+            td [class=c]
+              input [type=checkbox aria-label=Accountant / auditor for Dana Director data-user=865d6a2e-8abc-4ed0-a3ea-f7e066fc3879 data-role=accountant]
+          tr [class]
+            th "Fran Finance "
+              small "fran.finance@training.panalo.test · Finance administrator"
+            td [class=c]
+              input [type=checkbox aria-label=Super admin for Fran Finance data-user=6d6ea0dd-8245-48e7-97de-c7ec50cbe81a data-role=super_admin]
+            td [class=c]
+              input [type=checkbox aria-label=Director / owner for Fran Finance data-user=6d6ea0dd-8245-48e7-97de-c7ec50cbe81a data-role=director]
+            td [class=c]
+              input [type=checkbox aria-label=Finance admin for Fran Finance data-user=6d6ea0dd-8245-48e7-97de-c7ec50cbe81a data-role=finance_admin]
+            td [class=c]
+              input [type=checkbox aria-label=Payroll admin for Fran Finance data-user=6d6ea0dd-8245-48e7-97de-c7ec50cbe81a data-role=payroll_admin]
+            td [class=c]
+              input [type=checkbox aria-label=Project manager for Fran Finance data-user=6d6ea0dd-8245-48e7-97de-c7ec50cbe81a data-role=project_manager]
+            td [class=c]
+              input [type=checkbox aria-label=Supervisor for Fran Finance data-user=6d6ea0dd-8245-48e7-97de-c7ec50cbe81a data-role=supervisor]
+            td [class=c]
+              input [type=checkbox aria-label=Accountant / auditor for Fran Finance data-user=6d6ea0dd-8245-48e7-97de-c7ec50cbe81a data-role=accountant]
+          tr [class]
+            th "Jamie Apprentice "
+              small "jamie.apprentice@training.panalo.test · Apprentice fabricato"
+            td [class=c]
+              input [type=checkbox aria-label=Super admin for Jamie Apprentice data-user=70ccb8dd-6e58-4c1a-97a7-db10618a556f data-role=super_admin]
+            td [class=c]
+              input [type=checkbox aria-label=Director / owner for Jamie Apprentice data-user=70ccb8dd-6e58-4c1a-97a7-db10618a556f data-role=director]
+            td [class=c]
+              input [type=checkbox aria-label=Finance admin for Jamie Apprentice data-user=70ccb8dd-6e58-4c1a-97a7-db10618a556f data-role=finance_admin]
+            td [class=c]
+              input [type=checkbox aria-label=Payroll admin for Jamie Apprentice data-user=70ccb8dd-6e58-4c1a-97a7-db10618a556f data-role=payroll_admin]
+            td [class=c]
+              input [type=checkbox aria-label=Project manager for Jamie Apprentice data-user=70ccb8dd-6e58-4c1a-97a7-db10618a556f data-role=project_manager]
+            td [class=c]
+              input [type=checkbox aria-label=Supervisor for Jamie Apprentice data-user=70ccb8dd-6e58-4c1a-97a7-db10618a556f data-role=supervisor]
+            td [class=c]
+              input [type=checkbox aria-label=Accountant / auditor for Jamie Apprentic data-user=70ccb8dd-6e58-4c1a-97a7-db10618a556f data-role=accountant]
+          tr [class]
+            th "Morgan Project-Manager "
+              small "morgan.pm@training.panalo.test · Project manager"
+            td [class=c]
+              input [type=checkbox aria-label=Super admin for Morgan Project-Manager data-user=55cc34b0-3bc1-4806-9eb9-66be07920db5 data-role=super_admin]
+            td [class=c]
+              input [type=checkbox aria-label=Director / owner for Morgan Project-Mana data-user=55cc34b0-3bc1-4806-9eb9-66be07920db5 data-role=director]
+            td [class=c]
+              input [type=checkbox aria-label=Finance admin for Morgan Project-Manager data-user=55cc34b0-3bc1-4806-9eb9-66be07920db5 data-role=finance_admin]
+            td [class=c]
+              input [type=checkbox aria-label=Payroll admin for Morgan Project-Manager data-user=55cc34b0-3bc1-4806-9eb9-66be07920db5 data-role=payroll_admin]
+            td [class=c]
+              input [type=checkbox aria-label=Project manager for Morgan Project-Manag data-user=55cc34b0-3bc1-4806-9eb9-66be07920db5 data-role=project_manager]
+            td [class=c]
+              input [type=checkbox aria-label=Supervisor for Morgan Project-Manager data-user=55cc34b0-3bc1-4806-9eb9-66be07920db5 data-role=supervisor]
+            td [class=c]
+              input [type=checkbox aria-label=Accountant / auditor for Morgan Project- data-user=55cc34b0-3bc1-4806-9eb9-66be07920db5 data-role=accountant]
+          tr [class]
+            th "Olivia Office "
+              small "olivia.office@training.panalo.test · Office administrator"
+            td [class=c]
+              input [type=checkbox aria-label=Super admin for Olivia Office data-user=3bcbda32-a390-4897-a2a7-5cae1e9ddb5f data-role=super_admin]
+            td [class=c]
+              input [type=checkbox aria-label=Director / owner for Olivia Office data-user=3bcbda32-a390-4897-a2a7-5cae1e9ddb5f data-role=director]
+            td [class=c]
+              input [type=checkbox aria-label=Finance admin for Olivia Office data-user=3bcbda32-a390-4897-a2a7-5cae1e9ddb5f data-role=finance_admin]
+            td [class=c]
+              input [type=checkbox aria-label=Payroll admin for Olivia Office data-user=3bcbda32-a390-4897-a2a7-5cae1e9ddb5f data-role=payroll_admin]
+            td [class=c]
+              input [type=checkbox aria-label=Project manager for Olivia Office data-user=3bcbda32-a390-4897-a2a7-5cae1e9ddb5f data-role=project_manager]
+            td [class=c]
+              input [type=checkbox aria-label=Supervisor for Olivia Office data-user=3bcbda32-a390-4897-a2a7-5cae1e9ddb5f data-role=supervisor]
+            td [class=c]
+              input [type=checkbox aria-label=Accountant / auditor for Olivia Office data-user=3bcbda32-a390-4897-a2a7-5cae1e9ddb5f data-role=accountant]
+          tr [class]
+            th "Pat Payroll "
+              small "pat.payroll@training.panalo.test · Payroll administrator"
+            td [class=c]
+              input [type=checkbox aria-label=Super admin for Pat Payroll data-user=b16b95d7-2c42-440e-8362-cba600d224ef data-role=super_admin]
+            td [class=c]
+              input [type=checkbox aria-label=Director / owner for Pat Payroll data-user=b16b95d7-2c42-440e-8362-cba600d224ef data-role=director]
+            td [class=c]
+              input [type=checkbox aria-label=Finance admin for Pat Payroll data-user=b16b95d7-2c42-440e-8362-cba600d224ef data-role=finance_admin]
+            td [class=c]
+              input [type=checkbox aria-label=Payroll admin for Pat Payroll data-user=b16b95d7-2c42-440e-8362-cba600d224ef data-role=payroll_admin]
+            td [class=c]
+              input [type=checkbox aria-label=Project manager for Pat Payroll data-user=b16b95d7-2c42-440e-8362-cba600d224ef data-role=project_manager]
+            td [class=c]
+              input [type=checkbox aria-label=Supervisor for Pat Payroll data-user=b16b95d7-2c42-440e-8362-cba600d224ef data-role=supervisor]
+            td [class=c]
+              input [type=checkbox aria-label=Accountant / auditor for Pat Payroll data-user=b16b95d7-2c42-440e-8362-cba600d224ef data-role=accountant]
+          tr [class]
+            th "Sam Supervisor "
+              small "sam.supervisor@training.panalo.test · Workshop supervisor"
+            td [class=c]
+              input [type=checkbox aria-label=Super admin for Sam Supervisor data-user=ac86f6f0-293a-44cf-b6a4-f8f456ed7369 data-role=super_admin]
+            td [class=c]
+              input [type=checkbox aria-label=Director / owner for Sam Supervisor data-user=ac86f6f0-293a-44cf-b6a4-f8f456ed7369 data-role=director]
+            td [class=c]
+              input [type=checkbox aria-label=Finance admin for Sam Supervisor data-user=ac86f6f0-293a-44cf-b6a4-f8f456ed7369 data-role=finance_admin]
+            td [class=c]
+              input [type=checkbox aria-label=Payroll admin for Sam Supervisor data-user=ac86f6f0-293a-44cf-b6a4-f8f456ed7369 data-role=payroll_admin]
+            td [class=c]
+              input [type=checkbox aria-label=Project manager for Sam Supervisor data-user=ac86f6f0-293a-44cf-b6a4-f8f456ed7369 data-role=project_manager]
+            td [class=c]
+              input [type=checkbox aria-label=Supervisor for Sam Supervisor data-user=ac86f6f0-293a-44cf-b6a4-f8f456ed7369 data-role=supervisor]
+            td [class=c]
+              input [type=checkbox aria-label=Accountant / auditor for Sam Supervisor data-user=ac86f6f0-293a-44cf-b6a4-f8f456ed7369 data-role=accountant]
+          tr [class]
+            th "Tom Welder "
+              small "tom.welder@training.panalo.test · Welder / fabricator"
+            td [class=c]
+              input [type=checkbox aria-label=Super admin for Tom Welder data-user=bbd9d80d-2690-4f23-ab98-f7b51485e601 data-role=super_admin]
+            td [class=c]
+              input [type=checkbox aria-label=Director / owner for Tom Welder data-user=bbd9d80d-2690-4f23-ab98-f7b51485e601 data-role=director]
+            td [class=c]
+              input [type=checkbox aria-label=Finance admin for Tom Welder data-user=bbd9d80d-2690-4f23-ab98-f7b51485e601 data-role=finance_admin]
+            td [class=c]
+              input [type=checkbox aria-label=Payroll admin for Tom Welder data-user=bbd9d80d-2690-4f23-ab98-f7b51485e601 data-role=payroll_admin]
+            td [class=c]
+              input [type=checkbox aria-label=Project manager for Tom Welder data-user=bbd9d80d-2690-4f23-ab98-f7b51485e601 data-role=project_manager]
+            td [class=c]
+              input [type=checkbox aria-label=Supervisor for Tom Welder data-user=bbd9d80d-2690-4f23-ab98-f7b51485e601 data-role=supervisor]
+            td [class=c]
+              input [type=checkbox aria-label=Accountant / auditor for Tom Welder data-user=bbd9d80d-2690-4f23-ab98-f7b51485e601 data-role=accountant]
+    p [class=msg data-msg]
+  section [class=panel] "  "
+    h2 "What each role includes"
+    div [class=role-cards]
+      div [class=role-card]
+        h3 "Super admin"
+        p [class=muted small] "System configuration, users and every finance area except pa"
+        ul
+          li "Company settings"
+          li "Sign-in and access"
+          li "Chart of accounts and tax codes"
+          li "Create journals"
+          li "Approve and post journals"
+          li "Reopen closed periods"
+          li "Sales"
+          li "Purchases"
+          li "Approve supplier bank changes"
+          li "Banking"
+          li "Projects and job costing"
+          li "Approve timesheets"
+          li "BAS and tax reporting"
+          li "Financial reports"
+          li "Audit log"
+          li "Export data"
+          li "Raise purchase orders"
+          li "Review BAS"
+          li "Fixed assets"
+      div [class=role-card]
+        h3 "Director / owner"
+        p [class=muted small] "Reports, approvals and management dashboards."
+        ul
+          li "Approve and post journals"
+          li "Reopen closed periods"
+          li "Sales"
+          li "Purchases"
+          li "Approve supplier bank changes"
+          li "Banking"
+          li "Approve pay runs"
+          li "BAS and tax reporting"
+          li "Financial reports"
+          li "Audit log"
+          li "Export data"
+          li "My pay"
+          li "Review BAS"
+          li "Fixed assets"
+      div [class=role-card]
+        h3 "Finance admin"
+        p [class=muted small] "Invoices, bills, payments, bank reconciliation, journals, cu"
+        ul
+          li "Chart of accounts and tax codes"
+          li "Create journals"
+          li "Approve and post journals"
+          li "Sales"
+          li "Purchases"
+          li "Banking"
+          li "BAS and tax reporting"
+          li "Financial reports"
+          li "Audit log"
+          li "Export data"
+          li "Raise purchase orders"
+          li "My pay"
+          li "Fixed assets"
+      div [class=role-card]
+        h3 "Payroll admin"
+        p [class=muted small] "Employee pay data, pay runs, leave, PAYG, super and payroll "
+        ul
+          li "Payroll: pay, tax and bank details"
+          li "Prepare pay runs"
+          li "Approve leave"
+          li "Approve timesheets"
+          li "View the people register"
+          li "Financial reports"
+          li "Audit log"
+          li "Export data"
+          li "My pay"
+      div [class=role-card]
+        h3 "Project manager"
+        p [class=muted small] "Assigned projects, timesheets, labour and costs. No private "
+        ul
+          li "Projects and job costing"
+          li "Approve timesheets"
+          li "Financial reports"
+          li "Raise purchase orders"
+          li "Enter my timesheets"
+          li "My pay"
+      div [class=role-card]
+        h3 "Supervisor"
+        p [class=muted small] "Approves their team's timesheets and leave."
+        ul
+          li "Approve timesheets"
+          li "Approve leave"
+          li "Competency matrix: own team"
+          li "Enter my timesheets"
+          li "My pay"
+      div [class=role-card]
+        h3 "Accountant / auditor"
+        p [class=muted small] "Reads the ledger, reports and audit log; prepares adjusting "
+        ul
+          li "Create journals"
+          li "Financial reports"
+          li "Audit log"
+          li "Export data"
+          li "Review BAS"
+          li "BAS and tax reporting"
+    p [class=muted small] "System administrators automatically hold every permission ex"

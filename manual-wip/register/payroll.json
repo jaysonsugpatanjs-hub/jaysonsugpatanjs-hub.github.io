@@ -1,0 +1,1175 @@
+[
+ {
+  "figure": "13.1",
+  "title": "The Projects list (signed in as the project manager)",
+  "file": "fig-13.1.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Show"
+   },
+   {
+    "n": 2,
+    "label": "Number or name"
+   },
+   {
+    "n": 3,
+    "label": "Open a project"
+   },
+   {
+    "n": 4,
+    "label": "New project"
+   },
+   {
+    "n": 5,
+    "label": "Cost codes and rates"
+   }
+  ],
+  "route": "/projects",
+  "user": "morgan",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1124,
+   823
+  ]
+ },
+ {
+  "figure": "13.2",
+  "title": "Entering a new project: the job details",
+  "file": "fig-13.2.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Customer"
+   },
+   {
+    "n": 2,
+    "label": "Site"
+   },
+   {
+    "n": 3,
+    "label": "Contract type"
+   },
+   {
+    "n": 4,
+    "label": "Contract value ex GST"
+   },
+   {
+    "n": 5,
+    "label": "Start and finish"
+   }
+  ],
+  "route": "/projects/new",
+  "user": "morgan",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1066,
+   374
+  ]
+ },
+ {
+  "figure": "13.3",
+  "title": "Entering the project budget by cost code",
+  "file": "fig-13.3.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Budget hours (labour)"
+   },
+   {
+    "n": 2,
+    "label": "Budget amount"
+   },
+   {
+    "n": 3,
+    "label": "Total budget"
+   },
+   {
+    "n": 4,
+    "label": "Save project"
+   }
+  ],
+  "route": "/projects/new",
+  "user": "morgan",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1066,
+   963
+  ]
+ },
+ {
+  "figure": "13.4",
+  "title": "The new project after saving: number given, status Active",
+  "file": "fig-13.4.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Project number"
+   },
+   {
+    "n": 2,
+    "label": "Status"
+   },
+   {
+    "n": 3,
+    "label": "Cost to date"
+   },
+   {
+    "n": 4,
+    "label": "Margin so far"
+   },
+   {
+    "n": 5,
+    "label": "Edit"
+   }
+  ],
+  "route": "/projects/f33877b7-de44-4088-b4bc-df075589fa65",
+  "user": "morgan",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1108,
+   415
+  ]
+ },
+ {
+  "figure": "13.5",
+  "title": "Changing a project's status",
+  "file": "fig-13.5.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Put on hold"
+   },
+   {
+    "n": 2,
+    "label": "Mark completed"
+   }
+  ],
+  "route": "/projects/f33877b7-de44-4088-b4bc-df075589fa65",
+  "user": "morgan",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1108,
+   178
+  ]
+ },
+ {
+  "figure": "13.6",
+  "title": "Where a project's labour, invoices and bills come from (JOB-1001)",
+  "file": "fig-13.6.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Approved and waiting hours"
+   },
+   {
+    "n": 2,
+    "label": "Invoices on the job"
+   },
+   {
+    "n": 3,
+    "label": "Bills tagged to the job"
+   },
+   {
+    "n": 4,
+    "label": "PO for this project"
+   }
+  ],
+  "route": "/projects/6f799d7a-8522-4ad7-ba90-2faa32aa84dc",
+  "user": "morgan",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1108,
+   555
+  ]
+ },
+ {
+  "figure": "13.7",
+  "title": "Labour classes and who is costed at which rate",
+  "file": "fig-13.7.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Cost per hour"
+   },
+   {
+    "n": 2,
+    "label": "Charge-out per hour"
+   },
+   {
+    "n": 3,
+    "label": "Not set: can't be approved"
+   },
+   {
+    "n": 4,
+    "label": "Tom's class"
+   }
+  ],
+  "route": "/projects/settings",
+  "user": "morgan",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1108,
+   1035
+  ]
+ },
+ {
+  "figure": "13.8",
+  "title": "Tagging a bill line to a project and cost code",
+  "file": "fig-13.8.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Description"
+   },
+   {
+    "n": 2,
+    "label": "Type"
+   },
+   {
+    "n": 3,
+    "label": "Project"
+   },
+   {
+    "n": 4,
+    "label": "Cost code"
+   }
+  ],
+  "route": "/bills/new?project=6f799d7a-8522-4ad7-ba90-2faa32aa84dc",
+  "user": "fran",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1066,
+   227
+  ]
+ },
+ {
+  "figure": "14.2",
+  "title": "The five figures at the top of a project page (JOB-1001)",
+  "file": "fig-14.2.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Contract"
+   },
+   {
+    "n": 2,
+    "label": "Cost to date"
+   },
+   {
+    "n": 3,
+    "label": "Invoiced"
+   },
+   {
+    "n": 4,
+    "label": "Margin so far"
+   },
+   {
+    "n": 5,
+    "label": "Progress"
+   }
+  ],
+  "route": "/projects/6f799d7a-8522-4ad7-ba90-2faa32aa84dc",
+  "user": "morgan",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1108,
+   436
+  ]
+ },
+ {
+  "figure": "14.1",
+  "title": "Job costing: every open project side by side (signed in as the director)",
+  "file": "fig-14.1.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Show"
+   },
+   {
+    "n": 2,
+    "label": "Cost to date"
+   },
+   {
+    "n": 3,
+    "label": "Invoiced"
+   },
+   {
+    "n": 4,
+    "label": "Margin and margin %"
+   },
+   {
+    "n": 5,
+    "label": "Over / (under) billed"
+   },
+   {
+    "n": 6,
+    "label": "Export CSV"
+   }
+  ],
+  "route": "/job-costing",
+  "user": "dana",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1240,
+   857
+  ]
+ },
+ {
+  "figure": "14.3",
+  "title": "Budget and costs by cost code, as at 30 September 2026",
+  "file": "fig-14.3.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "As at"
+   },
+   {
+    "n": 2,
+    "label": "Labour"
+   },
+   {
+    "n": 3,
+    "label": "Actual = Labour + Other"
+   },
+   {
+    "n": 4,
+    "label": "Remaining"
+   },
+   {
+    "n": 5,
+    "label": "Over budget (no budget)"
+   }
+  ],
+  "route": "/projects/6f799d7a-8522-4ad7-ba90-2faa32aa84dc",
+  "user": "morgan",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1224,
+   643
+  ]
+ },
+ {
+  "figure": "15.1",
+  "title": "Tom's timesheet for the week starting 5 October (Draft)",
+  "file": "fig-15.1.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Week starting"
+   },
+   {
+    "n": 2,
+    "label": "Project"
+   },
+   {
+    "n": 3,
+    "label": "Cost code"
+   },
+   {
+    "n": 4,
+    "label": "Hours"
+   },
+   {
+    "n": 5,
+    "label": "Type"
+   },
+   {
+    "n": 6,
+    "label": "Notes"
+   }
+  ],
+  "route": "/timesheets?week=2026-10-05",
+  "user": "tom",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1124,
+   1337
+  ]
+ },
+ {
+  "figure": "15.2",
+  "title": "Adding Thursday's hours with a start and finish time",
+  "file": "fig-15.2.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Project"
+   },
+   {
+    "n": 2,
+    "label": "Start"
+   },
+   {
+    "n": 3,
+    "label": "Finish"
+   },
+   {
+    "n": 4,
+    "label": "Break (min)"
+   },
+   {
+    "n": 5,
+    "label": "Hours worked out"
+   }
+  ],
+  "route": "/timesheets?week=2026-10-05",
+  "user": "tom",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1066,
+   365
+  ]
+ },
+ {
+  "figure": "15.3",
+  "title": "Saved, ready to submit",
+  "file": "fig-15.3.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Week total"
+   },
+   {
+    "n": 2,
+    "label": "Save"
+   },
+   {
+    "n": 3,
+    "label": "Submit for approval"
+   }
+  ],
+  "route": "/timesheets?week=2026-10-05",
+  "user": "tom",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1066,
+   994
+  ]
+ },
+ {
+  "figure": "15.4",
+  "title": "After submitting: the week is waiting for approval",
+  "file": "fig-15.4.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Waiting for approval"
+   }
+  ],
+  "route": "/timesheets?week=2026-10-05",
+  "user": "tom",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1108,
+   227
+  ]
+ },
+ {
+  "figure": "15.5",
+  "title": "Sam's Review list: weeks waiting for approval",
+  "file": "fig-15.5.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Review"
+   },
+   {
+    "n": 2,
+    "label": "Waiting"
+   },
+   {
+    "n": 3,
+    "label": "Open Tom's week"
+   },
+   {
+    "n": 4,
+    "label": "Overtime"
+   },
+   {
+    "n": 5,
+    "label": "Projects"
+   }
+  ],
+  "route": "/timesheets/review",
+  "user": "sam",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1124,
+   391
+  ]
+ },
+ {
+  "figure": "15.6",
+  "title": "Checking Tom's week before approving it",
+  "file": "fig-15.6.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Person"
+   },
+   {
+    "n": 2,
+    "label": "Week total"
+   },
+   {
+    "n": 3,
+    "label": "Each entry: project, code, hours"
+   },
+   {
+    "n": 4,
+    "label": "Approve"
+   },
+   {
+    "n": 5,
+    "label": "Send back"
+   }
+  ],
+  "route": "/timesheets?week=2026-10-05&person=3d6e761b-5f8d-4d05-a09c-2227eab1034e",
+  "user": "sam",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1124,
+   1342
+  ]
+ },
+ {
+  "figure": "15.7",
+  "title": "Tom's week after approval",
+  "file": "fig-15.7.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Approved"
+   },
+   {
+    "n": 2,
+    "label": "Approved by and when"
+   }
+  ],
+  "route": "/timesheets?week=2026-10-05&person=3d6e761b-5f8d-4d05-a09c-2227eab1034e",
+  "user": "sam",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1108,
+   279
+  ]
+ },
+ {
+  "figure": "15.8",
+  "title": "What Casey sees when a week is sent back",
+  "file": "fig-15.8.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Sent back"
+   },
+   {
+    "n": 2,
+    "label": "Supervisor's reason"
+   }
+  ],
+  "route": "/timesheets?week=2026-10-05",
+  "user": "casey",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1108,
+   295
+  ]
+ },
+ {
+  "figure": "15.9",
+  "title": "Approved hours for payroll (signed in as payroll)",
+  "file": "fig-15.9.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Hours for payroll"
+   },
+   {
+    "n": 2,
+    "label": "From"
+   },
+   {
+    "n": 3,
+    "label": "To"
+   },
+   {
+    "n": 4,
+    "label": "Hours by type"
+   },
+   {
+    "n": 5,
+    "label": "Export CSV"
+   }
+  ],
+  "route": "/timesheets/hours",
+  "user": "pat",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1124,
+   452
+  ]
+ },
+ {
+  "figure": "16.1",
+  "title": "The Employees list (payroll view; pay rates masked)",
+  "file": "fig-16.1.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Name"
+   },
+   {
+    "n": 2,
+    "label": "Show"
+   },
+   {
+    "n": 3,
+    "label": "Open an employee"
+   },
+   {
+    "n": 4,
+    "label": "Needs attention"
+   }
+  ],
+  "route": "/employees",
+  "user": "pat",
+  "masked": 1,
+  "note": "",
+  "size": [
+   1124,
+   859
+  ]
+ },
+ {
+  "figure": "16.2",
+  "title": "Tom Welder's Pay section (rate and date of birth masked)",
+  "file": "fig-16.2.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Fill in from onboarding"
+   },
+   {
+    "n": 2,
+    "label": "Employment"
+   },
+   {
+    "n": 3,
+    "label": "Paid by"
+   },
+   {
+    "n": 4,
+    "label": "Pay frequency"
+   },
+   {
+    "n": 5,
+    "label": "Wages account"
+   }
+  ],
+  "route": "/employees/e9d928bc-d158-4c08-a620-fd5c20ae76a0",
+  "user": "pat",
+  "masked": 3,
+  "note": "",
+  "size": [
+   1108,
+   690
+  ]
+ },
+ {
+  "figure": "16.4",
+  "title": "STP details and bank account (address and bank details masked)",
+  "file": "fig-16.4.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Family name"
+   },
+   {
+    "n": 2,
+    "label": "Income type"
+   },
+   {
+    "n": 3,
+    "label": "Reason they left"
+   },
+   {
+    "n": 4,
+    "label": "Approved account (masked)"
+   },
+   {
+    "n": 5,
+    "label": "Request a change"
+   }
+  ],
+  "route": "/employees/e9d928bc-d158-4c08-a620-fd5c20ae76a0",
+  "user": "pat",
+  "masked": 4,
+  "note": "",
+  "size": [
+   1108,
+   719
+  ]
+ },
+ {
+  "figure": "16.5",
+  "title": "A bank change waiting for approval (Casey Rigger)",
+  "file": "fig-16.5.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Change waiting for approval"
+   }
+  ],
+  "route": "/employees/73081850-4b76-4e32-9a96-f7488fb2b603",
+  "user": "pat",
+  "masked": 1,
+  "note": "",
+  "size": [
+   1108,
+   195
+  ]
+ },
+ {
+  "figure": "16.7",
+  "title": "The same employee seen by the director (no pay, tax or bank details)",
+  "file": "fig-16.7.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Sensitive details hidden"
+   }
+  ],
+  "route": "/employees/e9d928bc-d158-4c08-a620-fd5c20ae76a0",
+  "user": "dana",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1108,
+   458
+  ]
+ },
+ {
+  "figure": "16.6",
+  "title": "The employee bank change in the director's Approvals list",
+  "file": "fig-16.6.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Bank details for Casey Rigger"
+   },
+   {
+    "n": 2,
+    "label": "Approve"
+   },
+   {
+    "n": 3,
+    "label": "Reject"
+   }
+  ],
+  "route": "/approvals",
+  "user": "dana",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1066,
+   193
+  ]
+ },
+ {
+  "figure": "16.3",
+  "title": "Tax declaration and super fund (TFN and member number masked)",
+  "file": "fig-16.3.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "TFN status"
+   },
+   {
+    "n": 2,
+    "label": "Tax-free threshold"
+   },
+   {
+    "n": 3,
+    "label": "Medicare levy"
+   },
+   {
+    "n": 4,
+    "label": "Fund USI"
+   },
+   {
+    "n": 5,
+    "label": "Save pay details"
+   }
+  ],
+  "route": "/employees/e9d928bc-d158-4c08-a620-fd5c20ae76a0",
+  "user": "pat",
+  "masked": 2,
+  "note": "",
+  "size": [
+   1066,
+   709
+  ]
+ },
+ {
+  "figure": "17.1",
+  "title": "The Pay runs list (signed in as payroll)",
+  "file": "fig-17.1.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "New pay run"
+   },
+   {
+    "n": 2,
+    "label": "Status"
+   },
+   {
+    "n": 3,
+    "label": "Gross, tax and net totals"
+   },
+   {
+    "n": 4,
+    "label": "Super due or paid"
+   }
+  ],
+  "route": "/pay-runs",
+  "user": "pat",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1124,
+   540
+  ]
+ },
+ {
+  "figure": "17.2",
+  "title": "A pay run waiting for approval, seen by the director (individual amounts masked)",
+  "file": "fig-17.2.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Waiting for approval"
+   },
+   {
+    "n": 2,
+    "label": "Period, payment date, prepared by"
+   },
+   {
+    "n": 3,
+    "label": "Totals to check"
+   },
+   {
+    "n": 4,
+    "label": "Approve and post"
+   },
+   {
+    "n": 5,
+    "label": "Send back"
+   }
+  ],
+  "route": "/pay-runs/986ccdee-1173-4c50-979a-6de2124b0cc9",
+  "user": "dana",
+  "masked": 1,
+  "note": "",
+  "size": [
+   1124,
+   757
+  ]
+ },
+ {
+  "figure": "17.3",
+  "title": "The same pay run after approval: posted to the ledger",
+  "file": "fig-17.3.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Approved, not yet paid"
+   },
+   {
+    "n": 2,
+    "label": "Payslip"
+   },
+   {
+    "n": 3,
+    "label": "Pay run journal"
+   },
+   {
+    "n": 4,
+    "label": "Net pay paid"
+   },
+   {
+    "n": 5,
+    "label": "Super paid"
+   }
+  ],
+  "route": "/pay-runs/986ccdee-1173-4c50-979a-6de2124b0cc9",
+  "user": "dana",
+  "masked": 1,
+  "note": "",
+  "size": [
+   1124,
+   1019
+  ]
+ },
+ {
+  "figure": "17.4",
+  "title": "The pay run journal: wages, super, PAYG and net pay",
+  "file": "fig-17.4.png",
+  "callouts": [],
+  "route": "/journals/23d44ae7-861b-4abf-b560-963d0de91340",
+  "user": "dana",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1124,
+   634
+  ]
+ },
+ {
+  "figure": "17.5",
+  "title": "Creating the pay run for the week 5 to 11 October",
+  "file": "fig-17.5.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Frequency"
+   },
+   {
+    "n": 2,
+    "label": "Period start"
+   },
+   {
+    "n": 3,
+    "label": "Period end"
+   },
+   {
+    "n": 4,
+    "label": "Payment date"
+   },
+   {
+    "n": 5,
+    "label": "Create and calculate"
+   }
+  ],
+  "route": "/pay-runs/new",
+  "user": "pat",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1124,
+   419
+  ]
+ },
+ {
+  "figure": "17.6",
+  "title": "A draft pay run with things to check",
+  "file": "fig-17.6.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Things to check"
+   },
+   {
+    "n": 2,
+    "label": "Unapproved hours warning"
+   },
+   {
+    "n": 3,
+    "label": "Below minimum wage warning"
+   },
+   {
+    "n": 4,
+    "label": "Recalculate"
+   },
+   {
+    "n": 5,
+    "label": "Submit for approval"
+   },
+   {
+    "n": 6,
+    "label": "Delete draft"
+   }
+  ],
+  "route": "/pay-runs/7b6ab98e-bd7a-4b9f-b62f-f7f23361c429",
+  "user": "pat",
+  "masked": 1,
+  "note": "",
+  "size": [
+   1124,
+   794
+  ]
+ },
+ {
+  "figure": "17.7",
+  "title": "Reviewing Tom's pay lines and adding an allowance",
+  "file": "fig-17.7.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Lines from approved timesheets"
+   },
+   {
+    "n": 2,
+    "label": "Taxable, tax and super"
+   },
+   {
+    "n": 3,
+    "label": "Pay item"
+   },
+   {
+    "n": 4,
+    "label": "Description on the payslip"
+   },
+   {
+    "n": 5,
+    "label": "or Amount"
+   },
+   {
+    "n": 6,
+    "label": "Add"
+   }
+  ],
+  "route": "/pay-runs/7b6ab98e-bd7a-4b9f-b62f-f7f23361c429",
+  "user": "pat",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1066,
+   376
+  ]
+ },
+ {
+  "figure": "17.8",
+  "title": "Submitted: the preparer can only send it back",
+  "file": "fig-17.8.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Waiting for approval"
+   },
+   {
+    "n": 2,
+    "label": "Prepared by"
+   },
+   {
+    "n": 3,
+    "label": "Send back"
+   }
+  ],
+  "route": "/pay-runs/7b6ab98e-bd7a-4b9f-b62f-f7f23361c429",
+  "user": "pat",
+  "masked": 1,
+  "note": "",
+  "size": [
+   1108,
+   802
+  ]
+ },
+ {
+  "figure": "17.9",
+  "title": "Bank file, payment list and payslips on an approved pay run (payroll view)",
+  "file": "fig-17.9.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Bank file (ABA)"
+   },
+   {
+    "n": 2,
+    "label": "Bank payment list (CSV)"
+   },
+   {
+    "n": 3,
+    "label": "Net pay from"
+   },
+   {
+    "n": 4,
+    "label": "Net pay paid"
+   },
+   {
+    "n": 5,
+    "label": "Super paid"
+   }
+  ],
+  "route": "/pay-runs/986ccdee-1173-4c50-979a-6de2124b0cc9",
+  "user": "pat",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1108,
+   358
+  ]
+ },
+ {
+  "figure": "17.10",
+  "title": "After downloading the bank file",
+  "file": "fig-17.10.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "Delete the file after uploading"
+   }
+  ],
+  "route": "/pay-runs/986ccdee-1173-4c50-979a-6de2124b0cc9",
+  "user": "pat",
+  "masked": 0,
+  "note": "",
+  "size": [
+   1108,
+   413
+  ]
+ },
+ {
+  "figure": "17.11",
+  "title": "Payroll summary for the financial year to date (individual rows masked)",
+  "file": "fig-17.11.png",
+  "callouts": [
+   {
+    "n": 1,
+    "label": "From"
+   },
+   {
+    "n": 2,
+    "label": "To"
+   },
+   {
+    "n": 3,
+    "label": "Totals"
+   },
+   {
+    "n": 4,
+    "label": "Export CSV"
+   }
+  ],
+  "route": "/payroll-reports",
+  "user": "pat",
+  "masked": 1,
+  "note": "",
+  "size": [
+   1124,
+   568
+  ]
+ }
+]

@@ -1,0 +1,45 @@
+p [class=msg id=app-msg]
+div [data-view] " "
+  header [class=page-head]
+    div
+      p [class=eyebrow] "ADMINISTRATION"
+      h1 "Integrations"
+      p [class=muted] "What Panalo Accounts connects to, and what it deliberately d"
+  section [class=panel]
+    table [class=tbl]
+      thead
+        tr
+          th "Connection"
+          th "Status"
+          th "Details"
+      tbody " "
+        tr
+          th "Single Touch Payroll (ATO)"
+          td
+            span [class=chip info] "Export only"
+          td [class=muted] "Panalo Accounts will prepare and validate STP Phase 2 data f"
+        tr
+          th "Super contributions (Payday Super)"
+          td
+            span [class=chip pending] "Not set"
+          td [class=muted] "Contributions will be calculated and exported per pay run; t"
+        tr
+          th "Bank payments (ABA files)"
+          td
+            span [class=chip good] "Live"
+          td [class=muted] "Pay runs and supplier payment batches produce ABA files to u"
+        tr
+          th "Bank statements"
+          td
+            span [class=chip good] "Live"
+          td [class=muted] "CSV, OFX/QFX and QIF import with matching suggestions and ru"
+        tr
+          th "Email"
+          td
+            span [class=chip pending] "Portal email"
+          td [class=muted] "Emails currently use Supabase's built-in sender, which only "
+        tr
+          th "ABN Lookup"
+          td
+            span [class=chip ] "Phase 3"
+          td [class=muted] "Supplier ABNs will be checked when suppliers and bills are e"

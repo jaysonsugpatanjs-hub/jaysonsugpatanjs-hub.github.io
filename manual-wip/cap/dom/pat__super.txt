@@ -1,0 +1,48 @@
+p [class=msg id=app-msg]
+div [data-view] "  "
+  header [class=page-head]
+    div
+      p [class=eyebrow] "PAYROLL"
+      h1 "Super"
+      p [class=muted] "From 1 July 2026 super guarantee is worked out on qualifying"
+  div [class=cards figures]
+    section [class=card attention]
+      h2 "Not yet paid"
+      p [class=big mono] "1,194.14"
+      p [class=muted small] "Some is overdue: late super attracts the super guarantee cha"
+  section [class=panel]
+    div [class=tbl-wrap]
+      table [class=tbl]
+        thead
+          tr
+            th "Pay run"
+            th "Payday"
+            th "Due by"
+            th [class=num] "Super"
+            th "Status"
+        tbody " "
+          tr
+            td [class=mono]
+              a [href=#/pay-runs/b70b0fc1-4f77-4987-ad20-ce2cd] "PR-00003"
+            td "30 Sept 2026"
+            td "9 Oct 2026"
+            td [class=num mono] "597.07"
+            td
+              span [class=chip pending] "Due"
+          tr
+            td [class=mono]
+              a [href=#/pay-runs/f8a4e572-0cac-43b8-8f71-10dfe] "PR-00002"
+            td "23 Sept 2026"
+            td "2 Oct 2026"
+            td [class=num mono] "597.07"
+            td
+              span [class=chip bad] "Overdue"
+          tr
+            td [class=mono]
+              a [href=#/pay-runs/a122686e-89b9-42b8-a2a5-0c11f] "PR-00001"
+            td "16 Sept 2026"
+            td "25 Sept 2026"
+            td [class=num mono] "597.07"
+            td
+              span [class=chip good] "Paid 25 Sept 2026"
+    p [class=muted small] "The due date counts weekdays only; if a public holiday falls"

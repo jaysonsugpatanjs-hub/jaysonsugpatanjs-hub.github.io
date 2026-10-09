@@ -1,0 +1,36 @@
+p [class=msg id=app-msg]
+div [data-view] "  "
+  header [class=page-head]
+    div
+      p [class=eyebrow] "PROJECTS · TIMESHEETS"
+      h1 "Review timesheets"
+      p [class=muted] "Open a week to check it against the site diary, then approve"
+  nav [class=tabs aria-label=Timesheets]
+    a [class=tab  href=#/timesheets] "My week"
+    a [class=tab on href=#/timesheets/review] "Review"
+    a [class=tab  href=#/timesheets/hours] "Hours for payroll"
+  section [class=panel] " "
+    div [class=tabs]
+      button [type=button class=on data-st=submitted] "Waiting"
+      button [type=button class data-st=rejected] "Sent back"
+      button [type=button class data-st=approved] "Approved"
+      button [type=button class data-st=draft] "Not submitted"
+    div [class=tbl-wrap]
+      table [class=tbl]
+        thead
+          tr
+            th "Person"
+            th "Week of"
+            th [class=num] "Hours"
+            th [class=num] "Overtime"
+            th [class=num] "Projects"
+            th "Submitted"
+        tbody " "
+          tr " "
+            td
+              a [href=#/timesheets?week=2026-10-05&person=3057] "Casey Rigger"
+            td "5 Oct 2026"
+            td [class=num mono] "16"
+            td [class=num mono]
+            td [class=num] "1"
+            td "8 Oct 2026, 5:56 am"

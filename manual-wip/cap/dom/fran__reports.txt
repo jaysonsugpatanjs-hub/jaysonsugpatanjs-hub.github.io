@@ -1,0 +1,133 @@
+p [class=msg id=app-msg]
+div [data-view] "  "
+  header [class=page-head]
+    div
+      p [class=eyebrow] "ACCOUNTING · REPORTS"
+      h1 "Profit and loss"
+      p [class=muted] "1 July 2026 to 8 Oct 2026"
+    button [class=btn type=button data-csv] "Export CSV"
+  nav [class=tabs aria-label=Reports]
+    button [type=button class=on data-tab=pl] "Profit and loss"
+    button [type=button class data-tab=bs] "Balance sheet"
+    button [type=button class data-tab=tb] "Trial balance"
+    button [type=button class data-tab=account] "Account transactions"
+    button [type=button class data-tab=ar] "Aged receivables"
+    button [type=button class data-tab=ap] "Aged payables"
+  section [class=panel] "  "
+    form [class=toolbar data-run] "   "
+      div [class=fld]
+        label "From"
+        input [id=r-from type=date]
+      div [class=fld]
+        label "To"
+        input [id=r-to type=date]
+      div [class=fld]
+        label "Quick range"
+        select [id=r-pre]
+      button [class=btn primary type=submit] "Run report"
+    div [class=tbl-wrap]
+      table [class=tbl report]
+        tbody "    "
+          tr [class=group]
+            th "Trading income"
+          tr
+            td
+              a [href=#/reports?type=account&account=81e5c9c7-] "Fabrication Revenue"
+                span [class=mono] "4000"
+            td [class=num mono] "78,100.00"
+          tr
+            td
+              a [href=#/reports?type=account&account=ddb00ce3-] "Welding Revenue"
+                span [class=mono] "4100"
+            td [class=num mono] "7,680.00"
+          tr
+            td
+              a [href=#/reports?type=account&account=3428919e-] "Shutdown/Maintenance Revenue"
+                span [class=mono] "4200"
+            td [class=num mono] "14,500.00"
+          tr
+            td
+              a [href=#/reports?type=account&account=ad9c0366-] "Pipework Revenue"
+                span [class=mono] "4300"
+            td [class=num mono] "55,000.00"
+          tr
+            td
+              a [href=#/reports?type=account&account=2f6e748d-] "Materials Recharge"
+                span [class=mono] "4700"
+            td [class=num mono] "3,410.00"
+          tr [class=sub]
+            th "Total trading income"
+            td [class=num mono] "158,690.00"
+          tr [class=group]
+            th "Cost of sales"
+          tr
+            td
+              a [href=#/reports?type=account&account=95ac86ed-] "Direct Labour"
+                span [class=mono] "5000"
+            td [class=num mono] "15,054.36"
+          tr
+            td
+              a [href=#/reports?type=account&account=c36a904b-] "Direct Materials"
+                span [class=mono] "5100"
+            td [class=num mono] "26,496.00"
+          tr
+            td
+              a [href=#/reports?type=account&account=5ac084bf-] "Welding Consumables"
+                span [class=mono] "5200"
+            td [class=num mono] "1,778.00"
+          tr
+            td
+              a [href=#/reports?type=account&account=81370f82-] "Subcontractors"
+                span [class=mono] "5300"
+            td [class=num mono] "2,800.00"
+          tr
+            td
+              a [href=#/reports?type=account&account=62cb04c9-] "Equipment Hire - Projects"
+                span [class=mono] "5500"
+            td [class=num mono] "4,200.00"
+          tr [class=sub]
+            th "Total cost of sales"
+            td [class=num mono] "50,328.36"
+          tr [class=total]
+            th "Gross profit"
+              span [class=muted small] "(68.3% margin)"
+            td [class=num mono] "108,361.64"
+          tr [class=group]
+            th "Operating expenses"
+          tr
+            td
+              a [href=#/reports?type=account&account=def9c8ef-] "Employer Superannuation"
+                span [class=mono] "6100"
+            td [class=num mono] "1,791.21"
+          tr
+            td
+              a [href=#/reports?type=account&account=1a745a74-] "Workers Compensation"
+                span [class=mono] "6200"
+            td [class=num mono] "1,250.00"
+          tr
+            td
+              a [href=#/reports?type=account&account=9957d656-] "Fuel"
+                span [class=mono] "6400"
+            td [class=num mono] "169.45"
+          tr
+            td
+              a [href=#/reports?type=account&account=0c97786e-] "PPE"
+                span [class=mono] "6600"
+            td [class=num mono] "486.00"
+          tr
+            td
+              a [href=#/reports?type=account&account=d306f517-] "Bank Charges"
+                span [class=mono] "7700"
+            td [class=num mono] "37.50"
+          tr
+            td
+              a [href=#/reports?type=account&account=59629ad7-] "Depreciation"
+                span [class=mono] "7800"
+            td [class=num mono] "3,713.72"
+          tr [class=sub]
+            th "Total operating expenses"
+            td [class=num mono] "7,447.88"
+          tr [class=grand]
+            th "Net profit"
+            td [class=num mono] "100,913.76"
+  p [class=msg data-msg]

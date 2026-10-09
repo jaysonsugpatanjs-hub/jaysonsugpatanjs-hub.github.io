@@ -1,0 +1,33 @@
+p [class=msg id=app-msg]
+div [data-view] " "
+  header [class=page-head]
+    div
+      p [class=eyebrow] "SALES · PAYMENTS"
+      h1 "Record a payment"
+      p [class=muted] "Enter what arrived in the bank, then say which invoices it p"
+  form [class=panel data-receipt] "  "
+    div [class=grid3] "      "
+      div [class=fld]
+        label "Customer"
+          span [class=req] "*"
+        select [id=r-cust]
+      div [class=fld]
+        label "Date received"
+        input [id=r-date type=date]
+      div [class=fld]
+        label "Amount received ($)"
+          span [class=req] "*"
+        input [id=r-amt class=num]
+      div [class=fld]
+        label "Paid into"
+        select [id=r-bank]
+      div [class=fld]
+        label "Method"
+        select [id=r-method]
+      div [class=fld]
+        label "Reference"
+        input [id=r-ref]
+    div [class=actions]
+      button [class=btn primary type=submit] "Record payment"
+      a [class=btn href=#/receipts] "Cancel"
+  p [class=msg data-msg]

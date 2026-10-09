@@ -1,0 +1,66 @@
+p [class=msg id=app-msg]
+div [data-view] "   "
+  header [class=page-head]
+    div
+      p [class=eyebrow] "PAYROLL"
+      h1 "Leave"
+      p [class=muted] "Approved leave is paid in the next pay run and taken off the"
+  section [class=panel] " "
+    div [class=tabs]
+      button [type=button class=on data-st=submitted] "Waiting"
+      button [type=button class data-st=approved] "Approved"
+      button [type=button class data-st=rejected] "Declined"
+      button [type=button class data-st=cancelled] "Cancelled"
+      button [type=button class data-st=paid] "Taken and paid"
+    div [class=tbl-wrap]
+      table [class=tbl]
+        thead
+          tr
+            th "Employee"
+            th "Leave"
+            th "Dates"
+            th [class=num] "Hours"
+            th [class=num] "Balance now"
+            th
+        tbody " "
+          tr "  "
+            td
+              a [href=#/employees/c8bf1617-beae-4bd5-87e6-071e] "Olivia Office"
+              small "Family wedding in Bendigo"
+            td "Annual leave"
+            td [class=nowrap] "2 Nov 2026 to 3 Nov 2026"
+            td [class=num mono] "15.2"
+            td [class=num mono bad-text] "8.77"
+            td [class=row-acts]
+              button [type=button class=btn data-ok=567d90c3-5ede-4ec2-95c8-8460e65fc6e8] "Approve"
+              button [type=button class=btn danger data-no=567d90c3-5ede-4ec2-95c8-8460e65fc6e8] "Decline"
+  form [class=panel data-for] "  "
+    h2 "Record leave for someone"
+    p [class=muted small] "For leave arranged by phone or on paper. It still needs appr"
+    div [class=grid3] "   "
+      div [class=fld]
+        label "Employee"
+        select [id=lf-emp]
+      div [class=fld]
+        label "Type"
+        select [id=lf-type]
+      div [class=fld] " "
+        label "Hours"
+        input [id=lf-hours name=lf-hours type=text]
+        small "A full day is usually 7.6 hours"
+        small [class=err data-err=lf-hours]
+      div [class=fld] " "
+        label "First day"
+        input [id=lf-start name=lf-start type=date]
+        small [class=err data-err=lf-start]
+      div [class=fld] " "
+        label "Last day"
+        input [id=lf-end name=lf-end type=date]
+        small [class=err data-err=lf-end]
+      div [class=fld] " "
+        label "Note"
+        input [id=lf-reason name=lf-reason type=text]
+        small [class=err data-err=lf-reason]
+    div [class=actions]
+      button [class=btn type=submit] "Record request"
+  p [class=msg data-msg]

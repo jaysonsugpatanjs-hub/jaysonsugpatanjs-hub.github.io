@@ -1,0 +1,78 @@
+p [class=msg id=app-msg]
+div [data-view] "    "
+  header [class=page-head]
+    div
+      p [class=eyebrow] "MY PAY"
+      h1 "Tom Welder"
+      p [class=muted] "Your payslips, leave balances and leave requests."
+  div [class=cards figures]
+    section [class=card]
+      h2 "Annual leave"
+      p [class=big mono] "8.77 h"
+      p [class=muted small] "≈ 1.2 days of 7.6 hours"
+    section [class=card]
+      h2 "Personal / carer's leave"
+      p [class=big mono] "4.38 h"
+      p [class=muted small] "≈ 0.6 days of 7.6 hours"
+  section [class=panel] " "
+    h2 "Payslips"
+    table [class=tbl]
+      thead
+        tr
+          th "Paid"
+          th "Period"
+          th [class=num] "Gross"
+          th [class=num] "Tax"
+          th [class=num] "Net"
+          th
+      tbody
+        tr
+          td "30 Sept 2026"
+          td [class=nowrap] "21 Sept 2026 to 27 Sept 2026"
+          td [class=num mono] "1,615.00"
+          td [class=num mono] "335.00"
+          td [class=num mono]
+          td
+            button [type=button class=link data-slip=b70b0fc1-4f77-4987-ad20-ce2cd8b8835f] "Download"
+        tr
+          td "23 Sept 2026"
+          td [class=nowrap] "14 Sept 2026 to 20 Sept 2026"
+          td [class=num mono] "1,742.50"
+          td [class=num mono] "376.00"
+          td [class=num mono]
+          td
+            button [type=button class=link data-slip=f8a4e572-0cac-43b8-8f71-10dfe1cb6dea] "Download"
+        tr
+          td "16 Sept 2026"
+          td [class=nowrap] "7 Sept 2026 to 13 Sept 2026"
+          td [class=num mono] "1,615.00"
+          td [class=num mono] "335.00"
+          td [class=num mono]
+          td
+            button [type=button class=link data-slip=a122686e-89b9-42b8-a2a5-0c11fad39eda] "Download"
+  form [class=panel data-request] " "
+    h2 "Request leave"
+    div [class=grid3] "  "
+      div [class=fld]
+        label "Type"
+        select [id=my-type]
+      div [class=fld] " "
+        label "First day"
+        input [id=my-start name=my-start type=date]
+        small [class=err data-err=my-start]
+      div [class=fld] " "
+        label "Last day"
+        input [id=my-end name=my-end type=date]
+        small [class=err data-err=my-end]
+      div [class=fld] " "
+        label "Hours"
+        input [id=my-hours name=my-hours type=text]
+        small "A full day is usually 7.6 hours"
+        small [class=err data-err=my-hours]
+      div [class=fld] " "
+        label "Note (optional)"
+        input [id=my-reason name=my-reason type=text]
+        small [class=err data-err=my-reason]
+    div [class=actions]
+      button [class=btn primary type=submit] "Send request"
+  p [class=msg data-msg]

@@ -1,0 +1,82 @@
+p [class=msg id=app-msg]
+div [data-view] "   "
+  header [class=page-head]
+    div
+      p [class=eyebrow] "BANKING"
+      h1 "Reconciliation"
+      div [class=toolbar inline]
+        div [class=fld]
+          label "Bank account"
+          select [id=rc-acc]
+    div [class=top-actions]
+      a [class=btn primary href=#/bank-accounts/abf5a6be-47f8-4dc0-a43c-] "Import statement"
+  div [class=cards figures] "   "
+    section [class=card]
+      h2 "Ledger balance today"
+      p [class=big mono] "179,482.47"
+    section [class=card]
+      h2 "Statement balance"
+      p [class=big mono] "211,125.58"
+      p [class=muted small] "at 7 Oct 2026"
+    section [class=card]
+      h2 "Reconciled to"
+      p [class=big] "30 Sept 2026"
+      p [class=muted small] "179,482.47"
+  div [class=tabs]
+    button [type=button class=on data-tab=match] "To match (4)"
+    button [type=button class data-tab=matched] "Matched"
+    button [type=button class data-tab=excluded] "Excluded"
+    button [type=button class data-tab=reconcile] "Reconcile"
+    button [type=button class data-tab=history] "History"
+  section [class=panel] "  "
+    div [class=toolbar]
+      div [class=fld]
+        label "Search"
+        input [id=rc-search]
+    div [class=tbl-wrap]
+      table [class=tbl]
+        thead
+          tr
+            th "Date"
+            th "Statement line"
+            th [class=num] "Amount"
+            th "Suggested"
+            th
+        tbody "    "
+          tr " "
+            td [class=nowrap] "2 Oct 2026"
+            td "DEPOSIT DEMO MINERALS EFT 51388"
+            td [class=num mono]
+              span [class] "33,000.00"
+            td
+              button [type=button class=btn data-accept=0e266bcc-7aaf-4fa5-bf61-88035ad24fcb] "Receipt for INV-1006 · Demo Minerals Processing Pty Ltd"
+            td [class=row-acts]
+              button [type=button class=link data-open=0e266bcc-7aaf-4fa5-bf61-88035ad24fcb] "Other options"
+          tr " "
+            td [class=nowrap] "3 Oct 2026"
+            td "DEMO SERVO FUEL 4471 BROADFORD"
+            td [class=num mono]
+              span [class=bad-text] "(142.80)"
+            td
+              button [type=button class=btn data-accept=82f3b46b-6795-4148-8b2d-9d6e04c5760a] "Rule: Fuel - Demo Servo fuel card"
+            td [class=row-acts]
+              button [type=button class=link data-open=82f3b46b-6795-4148-8b2d-9d6e04c5760a] "Other options"
+          tr " "
+            td [class=nowrap] "5 Oct 2026"
+            td "SUPER CLEARING PANALO PR-00002 PR-00003"
+            td [class=num mono]
+              span [class=bad-text] "(1,194.14)"
+            td
+              span [class=muted small] "No suggestion"
+            td [class=row-acts]
+              button [type=button class=link data-open=e34ba139-5043-4f0a-9276-9dd11e155d7b] "Other options"
+          tr " "
+            td [class=nowrap] "6 Oct 2026"
+            td "CARD FEE MERCHANT TERMINAL"
+            td [class=num mono]
+              span [class=bad-text] "(19.95)"
+            td
+              span [class=muted small] "No suggestion"
+            td [class=row-acts]
+              button [type=button class=link data-open=263d0113-74c7-4a7d-8367-16d11bf97d2f] "Other options"
+  p [class=msg data-msg]

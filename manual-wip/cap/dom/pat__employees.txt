@@ -1,0 +1,134 @@
+p [class=msg id=app-msg]
+div [data-view] " "
+  header [class=page-head]
+    div
+      p [class=eyebrow] "PAYROLL"
+      h1 "Employees"
+      p [class=muted] "People in the HR register who are paid through payroll. Set "
+  section [class=panel] " "
+    form [class=toolbar data-filter] "  "
+      div [class=fld]
+        label "Name"
+        input [id=em-q]
+      div [class=fld]
+        label "Show"
+        select [id=em-show]
+      button [class=btn type=submit] "Filter"
+    div [class=tbl-wrap]
+      table [class=tbl]
+        thead
+          tr
+            th "Employee"
+            th "Position"
+            th "Basis"
+            th "Paid"
+            th [class=num] "Rate"
+            th "Needs attention"
+        tbody " "
+          tr "   "
+            td
+              a [href=#/employees/2ec62e4e-1eaf-4c9b-925e-5b0a] "Alex Admin"
+              small "PP-006"
+            td "Systems administrator"
+            td
+              span [class=chip pending] "Not set up"
+            td "—"
+            td [class=num mono]
+            td
+              small [class=warn-text] "Pay details not set up"
+          tr "   "
+            td
+              a [href=#/employees/3ba8df5a-0489-4960-b071-2e63] "Casey Rigger"
+              small "PP-103"
+            td "Rigger / dogman"
+            td "Casual"
+            td "Weekly"
+            td [class=num mono] "38.00/h"
+            td
+              span [class=muted small] "—"
+          tr "   "
+            td
+              a [href=#/employees/93c41982-c69f-439e-84f6-c695] "Dana Director"
+              small "PP-001"
+            td "Managing director"
+            td
+              span [class=chip pending] "Not set up"
+            td "—"
+            td [class=num mono]
+            td
+              small [class=warn-text] "Pay details not set up"
+          tr "   "
+            td
+              a [href=#/employees/caf83f8d-1c43-4fa9-9e1e-9293] "Fran Finance"
+              small "PP-002"
+            td "Finance administrator"
+            td
+              span [class=chip pending] "Not set up"
+            td "—"
+            td [class=num mono]
+            td
+              small [class=warn-text] "Pay details not set up"
+          tr "   "
+            td
+              a [href=#/employees/60773234-224a-407d-80b8-8cf8] "Jamie Apprentice"
+              small "PP-104"
+            td "Apprentice fabricator"
+            td "Full-time"
+            td "Weekly"
+            td [class=num mono] "24.50/h"
+            td
+              span [class=muted small] "—"
+          tr "   "
+            td
+              a [href=#/employees/a74fa6e5-3824-4290-b22a-5475] "Morgan Project-Manager"
+              small "PP-004"
+            td "Project manager"
+            td
+              span [class=chip pending] "Not set up"
+            td "—"
+            td [class=num mono]
+            td
+              small [class=warn-text] "Pay details not set up"
+          tr "   "
+            td
+              a [href=#/employees/c8bf1617-beae-4bd5-87e6-071e] "Olivia Office"
+              small "PP-102"
+            td "Office administrator"
+            td "Full-time"
+            td "Weekly"
+            td [class=num mono] "72,000.00 pa"
+            td
+              span [class=muted small] "—"
+          tr "   "
+            td
+              a [href=#/employees/96b63c44-8587-495b-ae2a-9e8a] "Pat Payroll"
+              small "PP-003"
+            td "Payroll administrator"
+            td
+              span [class=chip pending] "Not set up"
+            td "—"
+            td [class=num mono]
+            td
+              small [class=warn-text] "Pay details not set up"
+          tr "   "
+            td
+              a [href=#/employees/6b51f552-ef9e-4385-89d7-0938] "Sam Supervisor"
+              small "PP-005"
+            td "Workshop supervisor"
+            td
+              span [class=chip pending] "Not set up"
+            td "—"
+            td [class=num mono]
+            td
+              small [class=warn-text] "Pay details not set up"
+          tr "   "
+            td
+              a [href=#/employees/7ff4b594-d3e1-487f-a382-9a97] "Tom Welder"
+              small "PP-101"
+            td "Welder / fabricator"
+            td "Full-time"
+            td "Weekly"
+            td [class=num mono] "42.50/h"
+            td
+              span [class=muted small] "—"
+  p [class=msg data-msg]

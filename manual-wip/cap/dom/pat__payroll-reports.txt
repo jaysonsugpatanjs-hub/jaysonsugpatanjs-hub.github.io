@@ -1,0 +1,91 @@
+p [class=msg id=app-msg]
+div [data-view] " "
+  header [class=page-head]
+    div
+      p [class=eyebrow] "PAYROLL"
+      h1 "Payroll summary"
+      p [class=muted] "Approved pay by employee for a date range (by payment date)."
+    button [class=btn type=button data-csv] "Export CSV"
+  section [class=panel] " "
+    form [class=toolbar data-run]
+      div [class=fld]
+        label "From"
+        input [id=ps-f type=date]
+      div [class=fld]
+        label "To"
+        input [id=ps-t type=date]
+      button [class=btn primary type=submit] "Show"
+    div [class=tbl-wrap]
+      table [class=tbl report]
+        thead
+          tr
+            th "Employee"
+            th [class=num] "Pays"
+            th [class=num] "Gross"
+            th [class=num] "Tax"
+            th [class=num] "incl. study loan"
+            th [class=num] "Salary sacrifice"
+            th [class=num] "Deductions"
+            th [class=num] "Super guarantee"
+            th [class=num] "Net"
+        tbody " "
+          tr " "
+            td
+              a [href=#/employees/3ba8df5a-0489-4960-b071-2e63] "Casey Rigger"
+              small "PP-103"
+            td [class=num] "3"
+            td [class=num mono] "3,135.00"
+            td [class=num mono] "789.00"
+            td [class=num mono]
+            td [class=num mono]
+            td [class=num mono]
+            td [class=num mono] "376.20"
+            td [class=num mono] "2,346.00"
+          tr " "
+            td
+              a [href=#/employees/60773234-224a-407d-80b8-8cf8] "Jamie Apprentice"
+              small "PP-104"
+            td [class=num] "3"
+            td [class=num mono] "2,793.00"
+            td [class=num mono] "348.00"
+            td [class=num mono]
+            td [class=num mono]
+            td [class=num mono]
+            td [class=num mono] "335.16"
+            td [class=num mono] "2,445.00"
+          tr " "
+            td
+              a [href=#/employees/c8bf1617-beae-4bd5-87e6-071e] "Olivia Office"
+              small "PP-102"
+            td [class=num] "3"
+            td [class=num mono] "4,153.86"
+            td [class=num mono] "783.00"
+            td [class=num mono]
+            td [class=num mono]
+            td [class=num mono]
+            td [class=num mono] "498.45"
+            td [class=num mono] "3,370.86"
+          tr " "
+            td
+              a [href=#/employees/7ff4b594-d3e1-487f-a382-9a97] "Tom Welder"
+              small "PP-101"
+            td [class=num] "3"
+            td [class=num mono] "4,972.50"
+            td [class=num mono] "1,046.00"
+            td [class=num mono]
+            td [class=num mono]
+            td [class=num mono]
+            td [class=num mono] "581.40"
+            td [class=num mono] "3,926.50"
+        tfoot
+          tr [class=grand]
+            th "Total"
+            td
+            td [class=num mono] "15,054.36"
+            td [class=num mono] "2,966.00"
+            td [class=num mono] "0.00"
+            td [class=num mono] "0.00"
+            td [class=num mono] "0.00"
+            td [class=num mono] "1,791.21"
+            td [class=num mono] "12,088.36"
+  p [class=msg data-msg]

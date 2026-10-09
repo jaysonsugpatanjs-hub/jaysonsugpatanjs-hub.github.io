@@ -1,0 +1,133 @@
+p [class=msg id=app-msg]
+div [data-view] "  "
+  header [class=page-head]
+    div
+      p [class=eyebrow] "ACCOUNTING"
+      h1 "Tax codes"
+      p [class=muted] "GST is worked out per line, to the cent, rounding half a cen"
+    button [class=btn primary type=button data-add] "Add tax code"
+  section [class=panel]
+    div [class=tbl-wrap]
+      table [class=tbl]
+        thead
+          tr
+            th "Code"
+            th "Name"
+            th [class=num] "Rate"
+            th "Used for"
+            th "BAS labels"
+            th "Status"
+            th
+              span [class=sr-only] "Actions"
+        tbody " "
+          tr [class] "  "
+            td [class=mono]
+            td "GST on Income"
+              small "Taxable sales: 10% GST included in G1, GST at 1A."
+            td [class=num] "10%"
+            td "Sales"
+            td [class=mono] "G1, 1A"
+            td
+              span [class=chip good] "Active"
+            td
+              button [type=button class=link data-edit=5c9847b6-9f42-4eb6-ba31-5759106f7a85] "Edit"
+          tr [class] "  "
+            td [class=mono]
+            td "GST on Expenses"
+              small "Non-capital purchases with GST: G11, credit at 1B."
+            td [class=num] "10%"
+            td "Purchases"
+            td [class=mono] "G11, 1B"
+            td
+              span [class=chip good] "Active"
+            td
+              button [type=button class=link data-edit=d238567a-096c-4b86-9256-ab4bce2209e3] "Edit"
+          tr [class] "  "
+            td [class=mono]
+            td "GST on Capital Purchases"
+              small "Capital purchases (plant, vehicles, equipment) with GST: G10"
+            td [class=num] "10%"
+            td "Purchases"
+            td [class=mono] "G10, 1B"
+            td
+              span [class=chip good] "Active"
+            td
+              button [type=button class=link data-edit=bb38f84c-91cb-4245-893c-9c63ab932f64] "Edit"
+          tr [class] "  "
+            td [class=mono]
+            td "GST Free Income"
+              small "GST-free sales: G1 and G3."
+            td [class=num] "0%"
+            td "Sales"
+            td [class=mono] "G1, G3"
+            td
+              span [class=chip good] "Active"
+            td
+              button [type=button class=link data-edit=a1c42dff-a8c6-42a7-96a8-b54a432dd123] "Edit"
+          tr [class] "  "
+            td [class=mono]
+            td "GST Free Exports"
+              small "Exports: G1 and G2."
+            td [class=num] "0%"
+            td "Sales"
+            td [class=mono] "G1, G2"
+            td
+              span [class=chip good] "Active"
+            td
+              button [type=button class=link data-edit=1ab475b5-b12e-47c9-ad5d-80a20d67da7b] "Edit"
+          tr [class] "  "
+            td [class=mono]
+            td "GST Free Expenses"
+              small "GST-free purchases: G11 and G14."
+            td [class=num] "0%"
+            td "Purchases"
+            td [class=mono] "G11, G14"
+            td
+              span [class=chip good] "Active"
+            td
+              button [type=button class=link data-edit=93585710-9d24-4f01-bbc2-0e84e5f449e5] "Edit"
+          tr [class] "  "
+            td [class=mono]
+            td "Input Taxed Sales"
+              small "Input-taxed sales (for example interest): G1 and G4."
+            td [class=num] "0%"
+            td "Sales"
+            td [class=mono] "G1, G4"
+            td
+              span [class=chip good] "Active"
+            td
+              button [type=button class=link data-edit=f82d2dba-7645-43a7-8851-c9af69cbf064] "Edit"
+          tr [class] "  "
+            td [class=mono]
+            td "Input Taxed Purchases"
+              small "Purchases for making input-taxed sales: G11 and G13."
+            td [class=num] "0%"
+            td "Purchases"
+            td [class=mono] "G11, G13"
+            td
+              span [class=chip good] "Active"
+            td
+              button [type=button class=link data-edit=722c41f1-e7ab-4ec3-a6ac-b4cd18f3f67e] "Edit"
+          tr [class] "  "
+            td [class=mono]
+            td "No GST (BAS excluded)"
+              small "Not reported on the BAS: wages, super, transfers, loans, tax"
+            td [class=num] "0%"
+            td "Both"
+            td [class=mono] "—"
+            td
+              span [class=chip good] "Active"
+            td
+              button [type=button class=link data-edit=fa90e0da-26fe-4acd-8d8f-c17e9b97c22e] "Edit"
+          tr [class] "  "
+            td [class=mono]
+            td "Out of Scope"
+              small "Outside the GST system altogether."
+            td [class=num] "0%"
+            td "Both"
+            td [class=mono] "—"
+            td
+              span [class=chip good] "Active"
+            td
+              button [type=button class=link data-edit=d790fb1d-17ce-433c-b4c7-5650dbf70f42] "Edit"
+  p [class=msg data-msg]

@@ -1,0 +1,173 @@
+p [class=msg id=app-msg]
+div [data-view] " "
+  header [class=page-head]
+    div
+      p [class=eyebrow] "PROJECTS"
+      h1 "New project"
+      p [class=muted] "The project number is given when you save. Budgets by cost c"
+  form [class=panel data-project] "      "
+    div [class=grid2] "        "
+      div [class=fld] " "
+        label "Project name"
+          span [class=req] "*"
+        input [id=pj-name name=pj-name type=text]
+        small [class=err data-err=pj-name]
+      div [class=fld]
+        label "Customer"
+        select [id=pj-cust]
+      div [class=fld] " "
+        label "Site"
+        input [id=pj-site name=pj-site type=text]
+        small "Where the work is done"
+        small [class=err data-err=pj-site]
+      div [class=fld] " "
+        label "Customer's order / contract number"
+        input [id=pj-ref name=pj-ref type=text]
+        small [class=err data-err=pj-ref]
+      div [class=fld]
+        label "Project manager"
+        select [id=pj-mgr]
+      div [class=fld]
+        label "Contract type"
+        select [id=pj-bill]
+      div [class=fld] " "
+        label "Contract value ($, ex GST)"
+        input [id=pj-value name=pj-value type=text]
+        small "The agreed price, or an estimate for schedule-of-rates work"
+        small [class=err data-err=pj-value]
+      div [class=grid2]
+        div [class=fld] " "
+          label "Start"
+          input [id=pj-start name=pj-start type=date]
+          small [class=err data-err=pj-start]
+        div [class=fld] " "
+          label "Finish"
+          input [id=pj-end name=pj-end type=date]
+          small [class=err data-err=pj-end]
+    h2 "Budget"
+    div [class=tbl-wrap]
+      table [class=tbl form-tbl]
+        thead
+          tr
+            th "Cost code"
+            th "Category"
+            th [class=num] "Hours"
+            th [class=num] "Amount ($)"
+        tbody " "
+          tr [data-budget=12884337-28e4-4a99-85a5-a83d1392209f] " "
+            td "Labour - fabrication"
+              span [class=mono] "100"
+            td [class=muted] "Labour"
+            td [class=num]
+              input [class=num apply data-h aria-label=Budget hours, Labour - fabrication]
+            td [class=num]
+              input [class=num apply data-a aria-label=Budget amount, Labour - fabrication]
+          tr [data-budget=dd719068-39d6-4e31-ad94-e106211df7e3] " "
+            td "Labour - welding"
+              span [class=mono] "110"
+            td [class=muted] "Labour"
+            td [class=num]
+              input [class=num apply data-h aria-label=Budget hours, Labour - welding]
+            td [class=num]
+              input [class=num apply data-a aria-label=Budget amount, Labour - welding]
+          tr [data-budget=8e612c8a-0e58-49fe-b506-b09c887b1613] " "
+            td "Labour - site installation"
+              span [class=mono] "120"
+            td [class=muted] "Labour"
+            td [class=num]
+              input [class=num apply data-h aria-label=Budget hours, Labour - site installation]
+            td [class=num]
+              input [class=num apply data-a aria-label=Budget amount, Labour - site installatio]
+          tr [data-budget=30256a81-0965-4c12-8bf2-5957aa3b6e0e] " "
+            td "Labour - supervision"
+              span [class=mono] "130"
+            td [class=muted] "Labour"
+            td [class=num]
+              input [class=num apply data-h aria-label=Budget hours, Labour - supervision]
+            td [class=num]
+              input [class=num apply data-a aria-label=Budget amount, Labour - supervision]
+          tr [data-budget=ae96179b-e354-4d1e-92f9-e16b5d6bf230] " "
+            td "Labour - shutdown and maintenance"
+              span [class=mono] "140"
+            td [class=muted] "Labour"
+            td [class=num]
+              input [class=num apply data-h aria-label=Budget hours, Labour - shutdown and main]
+            td [class=num]
+              input [class=num apply data-a aria-label=Budget amount, Labour - shutdown and mai]
+          tr [data-budget=15107af5-6f49-40c3-b9a0-4e589caec166] " "
+            td "Materials - pipe, steel and fittings"
+              span [class=mono] "200"
+            td [class=muted] "Materials"
+            td [class=num]
+              input [class=num apply data-h aria-label=Budget hours, Materials - pipe, steel an]
+            td [class=num]
+              input [class=num apply data-a aria-label=Budget amount, Materials - pipe, steel a]
+          tr [data-budget=c57e95f3-50bf-430b-9468-07b1bd85c544] " "
+            td "Welding consumables and gases"
+              span [class=mono] "210"
+            td [class=muted] "Consumables"
+            td [class=num]
+              input [class=num apply data-h aria-label=Budget hours, Welding consumables and ga]
+            td [class=num]
+              input [class=num apply data-a aria-label=Budget amount, Welding consumables and g]
+          tr [data-budget=2693b2eb-e56a-4c97-8025-3625396ef17d] " "
+            td "Equipment and plant hire"
+              span [class=mono] "300"
+            td [class=muted] "Equipment"
+            td [class=num]
+              input [class=num apply data-h aria-label=Budget hours, Equipment and plant hire]
+            td [class=num]
+              input [class=num apply data-a aria-label=Budget amount, Equipment and plant hire]
+          tr [data-budget=9c4866a3-e2b1-406a-a17d-dbebcda55505] " "
+            td "Subcontractors"
+              span [class=mono] "400"
+            td [class=muted] "Subcontract"
+            td [class=num]
+              input [class=num apply data-h aria-label=Budget hours, Subcontractors]
+            td [class=num]
+              input [class=num apply data-a aria-label=Budget amount, Subcontractors]
+          tr [data-budget=e06b73a3-a8e0-4da9-a6f0-b4a233a1795b] " "
+            td "Testing and inspection (NDT)"
+              span [class=mono] "410"
+            td [class=muted] "Subcontract"
+            td [class=num]
+              input [class=num apply data-h aria-label=Budget hours, Testing and inspection (ND]
+            td [class=num]
+              input [class=num apply data-a aria-label=Budget amount, Testing and inspection (N]
+          tr [data-budget=784740cf-d3c0-430d-bcd1-4804425dd5d0] " "
+            td "Travel and accommodation"
+              span [class=mono] "500"
+            td [class=muted] "Travel"
+            td [class=num]
+              input [class=num apply data-h aria-label=Budget hours, Travel and accommodation]
+            td [class=num]
+              input [class=num apply data-a aria-label=Budget amount, Travel and accommodation]
+          tr [data-budget=4ed6667a-c58a-418f-b018-5fdb98ed0b0b] " "
+            td "Freight and cartage"
+              span [class=mono] "600"
+            td [class=muted] "Freight"
+            td [class=num]
+              input [class=num apply data-h aria-label=Budget hours, Freight and cartage]
+            td [class=num]
+              input [class=num apply data-a aria-label=Budget amount, Freight and cartage]
+          tr [data-budget=a0ad5b1f-c2be-42c0-9c18-1bcf2be281ad] " "
+            td "Other project costs"
+              span [class=mono] "900"
+            td [class=muted] "Other"
+            td [class=num]
+              input [class=num apply data-h aria-label=Budget hours, Other project costs]
+            td [class=num]
+              input [class=num apply data-a aria-label=Budget amount, Other project costs]
+        tfoot
+          tr
+            th "Total budget"
+            td [class=num mono data-th] "0"
+            td [class=num mono data-ta] "0.00"
+    p [class=balance  data-margin]
+    div [class=fld]
+      label "Notes"
+      textarea [id=pj-notes]
+    div [class=actions]
+      button [class=btn primary type=submit] "Save project"
+      a [class=btn href=#/projects] "Cancel"
+  p [class=msg data-msg]

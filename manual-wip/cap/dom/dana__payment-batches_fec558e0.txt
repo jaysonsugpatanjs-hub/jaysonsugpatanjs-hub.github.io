@@ -1,0 +1,60 @@
+p [class=msg id=app-msg]
+div [data-view] "   "
+  header [class=page-head]
+    div
+      p [class=eyebrow] "BANKING"
+      h1 "Payment batch PB-0001"
+        span [class=chip pending] "Waiting for approval"
+      p [class=muted] "Pay on 9 Oct 2026 from Operating account (062-000 •••678) · "
+    a [class=btn href=#/payment-batches] "Back"
+  section [class=panel] "  "
+    ol [class=steps] "    "
+      li "Made by Fran Finance 8 Oct 2026, 5:56 am"
+      li "Waiting for someone else to approve"
+      li "Bank file not downloaded yet"
+      li "Mark as paid once the bank has processed the file"
+    div [class=actions] "  "
+      button [type=button class=btn primary data-act=approve] "Approve"
+      button [type=button class=btn danger data-act=cancel] "Cancel batch"
+  section [class=panel]
+    div [class=tbl-wrap]
+      table [class=tbl]
+        thead
+          tr
+            th "Supplier"
+            th "Bill"
+            th "Account"
+            th "Reference"
+            th [class=num] "Amount"
+        tbody "  "
+          tr
+            td "Demo Steel Supplies Pty Ltd"
+            td
+              a [href=#/bills/df9c27dd-e351-467a-be7e-460cac45] "BILL-1009"
+              small "DSS-INV-41520"
+            td [class=mono] "Demo Steel Supplies"
+              small "063-000 •••040"
+            td [class=mono] "DSS-INV-41520"
+            td [class=num mono] "20,416.00"
+          tr
+            td "Demo Welding Consumables Pty Ltd"
+            td
+              a [href=#/bills/f8df3413-6942-4a3c-baa7-807c074f] "BILL-1002"
+              small "DWC-118842"
+            td [class=mono] "Demo Welding Consumables"
+              small "063-000 •••050"
+            td [class=mono] "DWC-118842"
+            td [class=num mono] "1,955.80"
+          tr
+            td "Demo Crane Hire Pty Ltd"
+            td
+              a [href=#/bills/10c54321-7bd6-4c44-9564-3cd90eb8] "BILL-1007"
+              small "DCH-30418"
+            td [class=mono] "Demo Crane Hire"
+              small "064-000 •••060"
+            td [class=mono] "DCH-30418"
+            td [class=num mono] "4,620.00"
+          tr
+            th "Total"
+            td [class=num mono]
+  p [class=msg data-msg]

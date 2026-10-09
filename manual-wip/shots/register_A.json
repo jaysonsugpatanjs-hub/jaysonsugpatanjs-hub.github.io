@@ -1,0 +1,240 @@
+{
+ "F02-01": {
+  "fig": "F02-01",
+  "title": "The Panalo portal sign-in page",
+  "module": "M02",
+  "route": "/training/",
+  "role": "Not signed in",
+  "callouts": [
+   "Email address Panalo invited",
+   "Your password (masked)",
+   "Sign in",
+   "Forgot password?"
+  ],
+  "masked": [
+   "PASSWORD - NEVER SHARE"
+  ],
+  "caption": "The Panalo portal sign-in page",
+  "purpose": "",
+  "note": "",
+  "size": [
+   1360,
+   860
+  ]
+ },
+ "F02-02": {
+  "fig": "F02-02",
+  "title": "Panalo Accounts asks you to sign in on the portal",
+  "module": "M02",
+  "route": "/accounts/",
+  "role": "Not signed in",
+  "callouts": [
+   "Sign in (opens the portal, then brings you back)"
+  ],
+  "masked": [],
+  "caption": "Panalo Accounts asks you to sign in on the portal",
+  "purpose": "",
+  "note": "",
+  "size": [
+   1360,
+   860
+  ]
+ },
+ "F02-03": {
+  "fig": "F02-03",
+  "title": "Checking your access while Panalo Accounts loads",
+  "module": "M02",
+  "route": "/accounts/",
+  "role": "Finance admin",
+  "callouts": [],
+  "masked": [],
+  "caption": "Checking your access while Panalo Accounts loads",
+  "purpose": "",
+  "note": "",
+  "size": [
+   1360,
+   860
+  ]
+ },
+ "F02-04": {
+  "fig": "F02-04",
+  "title": "Setting up two-step sign-in the first time",
+  "module": "M02",
+  "route": "/accounts/",
+  "role": "Finance admin",
+  "callouts": [
+   "Type the 6-digit code your authenticator app shows",
+   "Turn on two-step sign-in"
+  ],
+  "masked": [
+   "QR CODE MASKED",
+   "KEY MASKED"
+  ],
+  "caption": "Setting up two-step sign-in the first time",
+  "purpose": "",
+  "note": "",
+  "size": [
+   1360,
+   860
+  ]
+ },
+ "F02-05": {
+  "fig": "F02-05",
+  "title": "Confirming it's you with the 6-digit code",
+  "module": "M02",
+  "route": "/accounts/",
+  "role": "Finance admin",
+  "callouts": [
+   "Code from the authenticator app (spaces are ignored)",
+   "Verify"
+  ],
+  "masked": [],
+  "caption": "Confirming it's you with the 6-digit code",
+  "purpose": "",
+  "note": "",
+  "size": [
+   1360,
+   860
+  ]
+ },
+ "F02-06": {
+  "fig": "F02-06",
+  "title": "A code that didn't work",
+  "module": "M02",
+  "route": "/accounts/",
+  "role": "Finance admin",
+  "callouts": [
+   "Error message: try the current code"
+  ],
+  "masked": [],
+  "caption": "A code that didn't work",
+  "purpose": "",
+  "note": "",
+  "size": [
+   1360,
+   860
+  ]
+ },
+ "F02-07": {
+  "fig": "F02-07",
+  "title": "Temporary password: choose your own on the portal first",
+  "module": "M02",
+  "route": "/accounts/",
+  "role": "Employee (welder)",
+  "callouts": [
+   "Open the portal"
+  ],
+  "masked": [],
+  "caption": "Temporary password: choose your own on the portal first",
+  "purpose": "",
+  "note": "",
+  "size": [
+   1360,
+   860
+  ]
+ },
+ "F02-08": {
+  "fig": "F02-08",
+  "title": "No access to Panalo Accounts",
+  "module": "M02",
+  "route": "/accounts/",
+  "role": "Employee (casual rigger)",
+  "callouts": [
+   "Back to the portal"
+  ],
+  "masked": [],
+  "caption": "No access to Panalo Accounts",
+  "purpose": "",
+  "note": "",
+  "size": [
+   1360,
+   860
+  ]
+ },
+ "F01-01": {
+  "fig": "F01-01",
+  "title": "Panalo Accounts after sign-in (director's view)",
+  "module": "M01",
+  "route": "#/dashboard",
+  "role": "Director / owner",
+  "callouts": [
+   "Company and product name",
+   "Menu: what you see depends on your role",
+   "Notifications",
+   "Dashboard heading: trading name, legal name and ABN"
+  ],
+  "masked": [],
+  "caption": "Panalo Accounts after sign-in (director's view)",
+  "purpose": "",
+  "note": "",
+  "size": [
+   1360,
+   860
+  ]
+ },
+ "F03-01": {
+  "fig": "F03-01",
+  "title": "The dashboard: money, work waiting and alerts",
+  "module": "M03",
+  "route": "#/dashboard",
+  "role": "Director / owner",
+  "callouts": [
+   "Bank balance in the ledger",
+   "Profit so far this financial year",
+   "GST account balance (estimate)",
+   "Journals not yet posted",
+   "Receivables and overdue amount",
+   "Payables and overdue amount",
+   "Statement lines still to match",
+   "Next BAS due",
+   "Pay runs waiting for approval",
+   "Super owed to funds",
+   "Approvals waiting for you"
+  ],
+  "masked": [],
+  "caption": "The dashboard: money, work waiting and alerts",
+  "purpose": "",
+  "note": "",
+  "size": [
+   1132,
+   1684
+  ]
+ },
+ "F03-02": {
+  "fig": "F03-02",
+  "title": "The notifications panel",
+  "module": "M03",
+  "route": "#/dashboard",
+  "role": "Director / owner",
+  "callouts": [
+   "Notifications: newest first; each opens its screen",
+   "Mark all read"
+  ],
+  "masked": [],
+  "caption": "The notifications panel",
+  "purpose": "",
+  "note": "",
+  "size": [
+   1360,
+   860
+  ]
+ },
+ "F04-01": {
+  "fig": "F04-01",
+  "title": "An employee's view: only My pay and Timesheets",
+  "module": "M04",
+  "route": "#/dashboard",
+  "role": "Employee (welder)",
+  "callouts": [
+   "Menu for an employee: only what this person needs"
+  ],
+  "masked": [],
+  "caption": "An employee's view: only My pay and Timesheets",
+  "purpose": "",
+  "note": "",
+  "size": [
+   1360,
+   860
+  ]
+ }
+}

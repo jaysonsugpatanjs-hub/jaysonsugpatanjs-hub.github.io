@@ -1,0 +1,30 @@
+p [class=msg id=app-msg]
+div [data-view] " "
+  header [class=page-head]
+    div
+      p [class=eyebrow] "BANKING"
+      h1 "Payment batches"
+      p [class=muted] "Pay approved bills with one bank file. Someone other than th"
+    a [class=btn primary href=#/payment-batches/new] "New batch"
+  section [class=panel]
+    div [class=tbl-wrap]
+      table [class=tbl]
+        thead
+          tr
+            th "Batch"
+            th "Pay on"
+            th "From"
+            th "Bills"
+            th "Status"
+            th [class=num] "Total"
+        tbody " "
+          tr
+            td
+              a [href=#/payment-batches/fec558e0-0c56-4b93-ae2]
+              small "Fran Finance"
+            td "9 Oct 2026"
+            td "Operating account"
+            td "3"
+            td
+              span [class=chip pending] "Waiting for approval"
+            td [class=num mono] "26,991.80"

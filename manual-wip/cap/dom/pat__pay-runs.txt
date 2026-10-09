@@ -1,0 +1,78 @@
+p [class=msg id=app-msg]
+div [data-view] " "
+  header [class=page-head]
+    div
+      p [class=eyebrow] "PAYROLL"
+      h1 "Pay runs"
+      p [class=muted] "Hours come from approved timesheets, leave from approved req"
+    a [class=btn primary href=#/pay-runs/new] "New pay run"
+  section [class=panel]
+    div [class=tbl-wrap]
+      table [class=tbl]
+        thead
+          tr
+            th "Pay run"
+            th "Period"
+            th "Payment"
+            th "Status"
+            th [class=num] "People"
+            th [class=num] "Gross"
+            th [class=num] "Tax"
+            th [class=num] "Net"
+            th "Super"
+        tbody " "
+          tr "  "
+            td [class=mono]
+              a [href=#/pay-runs/bc9dd684-4f21-4278-b251-3f1f8] "PR-00004"
+              small "weekly"
+            td [class=nowrap] "28 Sept 2026 to 4 Oct 2026"
+            td [class=nowrap] "8 Oct 2026"
+            td
+              span [class=chip info] "Waiting for approval"
+            td [class=num] "4"
+            td [class=num mono] "5,103.12"
+            td [class=num mono] "1,016.00"
+            td [class=num mono] "4,087.12"
+            td [class=nowrap]
+          tr "  "
+            td [class=mono]
+              a [href=#/pay-runs/b70b0fc1-4f77-4987-ad20-ce2cd] "PR-00003"
+              small "weekly"
+            td [class=nowrap] "21 Sept 2026 to 27 Sept 2026"
+            td [class=nowrap] "30 Sept 2026"
+            td
+              span [class=chip good] "Paid"
+            td [class=num] "4"
+            td [class=num mono] "4,975.62"
+            td [class=num mono] "975.00"
+            td [class=num mono] "4,000.62"
+            td [class=nowrap]
+              span [class=chip pending] "Due 9 Oct 2026"
+          tr "  "
+            td [class=mono]
+              a [href=#/pay-runs/f8a4e572-0cac-43b8-8f71-10dfe] "PR-00002"
+              small "weekly"
+            td [class=nowrap] "14 Sept 2026 to 20 Sept 2026"
+            td [class=nowrap] "23 Sept 2026"
+            td
+              span [class=chip good] "Paid"
+            td [class=num] "4"
+            td [class=num mono] "5,103.12"
+            td [class=num mono] "1,016.00"
+            td [class=num mono] "4,087.12"
+            td [class=nowrap]
+              span [class=chip bad] "Due 2 Oct 2026"
+          tr "  "
+            td [class=mono]
+              a [href=#/pay-runs/a122686e-89b9-42b8-a2a5-0c11f] "PR-00001"
+              small "weekly"
+            td [class=nowrap] "7 Sept 2026 to 13 Sept 2026"
+            td [class=nowrap] "16 Sept 2026"
+            td
+              span [class=chip good] "Paid"
+            td [class=num] "4"
+            td [class=num mono] "4,975.62"
+            td [class=num mono] "975.00"
+            td [class=num mono] "4,000.62"
+            td [class=nowrap]
+              span [class=chip good] "Paid 25 Sept 2026"

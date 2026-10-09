@@ -1,0 +1,86 @@
+p [class=msg id=app-msg]
+div [data-view] " "
+  header [class=page-head]
+    div
+      p [class=eyebrow] "SALES · QUOTES"
+      h1 "New quote"
+      p [class=muted] "Describe the work and price it line by line. Approve the quo"
+  form [class=panel data-doc] "     "
+    div [class=grid3] "      "
+      div [class=fld] " "
+        label "Customer"
+          span [class=req] "*"
+        select [id=d-party]
+        small [data-party-note]
+      div [class=fld]
+        label "Quote date"
+        input [id=d-date type=date]
+      div [class=fld]
+        label "Valid until"
+        input [id=d-exp type=date]
+      div [class=fld]
+        label "Title"
+        input [id=d-title]
+      div [class=fld]
+        label "Customer reference"
+        input [id=d-ref]
+      div [class=fld]
+        label "Amounts are"
+        select [id=d-amounts]
+    div [class=tbl-wrap]
+      table [class=tbl lines doc-lines]
+        thead
+          tr " "
+            th "Description"
+            th "Account"
+            th [class=num] "Qty"
+            th [class=num] "Unit price"
+            th [class=num] "Disc %"
+            th "Tax"
+            th [class=num] "GST"
+            th [class=num] "Amount"
+            th
+              span [class=sr-only] "Remove"
+        tbody " "
+          tr [data-line=0] "       "
+            td [class=desc] " "
+              textarea [aria-label=Description, line 1 data-f=description]
+              div [class=line-tags] " "
+                select [aria-label=Type, line 1 data-f=kind class=kind]
+                select [aria-label=Project, line 1 data-f=projectId class=kind]
+            td
+              select [aria-label=Account, line 1 data-f=accountId]
+                optgroup
+                optgroup
+            td
+              input [aria-label=Quantity, line 1 data-f=quantity class=num qty]
+            td
+              input [aria-label=Unit price, line 1 data-f=unitPrice class=num]
+            td
+              input [aria-label=Discount percent, line 1 data-f=discountPercent class=num disc]
+            td
+              select [aria-label=Tax code, line 1 data-f=taxCodeId]
+            td [class=num mono muted data-gst]
+            td [class=num mono data-amt] "0.00"
+            td
+              button [type=button class=link data-remove=0 aria-label=Remove line 1] "✕"
+    div [class=doc-foot] "  "
+      button [type=button class=link data-add-line] "+ Add a line"
+      dl [class=totals data-totals] "  "
+        dt "Subtotal (ex GST)"
+        dd [class=mono] "0.00"
+        dt "GST"
+        dd [class=mono] "0.00"
+        dt [class=grand] "Total"
+        dd [class=mono grand] "0.00"
+    div [class=grid2] " "
+      div [class=fld]
+        label "Scope of work"
+        textarea [id=d-scope]
+      div [class=fld]
+        label "Terms and conditions"
+        textarea [id=d-terms]
+    div [class=actions]
+      button [class=btn primary type=submit data-act=save] "Save draft"
+      a [class=btn href=#/quotes] "Cancel"
+  p [class=msg data-msg]

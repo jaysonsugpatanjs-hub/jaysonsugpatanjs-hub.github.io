@@ -1,0 +1,118 @@
+p [class=msg id=app-msg]
+div [data-view] "       "
+  header [class=page-head]
+    div
+      p [class=eyebrow] "PURCHASES · SUPPLIERS"
+      h1 "Demo Steel Supplies Pty Ltd"
+      p [class=muted] "ABN 12 000 000 041"
+    div [class=actions tight]
+      a [class=btn href=#/suppliers/142838bb-c337-4c84-b29b-475e] "Edit"
+      a [class=btn primary href=#/bills/new?supplier=142838bb-c337-4c84-] "Enter a bill"
+      a [class=btn href=#/purchase-orders/new?supplier=142838bb-] "New purchase order"
+  div [class=cards figures] "   "
+    section [class=card]
+      h2 "Owing to them"
+      p [class=big mono] "20,416.00"
+    section [class=card]
+      h2 "Insurance"
+      p "Not recorded"
+      h2 "Licence"
+      p "Not recorded"
+    section [class=card]
+      h2 "Pay to"
+      p [class=mono] "Demo Steel Supplies BSB 063-000 · 10203040"
+      p [class=muted small] "Changed 8 Oct 2026"
+      button [type=button class=link data-bank] "Change bank details"
+  form [class=panel hidden data-bank-form] "  "
+    h2 "New bank details"
+    p [class=muted small] "Only change bank details after confirming them with the supp"
+    div [class=grid3]
+      div [class=fld] " "
+        label "Account name"
+        input [id=bk-name name=bk-name type=text]
+        small [class=err data-err=bk-name]
+      div [class=fld] " "
+        label "BSB"
+        input [id=bk-bsb name=bk-bsb type=text]
+        small [class=err data-err=bk-bsb]
+      div [class=fld] " "
+        label "Account number"
+        input [id=bk-acct name=bk-acct type=text]
+        small [class=err data-err=bk-acct]
+    div [class=actions]
+      button [class=btn primary type=submit] "Request approval"
+      button [class=btn type=button data-bank-cancel] "Cancel"
+  section [class=panel]
+    h2 "Bills"
+    div [class=tbl-wrap]
+      table [class=tbl]
+        thead
+          tr
+            th "Bill"
+            th "Their reference"
+            th "Date"
+            th "Due"
+            th "Status"
+            th [class=num] "Total"
+            th [class=num] "Owing"
+        tbody
+          tr
+            td [class=mono]
+              a [href=#/bills/df9c27dd-e351-467a-be7e-460cac45] "BILL-1009"
+            td "DSS-INV-41520"
+            td "25 Sept 2026"
+            td "25 Oct 2026"
+            td
+              span [class=chip good] "Approved"
+            td [class=num mono] "20,416.00"
+            td [class=num mono] "20,416.00"
+          tr
+            td [class=mono]
+              a [href=#/bills/95695139-164d-471f-97e1-bb46bae5] "BILL-1001"
+            td "DSS-INV-40871"
+            td "28 July 2026"
+            td "27 Aug 2026"
+            td
+              span [class=chip good] "Approved"
+            td [class=num mono] "8,729.60"
+            td [class=num mono]
+  section [class=panel]
+    h2 "Purchase orders"
+    table [class=tbl]
+      thead
+        tr
+          th "Number"
+          th "Date"
+          th "Status"
+          th [class=num] "Total"
+      tbody " "
+        tr
+          td [class=mono]
+            a [href=#/purchase-orders/a31eef14-9f88-4957-842] "PO-1001"
+          td "15 July 2026"
+          td
+            span [class=chip good] "Completed"
+          td [class=num mono] "8,729.60"
+  section [class=panel]
+    h2 "Payments"
+    table [class=tbl]
+      thead
+        tr
+          th "Date"
+          th "Reference"
+          th "Status"
+          th [class=num] "Amount"
+      tbody " "
+        tr
+          td
+            a [href=#/supplier-payments/3ea9a478-db1e-45ae-a] "20 Aug 2026"
+          td "DSS July"
+          td
+            span [class=chip good] "Paid"
+          td [class=num mono] "8,729.60"
+  section [class=panel data-attachments data-entity=supplier data-entity-id=142838bb-c337-4c84-b29b-475e2cabada9] "   "
+    h2 "Attachments"
+    p [class=muted small] "Nothing attached."
+    label [class=btn file] "Attach a PDF or photo"
+      input [type=file data-attach]
+  p [class=msg data-msg]

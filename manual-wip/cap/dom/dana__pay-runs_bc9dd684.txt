@@ -1,0 +1,101 @@
+p [class=msg id=app-msg]
+div [data-view] "    "
+  header [class=page-head]
+    div
+      p [class=eyebrow] "PAYROLL · PAY RUN"
+      h1 "PR-00004"
+        span [class=chip info] "Waiting for approval"
+      p [class=muted] "weekly · 28 Sept 2026 to 4 Oct 2026 · paid 8 Oct 2026 · prep"
+  div [class=cards figures] "    "
+    section [class=card]
+      h2 "Gross"
+      p [class=big mono] "5,103.12"
+    section [class=card]
+      h2 "Tax withheld"
+      p [class=big mono] "1,016.00"
+      p [class=muted small] "Owed to the ATO, reported on the BAS"
+    section [class=card]
+      h2 "Net pay"
+      p [class=big mono] "4,087.12"
+      p [class=muted small] "To pay employees"
+    section [class=card ]
+      h2 "Super"
+      p [class=big mono] "597.07"
+      p [class=muted small] "Due by 19 Oct 2026"
+  p [class=note] "1 thing to check below."
+  section [class=panel] "  "
+    div [class=tbl-wrap]
+      table [class=tbl payrun] " "
+        thead
+          tr
+            th "Employee"
+            th [class=num] "Hours"
+            th [class=num] "Gross"
+            th [class=num] "Tax"
+            th [class=num] "Deductions"
+            th [class=num] "Net"
+            th [class=num] "Super"
+            th
+        tbody [class=emp]
+          tr [class] "   "
+            td
+              button [type=button class=link data-toggle=3ba8df5a-0489-4960-b071-2e63898c9bb3] "▸ Casey Rigger"
+              small "Scale 1 (no tax-free threshold)"
+            td [class=num mono] "22"
+            td [class=num mono] "1,045.00"
+            td [class=num mono] "263.00"
+            td [class=num mono]
+            td [class=num mono]
+            td [class=num mono] "125.40"
+            td [class=row-acts]
+        tbody [class=emp]
+          tr [class=warn-row] "   "
+            td
+              button [type=button class=link data-toggle=60773234-224a-407d-80b8-8cf802d65ac5] "▸ Jamie Apprentice"
+              small "Scale 2 (tax-free threshold)"
+              small [class=warn-text] "The base rate 24.5000 is below the national minimum wage (26"
+            td [class=num mono] "38"
+            td [class=num mono] "931.00"
+            td [class=num mono] "116.00"
+            td [class=num mono]
+            td [class=num mono]
+            td [class=num mono] "111.72"
+            td [class=row-acts]
+        tbody [class=emp]
+          tr [class] "   "
+            td
+              button [type=button class=link data-toggle=c8bf1617-beae-4bd5-87e6-071eb1e6b125] "▸ Olivia Office"
+              small "Scale 2 (tax-free threshold)"
+            td [class=num mono] "38"
+            td [class=num mono] "1,384.62"
+            td [class=num mono] "261.00"
+            td [class=num mono]
+            td [class=num mono]
+            td [class=num mono] "166.15"
+            td [class=row-acts]
+        tbody [class=emp]
+          tr [class] "   "
+            td
+              button [type=button class=link data-toggle=7ff4b594-d3e1-487f-a382-9a973f87be40] "▸ Tom Welder"
+              small "Scale 2 (tax-free threshold)"
+            td [class=num mono] "38"
+            td [class=num mono] "1,742.50"
+            td [class=num mono] "376.00"
+            td [class=num mono]
+            td [class=num mono]
+            td [class=num mono] "193.80"
+            td [class=row-acts]
+        tfoot
+          tr [class=grand]
+            th "Total"
+            td
+            td [class=num mono] "5,103.12"
+            td [class=num mono] "1,016.00"
+            td
+            td [class=num mono] "4,087.12"
+            td [class=num mono] "597.07"
+            td
+    div [class=actions] "  "
+      button [type=button class=btn primary data-act=approve] "Approve and post"
+      button [type=button class=btn data-act=return] "Send back"
+  p [class=msg data-msg]

@@ -1,0 +1,109 @@
+p [class=msg id=app-msg]
+div [data-view] "    "
+  header [class=page-head]
+    div
+      p [class=eyebrow] "PAYROLL · PAY RUN"
+      h1 "PR-00001"
+        span [class=chip good] "Paid"
+      p [class=muted] "weekly · 7 Sept 2026 to 13 Sept 2026 · paid 16 Sept 2026 · p"
+  div [class=cards figures] "    "
+    section [class=card]
+      h2 "Gross"
+      p [class=big mono] "4,975.62"
+    section [class=card]
+      h2 "Tax withheld"
+      p [class=big mono] "975.00"
+      p [class=muted small] "Owed to the ATO, reported on the BAS"
+    section [class=card]
+      h2 "Net pay"
+      p [class=big mono] "4,000.62"
+      p [class=muted small] "Paid 16 Sept 2026"
+    section [class=card ]
+      h2 "Super"
+      p [class=big mono] "597.07"
+      p [class=muted small] "Paid 25 Sept 2026"
+  p [class=note] "1 thing to check below."
+  section [class=panel] "   "
+    div [class=tbl-wrap]
+      table [class=tbl payrun] " "
+        thead
+          tr
+            th "Employee"
+            th [class=num] "Hours"
+            th [class=num] "Gross"
+            th [class=num] "Tax"
+            th [class=num] "Deductions"
+            th [class=num] "Net"
+            th [class=num] "Super"
+            th
+        tbody [class=emp]
+          tr [class] "   "
+            td
+              button [type=button class=link data-toggle=3ba8df5a-0489-4960-b071-2e63898c9bb3] "▸ Casey Rigger"
+              small "Scale 1 (no tax-free threshold)"
+            td [class=num mono] "22"
+            td [class=num mono] "1,045.00"
+            td [class=num mono] "263.00"
+            td [class=num mono]
+            td [class=num mono]
+            td [class=num mono] "125.40"
+            td [class=row-acts]
+              button [type=button class=link data-slip=3ba8df5a-0489-4960-b071-2e63898c9bb3] "Payslip"
+        tbody [class=emp]
+          tr [class=warn-row] "   "
+            td
+              button [type=button class=link data-toggle=60773234-224a-407d-80b8-8cf802d65ac5] "▸ Jamie Apprentice"
+              small "Scale 2 (tax-free threshold)"
+              small [class=warn-text] "The base rate 24.5000 is below the national minimum wage (26"
+            td [class=num mono] "38"
+            td [class=num mono] "931.00"
+            td [class=num mono] "116.00"
+            td [class=num mono]
+            td [class=num mono]
+            td [class=num mono] "111.72"
+            td [class=row-acts]
+              button [type=button class=link data-slip=60773234-224a-407d-80b8-8cf802d65ac5] "Payslip"
+        tbody [class=emp]
+          tr [class] "   "
+            td
+              button [type=button class=link data-toggle=c8bf1617-beae-4bd5-87e6-071eb1e6b125] "▸ Olivia Office"
+              small "Scale 2 (tax-free threshold)"
+            td [class=num mono] "38"
+            td [class=num mono] "1,384.62"
+            td [class=num mono] "261.00"
+            td [class=num mono]
+            td [class=num mono]
+            td [class=num mono] "166.15"
+            td [class=row-acts]
+              button [type=button class=link data-slip=c8bf1617-beae-4bd5-87e6-071eb1e6b125] "Payslip"
+        tbody [class=emp]
+          tr [class] "   "
+            td
+              button [type=button class=link data-toggle=7ff4b594-d3e1-487f-a382-9a973f87be40] "▸ Tom Welder"
+              small "Scale 2 (tax-free threshold)"
+            td [class=num mono] "38"
+            td [class=num mono] "1,615.00"
+            td [class=num mono] "335.00"
+            td [class=num mono]
+            td [class=num mono]
+            td [class=num mono] "193.80"
+            td [class=row-acts]
+              button [type=button class=link data-slip=7ff4b594-d3e1-487f-a382-9a973f87be40] "Payslip"
+        tfoot
+          tr [class=grand]
+            th "Total"
+            td
+            td [class=num mono] "4,975.62"
+            td [class=num mono] "975.00"
+            td
+            td [class=num mono] "4,000.62"
+            td [class=num mono] "597.07"
+            td
+    div [class=actions] "  "
+      button [type=button class=btn data-act=aba] "Bank file (ABA)"
+      button [type=button class=btn data-act=banklist] "Bank payment list (CSV)"
+    p [class=muted small] "Ledger: · net pay · super"
+      a [href=#/journals/4e63542e-2878-4bca-80d1-f9e5d] "JE-000033"
+      a [href=#/journals/09644f6e-6833-4d97-af7e-d1353] "JE-000034"
+      a [href=#/journals/032c3510-e2d7-415d-9728-28727] "JE-000039"
+  p [class=msg data-msg]
