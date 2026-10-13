@@ -2,6 +2,7 @@
 // Rendered with escaped template strings, like the rest of the admin page.
 import { api, config, friendlyError } from "../auth.js";
 import { showTemporaryPassword } from "./onboarding.js";
+import { endOfSydneyDayIso } from "./module-manager-core.js";
 
 const STATUS_LABEL = {
   competent: "Competent",
@@ -124,8 +125,75 @@ function renderEditor(root) {
       <button class="secondary-action" type="submit">Add licence</button>
       <p class="form-message" data-licence-msg role="status" aria-live="polite"></p>
     </form>` : ""}
-    <div data-signin></div>`;
+    <div data-signin></div>
+    <div data-pathway></div>`;
   renderSignIn(root, e);
+  renderPathway(root, e);
+}
+
+/* ---- Role pathway: what this position needs to learn and read, granted only after approval ---- */
+function pathwayExpiry() {
+  const d = new Date(); d.setMonth(d.getMonth() + 6);
+  return d.toISOString().slice(0, 10);
+}
+
+async function renderPathway(root, e) {
+  const box = root.querySelector("[data-pathway]");
+  if (!box) return;
+  if (!can("training.manage")) { box.innerHTML = ""; return; }
+  box.innerHTML = '<h3>Role pathway</h3><p class="muted small">Loads the training and documents this position needs.</p><button type="button" class="secondary-action" data-load-pathway>Show role pathway</button>';
+  box.querySelector("[data-load-pathway]").addEventListener("click", () => loadPathway(box, e));
+}
+
+async function loadPathway(box, e) {
+  box.innerHTML = '<h3>Role pathway</h3><p class="muted small">Loading…</p>';
+  try {
+    const p = await api(config.adminFunction, { action: "pathway_get", employeeId: e.id });
+    if (p.needsPosition) { box.innerHTML = '<h3>Role pathway</h3><p class="muted">Set this person\'s position above first.</p>'; return; }
+    const mods = p.modules.map(m => `<label class="check-field"><input type="checkbox" data-pw-module="${safe(m.code)}" ${m.enabled || !m.published ? "disabled" : "checked"}>
+      <span><strong>${safe(m.title || m.code)}</strong> <small>${safe(m.code)}${m.requiredBeforeStart ? " · required before start" : ""}${!m.published ? " · not published yet" : m.passed ? " · theory passed" : m.enabled ? " · already enabled" : ""}</small></span></label>`).join("") || '<p class="muted small">No training modules are required for this position. Set them under Positions.</p>';
+    const folders = new Map();
+    const procs = p.processes.map(pr => {
+      for (const d of pr.documents) if (d.inIms && d.approved && !d.hasAccess) folders.set(d.folderId, d.folder);
+      return `<li data-pw-process="${safe(pr.code)}"><strong>${safe(pr.code)} · ${safe(pr.title)}</strong><small>${safe(pr.area)}</small>
+        <small>${pr.documents.map(d => !d.inIms ? `${safe(d.docNumber)} (not in IMS yet)` : !d.approved ? `${safe(d.docNumber)} (awaiting approval)` : `${safe(d.docNumber)}${d.hasAccess ? " ✓" : ""}`).join(" · ") || "No documents listed"}</small></li>`;
+    }).join("") || '<p class="muted small">No processes matched this position yet.</p>';
+    const folderChecks = [...folders].map(([id, name]) => `<label class="check-field"><input type="checkbox" data-pw-folder="${safe(id)}" checked><span>Viewer access to the <strong>${safe(name)}</strong> folder</span></label>`).join("");
+    box.innerHTML = `<h3>Role pathway · ${safe(p.employee.position)}</h3>
+      <p class="muted small">${p.saved ? "Using the saved process list for this position." : "Suggested by matching the position name to the Process Map roles. Review it, then save it for the position."}</p>
+      <h4>Training to enable</h4>${mods}
+      <h4>Processes this role is involved in</h4><ul class="list">${procs}</ul>
+      ${folderChecks ? `<h4>Document access to give</h4>${folderChecks}` : ""}
+      ${p.employee.hasLogin ? "" : '<p class="muted small">This person has no training login yet. Create one under Sign-in and access first.</p>'}
+      <div class="field"><label for="pw-expiry">Access ends after</label><input id="pw-expiry" type="date" value="${pathwayExpiry()}"></div>
+      <div class="form-actions"><button type="button" class="primary" data-pw-apply ${p.employee.hasLogin ? "" : "disabled"}>Grant ticked items</button>
+      ${can("people.manage") ? '<button type="button" class="secondary-action" data-pw-save>Save process list for this position</button>' : ""}</div>
+      <p class="form-message" data-pw-msg role="status" aria-live="polite"></p>`;
+    const msg = box.querySelector("[data-pw-msg]");
+    box.querySelector("[data-pw-apply]").addEventListener("click", async event => {
+      const btn = event.currentTarget; btn.disabled = true; msg.textContent = "Granting…";
+      try {
+        const r = await api(config.adminFunction, { action: "pathway_apply", employeeId: e.id,
+          moduleCodes: [...box.querySelectorAll("[data-pw-module]:checked")].map(i => i.dataset.pwModule),
+          folderIds: [...box.querySelectorAll("[data-pw-folder]:checked")].map(i => i.dataset.pwFolder),
+          expiresAt: endOfSydneyDayIso(box.querySelector("#pw-expiry").value) });
+        const failed = r.results.filter(x => !x.ok);
+        await loadPathway(box, e);
+        box.querySelector("[data-pw-msg]").textContent = failed.length
+          ? `${r.results.length - failed.length} granted. ${failed.length} could not be granted: ${failed.map(f => f.message).join("; ")}`
+          : `${r.results.length} item${r.results.length === 1 ? "" : "s"} granted and recorded.`;
+      } catch (error) { msg.textContent = friendlyError(error); btn.disabled = false; }
+    });
+    const save = box.querySelector("[data-pw-save]");
+    if (save) save.addEventListener("click", async () => {
+      save.disabled = true; msg.textContent = "Saving…";
+      try {
+        const r = await api(config.adminFunction, { action: "pathway_save_map", positionId: p.positionId, codes: p.processes.map(x => x.code) });
+        msg.textContent = `Saved ${r.saved} processes for this position.`;
+      } catch (error) { msg.textContent = friendlyError(error); }
+      save.disabled = false;
+    });
+  } catch (error) { box.innerHTML = `<h3>Role pathway</h3><p class="form-message">${safe(friendlyError(error))}</p>`; }
 }
 
 async function renderSignIn(root, e) {

@@ -1,6 +1,7 @@
 import { withSupabase } from "npm:@supabase/server@^1";
 import { corsHeaders, errorJson, httpError, json, rpc } from "../_shared/http.ts";
 import { peopleActions } from "./people.ts";
+import { pathwayApply, pathwayGet, pathwaySaveMap } from "./pathway.ts";
 import { accountActions, type Actor } from "./accounts.ts";
 import { personnelActions } from "./personnel.ts";
 import { generateTemporaryPassword } from "../_shared/accounts.ts";
@@ -75,6 +76,9 @@ const ACTION_PERMISSIONS: Record<string, string | string[]> = {
   module_ims_revisions: "training.manage",
   module_link_ims: "training.manage",
   module_access: "training.manage",
+  pathway_get: ["training.manage", "people.manage"],
+  pathway_apply: "training.manage",
+  pathway_save_map: "people.manage",
   people_reference: ["people.view", "people.manage", "access.manage", "hr.manage", "competency.all", "competency.team"],
   people_list: ["people.view", "people.manage", "access.manage", "hr.manage"],
   employee_save: "people.manage",
@@ -621,6 +625,9 @@ export default {
           case "module_ims_revisions": result = await imsTrainingRevisions(admin); break;
           case "module_link_ims": result = await linkImsRevision(admin, administrator, body); break;
           case "module_access": result = await moduleAccess(admin, body); break;
+          case "pathway_get": result = await pathwayGet(admin, administrator, body); break;
+          case "pathway_apply": result = await pathwayApply(admin, administrator, body); break;
+          case "pathway_save_map": result = await pathwaySaveMap(admin, administrator, body); break;
           default: result = await peopleActions[action](admin, administrator, body);
         }
       }
