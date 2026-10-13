@@ -159,8 +159,15 @@ async function loadPathway(box, e) {
         <small>${pr.documents.map(d => !d.inIms ? `${safe(d.docNumber)} (not in IMS yet)` : !d.approved ? `${safe(d.docNumber)} (awaiting approval)` : `${safe(d.docNumber)}${d.hasAccess ? " ✓" : ""}`).join(" · ") || "No documents listed"}</small></li>`;
     }).join("") || '<p class="muted small">No processes matched this position yet.</p>';
     const enabledMods = p.modules.filter(m => m.enabled);
+    // Role workshops published on this site, matched from the position name.
+    const WORKSHOPS = [
+      { match: /operations|director|managing/i, name: "Operations Manager and Director workshop", path: "../panalo-ops-director-workshop/" },
+      { match: /admin|support|controller|account/i, name: "Admin and Support Controller workshop", path: "../panalo-admin-workshop/" }
+    ];
+    const workshop = WORKSHOPS.find(w => w.match.test(p.employee.position || ""));
+    const workshopUrl = workshop ? new URL(workshop.path, config.appUrl).href : "";
     const moduleLink = m => new URL(`./modules/pp-trn-wld-001/?assignment=${encodeURIComponent(m.assignmentId)}`, config.appUrl).href;
-    const note = `Hi ${p.employee.fullName.split(" ")[0]},\n\nYou now have access to Panalo Pipes training${enabledMods.length ? ":\n\n" + enabledMods.map(m => `${m.title || m.code}\n${moduleLink(m)}`).join("\n\n") : "."}\n\nTraining portal: ${config.appUrl}\nSign in with your own account when asked.\n\nIf you can't sign in, reply to me and I will reset it.\n\nThanks`;
+    const note = `Hi ${p.employee.fullName.split(" ")[0]},\n\nYou now have access to Panalo Pipes training${enabledMods.length ? ":\n\n" + enabledMods.map(m => `${m.title || m.code}\n${moduleLink(m)}`).join("\n\n") : "."}${workshop ? `\n\nYour role workshop: ${workshop.name}\n${workshopUrl}` : ""}\n\nTraining portal: ${config.appUrl}\nSign in with your own account when asked.\n\nIf you can't sign in, reply to me and I will reset it.\n\nThanks`;
     const mailto = `mailto:${encodeURIComponent(p.employee.email || "")}?subject=${encodeURIComponent("Your Panalo Pipes training access")}&body=${encodeURIComponent(note)}`;
     const folderChecks = [...folders].map(([id, name]) => `<label class="check-field"><input type="checkbox" data-pw-folder="${safe(id)}" checked><span>Viewer access to the <strong>${safe(name)}</strong> folder</span></label>`).join("");
     box.innerHTML = `<h3>Role pathway · ${safe(p.employee.position)}</h3>
@@ -174,8 +181,9 @@ async function loadPathway(box, e) {
       ${can("people.manage") ? '<button type="button" class="secondary-action" data-pw-save>Save process list for this position</button>' : ""}</div>
       <p class="form-message" data-pw-msg role="status" aria-live="polite"></p>
       <h4>Tell them</h4>
-      ${enabledMods.length || p.employee.hasLogin ? `<p class="muted small">${enabledMods.length ? `${enabledMods.length} module${enabledMods.length === 1 ? " is" : "s are"} enabled for ${safe(p.employee.fullName)} right now.` : "No modules are enabled for them yet."} Status refreshes each time you grant or press Refresh.</p>
+      ${enabledMods.length || p.employee.hasLogin || workshopUrl ? `<p class="muted small">${enabledMods.length ? `${enabledMods.length} module${enabledMods.length === 1 ? " is" : "s are"} enabled for ${safe(p.employee.fullName)} right now.` : "No modules are enabled for them yet."} Status refreshes each time you grant or press Refresh.</p>
       <div class="form-actions">${p.employee.email ? `<a class="secondary-action" data-pw-mail href="${safe(mailto)}">Email them</a>` : ""}
+      ${workshopUrl ? `<a class="secondary-action" href="${safe(workshopUrl)}" target="_blank" rel="noopener">Open ${safe(workshop.name)}</a>` : ""}
       <button type="button" class="secondary-action" data-pw-copy>Copy link and message</button>
       <button type="button" class="secondary-action" data-pw-refresh>Refresh status</button></div>` : ""}`;
     const msg = box.querySelector("[data-pw-msg]");
