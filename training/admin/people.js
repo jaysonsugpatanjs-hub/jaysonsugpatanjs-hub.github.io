@@ -131,6 +131,20 @@ function renderEditor(root) {
   renderPathway(root, e);
 }
 
+// Role workshops on this site (public pages). `match` picks the ones to tick for a position.
+const WORKSHOPS = [
+  { name: "Operations Manager & Director (Managing Director, Operations and Projects Manager)", path: "../panalo-ops-director-workshop/", match: /managing|director|operations|project/i },
+  { name: "IMS and QHSE Manager", path: "../panalo-ims-qhse-workshop/", match: /ims|qhse|quality manager|whs manager/i },
+  { name: "Responsible Welding Coordinator", path: "../panalo-welding-coordinator-workshop/", match: /welding coordinator|responsible welding/i },
+  { name: "Workshop or Site Supervisor", path: "../panalo-supervisor-workshop/", match: /supervisor|foreman|leading hand/i },
+  { name: "QA QC Inspector", path: "../panalo-qaqc-inspector-workshop/", match: /inspector|qa\s*qc|qaqc/i },
+  { name: "Document Control and Training Administrator", path: "../panalo-doc-control-training-workshop/", match: /document control|training admin/i },
+  { name: "Procurement and Supplier Coordinator", path: "../panalo-procurement-workshop/", match: /procurement|supplier|purchas/i },
+  { name: "HSR or Worker Representative", path: "../panalo-hsr-workshop/", match: /hsr|worker rep|health and safety rep/i },
+  { name: "Qualified Welders and Fabricators", path: "../panalo-welders-fabricators-workshop/", match: /welder|fabricator|boilermaker/i },
+  { name: "Admin and Support Controller", path: "../panalo-admin-workshop/", match: /admin(?!istrator)|support controller|accounts/i }
+];
+
 /* ---- Role pathway: what this position needs to learn and read, granted only after approval ---- */
 function pathwayExpiry() {
   const d = new Date(); d.setMonth(d.getMonth() + 6);
@@ -159,16 +173,14 @@ async function loadPathway(box, e) {
         <small>${pr.documents.map(d => !d.inIms ? `${safe(d.docNumber)} (not in IMS yet)` : !d.approved ? `${safe(d.docNumber)} (awaiting approval)` : `${safe(d.docNumber)}${d.hasAccess ? " ✓" : ""}`).join(" · ") || "No documents listed"}</small></li>`;
     }).join("") || '<p class="muted small">No processes matched this position yet.</p>';
     const enabledMods = p.modules.filter(m => m.enabled);
-    // Role workshops published on this site, matched from the position name.
-    const WORKSHOPS = [
-      { match: /operations|director|managing/i, name: "Operations Manager and Director workshop", path: "../panalo-ops-director-workshop/" },
-      { match: /admin|support|controller|account/i, name: "Admin and Support Controller workshop", path: "../panalo-admin-workshop/" }
-    ];
-    const workshop = WORKSHOPS.find(w => w.match.test(p.employee.position || ""));
-    const workshopUrl = workshop ? new URL(workshop.path, config.appUrl).href : "";
+    // Role workshops published on this site. The matching ones are ticked; the admin can change the selection.
+    const workshops = WORKSHOPS.map(w => ({ ...w, url: new URL(w.path, config.appUrl).href, suggested: w.match.test(p.employee.position || "") }));
+    const chosenWorkshops = () => [...box.querySelectorAll("[data-pw-workshop]")].filter(i => i.checked).map(i => workshops[Number(i.dataset.pwWorkshop)]);
+    const buildNote = () => {
+      const picked = chosenWorkshops();
+      return `Hi ${p.employee.fullName.split(" ")[0]},\n\nYou now have access to Panalo Pipes training${enabledMods.length ? ":\n\n" + enabledMods.map(m => `${m.title || m.code}\n${moduleLink(m)}`).join("\n\n") : "."}${picked.length ? "\n\nYour role workshop" + (picked.length > 1 ? "s" : "") + ":\n\n" + picked.map(w => `${w.name}\n${w.url}`).join("\n\n") : ""}\n\nTraining portal: ${config.appUrl}\nSign in with your own account when asked.\n\nIf you can't sign in, reply to me and I will reset it.\n\nThanks`;
+    };
     const moduleLink = m => new URL(`./modules/pp-trn-wld-001/?assignment=${encodeURIComponent(m.assignmentId)}`, config.appUrl).href;
-    const note = `Hi ${p.employee.fullName.split(" ")[0]},\n\nYou now have access to Panalo Pipes training${enabledMods.length ? ":\n\n" + enabledMods.map(m => `${m.title || m.code}\n${moduleLink(m)}`).join("\n\n") : "."}${workshop ? `\n\nYour role workshop: ${workshop.name}\n${workshopUrl}` : ""}\n\nTraining portal: ${config.appUrl}\nSign in with your own account when asked.\n\nIf you can't sign in, reply to me and I will reset it.\n\nThanks`;
-    const mailto = `mailto:${encodeURIComponent(p.employee.email || "")}?subject=${encodeURIComponent("Your Panalo Pipes training access")}&body=${encodeURIComponent(note)}`;
     const folderChecks = [...folders].map(([id, name]) => `<label class="check-field"><input type="checkbox" data-pw-folder="${safe(id)}" checked><span>Viewer access to the <strong>${safe(name)}</strong> folder</span></label>`).join("");
     box.innerHTML = `<h3>Role pathway · ${safe(p.employee.position)}</h3>
       <p class="muted small">${p.saved ? "Using the saved process list for this position." : "Suggested by matching the position name to the Process Map roles. Review it, then save it for the position."}</p>
@@ -180,15 +192,20 @@ async function loadPathway(box, e) {
       <div class="form-actions"><button type="button" class="primary" data-pw-apply ${p.employee.hasLogin ? "" : "disabled"}>Grant ticked items</button>
       ${can("people.manage") ? '<button type="button" class="secondary-action" data-pw-save>Save process list for this position</button>' : ""}</div>
       <p class="form-message" data-pw-msg role="status" aria-live="polite"></p>
+      <h4>Workshops they can access</h4>
+      <p class="muted small">Tick the role workshops to send. The ones matching this position are ticked for you.</p>
+      <div class="list">${workshops.map((w, i) => `<label class="check-field"><input type="checkbox" data-pw-workshop="${i}" ${w.suggested ? "checked" : ""}><span><strong>${safe(w.name)}</strong> <small><a href="${safe(w.url)}" target="_blank" rel="noopener">Open</a></small></span></label>`).join("")}</div>
       <h4>Tell them</h4>
-      ${enabledMods.length || p.employee.hasLogin || workshopUrl ? `<p class="muted small">${enabledMods.length ? `${enabledMods.length} module${enabledMods.length === 1 ? " is" : "s are"} enabled for ${safe(p.employee.fullName)} right now.` : "No modules are enabled for them yet."} Status refreshes each time you grant or press Refresh.</p>
-      <div class="form-actions">${p.employee.email ? `<a class="secondary-action" data-pw-mail href="${safe(mailto)}">Email them</a>` : ""}
-      ${workshopUrl ? `<a class="secondary-action" href="${safe(workshopUrl)}" target="_blank" rel="noopener">Open ${safe(workshop.name)}</a>` : ""}
+      <p class="muted small">${enabledMods.length ? `${enabledMods.length} module${enabledMods.length === 1 ? " is" : "s are"} enabled for ${safe(p.employee.fullName)} right now.` : "No modules are enabled for them yet."} Status refreshes each time you grant or press Refresh.</p>
+      <div class="form-actions">${p.employee.email ? '<a class="secondary-action" data-pw-mail href="#">Email them</a>' : ""}
       <button type="button" class="secondary-action" data-pw-copy>Copy link and message</button>
-      <button type="button" class="secondary-action" data-pw-refresh>Refresh status</button></div>` : ""}`;
+      <button type="button" class="secondary-action" data-pw-refresh>Refresh status</button></div>`;
     const msg = box.querySelector("[data-pw-msg]");
+    const mailHref = () => `mailto:${encodeURIComponent(p.employee.email || "")}?subject=${encodeURIComponent("Your Panalo Pipes training access")}&body=${encodeURIComponent(buildNote())}`;
+    const mail = box.querySelector("[data-pw-mail]");
+    if (mail) { mail.href = mailHref(); box.querySelectorAll("[data-pw-workshop]").forEach(i => i.addEventListener("change", () => { mail.href = mailHref(); })); }
     box.querySelector("[data-pw-copy]")?.addEventListener("click", async () => {
-      try { await navigator.clipboard.writeText(note); msg.textContent = "Copied. Paste it into a message to them."; }
+      try { await navigator.clipboard.writeText(buildNote()); msg.textContent = "Copied. Paste it into a message to them."; }
       catch { msg.textContent = "Copy was blocked by the browser. Use Email them instead."; }
     });
     box.querySelector("[data-pw-refresh]")?.addEventListener("click", () => loadPathway(box, e));
