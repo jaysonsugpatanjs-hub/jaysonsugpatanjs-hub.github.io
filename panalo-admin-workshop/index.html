@@ -1,0 +1,503 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Panalo Admin Workshop</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: sticky charcoal header, left task nav (top strip on phones), one working column of "row cards": facts on the left, drop-down answer on the right. */
+:root{
+  --bg:#F1F0ED; --surface:#FFFFFF; --ink:#25221E; --muted:#68625A; --line:#D9D5CC;
+  --accent:#8E6A1E; --accent-fill:#B58D3B; --hdr-bg:#2F2E2C; --hdr-fg:#F4F1EA; --hdr-muted:#B9B2A5;
+  --input-bg:#FFF3CF; --input-ink:#1B3FA6; --input-line:#D8BE73;
+  --good:#1D6A2D; --good-bg:#DCEEDC; --bad:#A3261D; --bad-bg:#F6DCD8; --chip:#ECE8DF;
+  --font-display:'Barlow Semi Condensed','Arial Narrow',Arial,sans-serif;
+  --font-body:'IBM Plex Sans',Arial,sans-serif;
+  --font-mono:'IBM Plex Mono',Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#1A1917; --surface:#252320; --ink:#EDE9E0; --muted:#A59E92; --line:#3B3833;
+  --accent:#D8B056; --accent-fill:#B58D3B; --hdr-bg:#100F0E; --hdr-fg:#F4F1EA; --hdr-muted:#9B9488;
+  --input-bg:#3A3220; --input-ink:#A9C0FF; --input-line:#6B5A2C;
+  --good:#86D395; --good-bg:#1E3A26; --bad:#FF9E95; --bad-bg:#4A2220; --chip:#312E29; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1A1917; --surface:#252320; --ink:#EDE9E0; --muted:#A59E92; --line:#3B3833;
+  --accent:#D8B056; --accent-fill:#B58D3B; --hdr-bg:#100F0E; --hdr-fg:#F4F1EA; --hdr-muted:#9B9488;
+  --input-bg:#3A3220; --input-ink:#A9C0FF; --input-line:#6B5A2C;
+  --good:#86D395; --good-bg:#1E3A26; --bad:#FF9E95; --bad-bg:#4A2220; --chip:#312E29; color-scheme:dark}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:15px;line-height:1.5}
+*{box-sizing:border-box}
+a{color:var(--accent)}
+h1,h2,h3{font-family:var(--font-display);font-weight:700;line-height:1.15;text-wrap:balance;margin:0}
+:focus-visible{outline:2px solid var(--accent-fill);outline-offset:2px}
+
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--hdr-bg);color:var(--hdr-fg);border-bottom:3px solid var(--accent-fill)}
+.top-in{max-width:1180px;margin:0 auto;padding:10px 16px;display:flex;gap:16px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.brand{display:flex;flex-direction:column;min-width:0}
+.brand b{font-family:var(--font-display);font-size:1.15rem;letter-spacing:.02em}
+.brand span{font-size:.78rem;color:var(--hdr-muted)}
+.meter{display:flex;align-items:center;gap:10px;font-size:.8rem;color:var(--hdr-muted)}
+.meter .bar{width:140px;height:8px;background:#ffffff26;border-radius:4px;overflow:hidden}
+.meter .bar i{display:block;height:100%;background:var(--accent-fill);width:0;transition:width .3s}
+.meter strong{color:var(--hdr-fg);font-variant-numeric:tabular-nums}
+
+.shell{max-width:1180px;margin:0 auto;padding-inline:16px;padding-block:20px 64px;display:grid;grid-template-columns:230px minmax(0,1fr);gap:28px}
+nav.side{position:sticky;top:calc(env(safe-area-inset-top,0px) + 76px);align-self:start;display:flex;flex-direction:column;gap:2px}
+nav.side a{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:8px 10px;border-radius:6px;text-decoration:none;color:var(--ink);font-weight:500;font-size:.9rem}
+nav.side a:hover{background:var(--chip)}
+nav.side a[aria-current="page"]{background:var(--hdr-bg);color:var(--hdr-fg)}
+nav.side .sec{font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:12px 10px 4px}
+nav.side .badge{font-family:var(--font-mono);font-size:.72rem;opacity:.85;white-space:nowrap}
+nav.side .badge.done{color:var(--good)}
+nav.side a[aria-current="page"] .badge.done{color:#8FE0A0}
+main{min-width:0}
+
+.pagehead{display:flex;gap:16px;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;margin-bottom:18px}
+.eyebrow{font-size:.74rem;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);font-weight:600;margin:0 0 4px}
+h1{font-size:2rem}
+h2{font-size:1.2rem;margin-bottom:10px}
+.lead{color:var(--muted);max-width:68ch;margin:6px 0 0}
+.score{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 14px;text-align:center;min-width:110px}
+.score b{display:block;font-family:var(--font-display);font-size:1.6rem;font-variant-numeric:tabular-nums}
+.score span{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px 18px;margin-bottom:18px}
+.brief{display:grid;grid-template-columns:110px minmax(0,1fr);gap:10px 16px;margin:0}
+.brief dt{font-weight:600;color:var(--accent);font-size:.82rem;text-transform:uppercase;letter-spacing:.06em;padding-top:2px}
+.brief dd{margin:0;min-width:0}
+.brief ul{margin:0;padding-left:1.1em}
+.mono{font-family:var(--font-mono);font-size:.86em}
+
+.rows{display:flex;flex-direction:column;gap:10px;margin-bottom:22px}
+.row{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px 14px;display:grid;grid-template-columns:minmax(0,1fr) minmax(210px,290px);gap:12px 20px;align-items:start}
+.row.ok{border-color:var(--good)}
+.row.no{border-color:var(--bad)}
+.row-head{font-weight:600}
+.row-head small{display:block;font-weight:400;color:var(--muted);font-size:.84rem}
+.facts{display:flex;flex-wrap:wrap;gap:6px 18px;margin:8px 0 0}
+.facts div{min-width:0}
+.facts dt{font-size:.68rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+.facts dd{margin:0;font-variant-numeric:tabular-nums}
+.row-answer label{display:block;font-size:.68rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:3px}
+select,input[type=number],input[type=text],textarea{width:100%;font:inherit;padding:8px 10px;border-radius:6px;border:1px solid var(--input-line);background:var(--input-bg);color:var(--input-ink);font-weight:500}
+textarea{min-height:76px;resize:vertical}
+select{appearance:auto}
+.status{margin:6px 0 0;font-size:.84rem;min-height:1.2em}
+.status.ok{color:var(--good)}
+.status.no{color:var(--bad)}
+.status b{display:inline-block;padding:1px 7px;border-radius:4px;margin-right:6px;font-size:.8rem}
+.status.ok b{background:var(--good-bg)}
+.status.no b{background:var(--bad-bg)}
+.status span{color:var(--muted)}
+
+.ledger{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+.ledger td{padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+.ledger td:nth-child(2){text-align:right;font-weight:600;white-space:nowrap}
+.ledger td:nth-child(3){color:var(--muted);font-size:.86rem}
+.hint{color:var(--muted);font-size:.86rem;margin:8px 0 12px}
+.settings{display:flex;gap:18px;flex-wrap:wrap;align-items:end}
+.settings div{min-width:140px;flex:1 1 160px;max-width:260px}
+.settings .fixed{padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:var(--chip);font-weight:600}
+
+.btn{font:inherit;font-weight:600;padding:8px 14px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer;text-decoration:none;display:inline-block}
+.btn:hover{border-color:var(--accent-fill)}
+.btn.primary{background:var(--hdr-bg);color:var(--hdr-fg);border-color:var(--hdr-bg)}
+.btn.warn{border-color:var(--bad);color:var(--bad)}
+.foot{display:flex;gap:10px;flex-wrap:wrap;justify-content:space-between;margin-top:6px}
+
+.cols5{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}
+.q5{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px 14px}
+.q5 b{display:block;font-family:var(--font-display);font-size:1.05rem;margin-bottom:4px}
+.q5 p{margin:0;color:var(--muted);font-size:.9rem}
+.legend{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.sw{display:flex;gap:10px;align-items:center;font-size:.9rem}
+.sw i{flex:none;width:46px;height:26px;border-radius:5px;border:1px solid var(--line);display:grid;place-items:center;font-style:normal;font-size:.75rem;font-weight:600}
+.tbl-wrap{overflow-x:auto}
+table.prog{width:100%;border-collapse:collapse;min-width:520px;font-variant-numeric:tabular-nums}
+table.prog th{font-size:.7rem;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);text-align:left;padding:6px 8px;border-bottom:2px solid var(--line)}
+table.prog td{padding:8px;border-bottom:1px solid var(--line)}
+.pill{display:inline-block;padding:1px 9px;border-radius:99px;font-size:.78rem;font-weight:600;background:var(--chip)}
+.pill.done{background:var(--good-bg);color:var(--good)}
+.signoff{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.signoff label{display:block;font-size:.72rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:3px}
+.signoff .wide{grid-column:1/-1}
+.example{display:grid;grid-template-columns:minmax(0,1fr) minmax(210px,290px);gap:12px 20px;align-items:center;border:1px dashed var(--line);border-radius:8px;padding:12px 14px}
+.example .fake{padding:8px 10px;border-radius:6px;border:1px solid var(--input-line);background:var(--input-bg);color:var(--input-ink);font-weight:500}
+
+.proc{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px 16px;margin-bottom:10px}
+.proc header{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;margin-bottom:8px}
+.proc header .mono{background:var(--hdr-bg);color:var(--hdr-fg);padding:1px 8px;border-radius:4px}
+.proc h3{font-size:1.1rem}
+.proc .role{color:var(--muted);font-size:.86rem;margin-left:auto}
+.proc .g{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px 20px}
+.proc h4{margin:0 0 3px;font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--accent)}
+.proc ul{margin:0;padding-left:1.1em}
+.proc p{margin:0}
+.proc .note{margin-top:8px;font-size:.84rem;color:var(--muted)}
+.search{max-width:420px;margin-bottom:14px}
+
+.rt{display:flex;flex-direction:column;gap:8px}
+.rt label{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;align-items:start;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 14px;cursor:pointer}
+.rt input{margin-top:4px;width:18px;height:18px;accent-color:var(--accent-fill)}
+.rt .when{font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--accent);font-weight:600}
+.rt .meta{color:var(--muted);font-size:.85rem}
+.rt label:has(input:checked){background:var(--good-bg);border-color:var(--good)}
+
+.keyitem{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr) minmax(0,1.4fr);gap:6px 16px;padding:8px 0;border-bottom:1px solid var(--line)}
+.keyitem b{font-weight:600}
+.keyitem small{color:var(--muted)}
+
+@media (max-width:899px){
+  .shell{grid-template-columns:minmax(0,1fr);gap:14px;padding-block:14px 48px}
+  nav.side{position:static;flex-direction:row;overflow-x:auto;gap:6px;padding-bottom:6px}
+  nav.side a{white-space:nowrap;background:var(--surface);border:1px solid var(--line)}
+  nav.side .sec{display:none}
+  h1{font-size:1.6rem}
+}
+@media (max-width:640px){
+  .row,.example{grid-template-columns:minmax(0,1fr)}
+  .brief{grid-template-columns:minmax(0,1fr);gap:2px}
+  .brief dd{margin-bottom:10px}
+  .keyitem{grid-template-columns:minmax(0,1fr)}
+  .meter .bar{width:90px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+<style>html{color-scheme:light}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<header class="top"><div class="top-in">
+  <div class="brand"><b>Panalo Pipes · Admin &amp; Support Controller</b><span>Hands-on workshop · sample data only</span></div>
+  <div class="meter" aria-label="Overall progress"><span>Overall</span><div class="bar"><i id="mbar"></i></div><strong id="mtxt">0 / 0</strong></div>
+</div></header>
+<div class="shell">
+  <nav class="side" id="nav" aria-label="Workshop sections"></nav>
+  <main id="main" tabindex="-1"></main>
+</div>
+
+<script>
+const PROCS = [{"id": "P086", "title": "Supplier invoices, payment approval and banking", "role": "Admin / Accounts", "read": ["PP-QMS-PRO-007 – Purchasing Supplier and Subcontractor Control", "PP-QMS-PRO-001 – Documented Information and Records Control", "PP-QMS-FRM-001-F08 – Purchase Order Technical and Quality Checklist", "PP-QMS-FRM-001-F09 – Incoming Material and Service Inspection"], "fill": ["No IMS form identified; use the supporting records listed."], "approver": "Independent authorised financial approver", "stop": "Match PO, receipt and invoice; verify payee change and delegated authority before payment.", "note": "Record Gap G08: no accounting forms are in the pack. Use the finance system.", "task": "t1"}, {"id": "P028", "title": "Purchasing and technical order review", "role": "Procurement / Admin", "read": ["PP-QMS-PRO-007 – Purchasing Supplier and Subcontractor Control", "PP-QMS-FRM-001-F05 – Tender Contract and Technical Review", "PP-ENG-DRW-[JOB]-[SEQ] – Controlled Drawings and Shop Details"], "fill": ["PP-QMS-FRM-001-F08 – Purchase Order Technical and Quality Checklist"], "approver": "Budget approver and technical reviewer", "stop": "Specify grade, product / service, certificates, delivery and technical flow-down.", "note": "", "task": "t1"}, {"id": "P084", "title": "Timesheet, attendance and payroll preparation", "role": "Admin / Payroll", "read": ["PP-IMS-MTX-001 – Roles Responsibilities and Authorities Matrix", "PP-QMS-PRO-001 – Documented Information and Records Control", "PP-WHS-FRM-001-F34 – Contractor and Labour Hire Mobilisation and Performance"], "fill": ["PP-HR-FRM-001 – New Employee Onboarding Form"], "approver": "Supervisor, management and authorised payroll officer", "stop": "Reconcile approved hours / allowances to engagement terms; payroll calculations and payment require authorised review.", "note": "Record Gap G07: no timesheet or payroll template is in the pack. Use the payroll system and keep it restricted.", "task": "t2"}, {"id": "P085", "title": "Customer invoicing and progress claims", "role": "Admin / Accounts", "read": ["PP-QMS-FRM-001-F05 – Tender Contract and Technical Review", "PP-QMS-PRO-001 – Documented Information and Records Control", "PP-QMS-FRM-001-F14 – Dimensional Final Inspection and Release", "PP-QMS-REG-013 – MDR and QA Dossier Index"], "fill": ["No IMS form identified; use the supporting records listed."], "approver": "Operations and authorised financial approver", "stop": "Match approved scope, completed work / hours and contract billing conditions before issue.", "note": "Record Gap G08: no accounting forms are in the pack. Use the finance system.", "task": "t3"}, {"id": "P008", "title": "Document creation, revision and controlled issue", "role": "Document Control / document owner", "read": ["PP-QMS-PRO-001 – Documented Information and Records Control", "PP-IMS-REG-001 – Document Redundancy Comparison and ISO Gap Register"], "fill": ["PP-QMS-FRM-001-F01 – Document Creation and Change Request", "PP-IMS-REG-002 – Consolidated Master Document Register"], "approver": "Technical reviewer and delegated approver", "stop": "Confirm one current approved version; withdraw obsolete copies and communicate changes.", "note": "", "task": "t4"}, {"id": "P009", "title": "External standards and drawing issue control", "role": "Document Control / Engineering", "read": ["PP-QMS-PRO-001 – Documented Information and Records Control", "PP-QMS-PRO-006 – Design Interface and Engineering Change"], "fill": ["PP-IMS-REG-006 – External Documents Standards and Client Requirements Register", "PP-ENG-DRW-[JOB]-[SEQ] – Controlled Drawings and Shop Details"], "approver": "Competent technical reviewer", "stop": "Confirm applicable edition, drawing status, distribution and removal of superseded copies.", "note": "", "task": "t4"}, {"id": "P020", "title": "Recruitment, engagement and employment conditions", "role": "HR / Admin", "read": ["PP-IMS-MTX-001 – Roles Responsibilities and Authorities Matrix", "PP-QMS-PRO-004 – Competence Induction and Awareness", "PP-WHS-PRO-006 – Site Work Contractors Permits and HRCW"], "fill": ["PP-HR-FRM-001 – New Employee Onboarding Form"], "approver": "Managing Director / HR", "stop": "Verify identity, engagement terms and required credentials.", "note": "", "task": "t5"}, {"id": "P021", "title": "Employee onboarding and confidential personnel file", "role": "HR / Admin", "read": ["PP-QMS-PRO-004 – Competence Induction and Awareness", "PP-QMS-PRO-001 – Documented Information and Records Control"], "fill": ["PP-HR-FRM-001 – New Employee Onboarding Form", "PP-WHS-REG-013 – Training and Competency Matrix"], "approver": "HR / Manager", "stop": "Collect declarations and verified employment details; restrict personnel-file access.", "note": "", "task": "t5"}, {"id": "P025", "title": "Contractor and labour-hire selection / deployment", "role": "Operations / WHS / Admin", "read": ["PP-QMS-PRO-007 – Purchasing Supplier and Subcontractor Control", "PP-WHS-PRO-006 – Site Work Contractors Permits and HRCW", "PP-QMS-PRO-004 – Competence Induction and Awareness"], "fill": ["PP-QMS-FRM-001-F07 – Supplier and Subcontractor Evaluation and Approval", "PP-WHS-FRM-001-F34 – Contractor and Labour Hire Mobilisation and Performance", "PP-WHS-FRM-001-F33 – Site Mobilisation and HRCW Screening Checklist"], "approver": "Host client and Operations Manager", "stop": "Verify scope, insurance, credentials, induction, supervision and host responsibilities.", "note": "", "task": "t5"}, {"id": "P010", "title": "Record retention, access and disposal", "role": "Document Control / record custodian", "read": ["PP-QMS-PRO-001 – Documented Information and Records Control"], "fill": ["PP-QMS-FRM-001-F38 – Records Archive Retention and Disposal"], "approver": "Record owner / delegated approver", "stop": "Apply authorised periods, confidentiality and disposal approval.", "note": "", "task": "t6"}, {"id": "P090", "title": "Inventory stocktake and stores reconciliation", "role": "Stores / Procurement", "read": ["PP-QMS-PRO-009 – Material Identification Traceability and Preservation", "PP-QMS-PRO-007 – Purchasing Supplier and Subcontractor Control"], "fill": ["PP-QMS-REG-005 – Material and Heat Traceability Register", "PP-QMS-REG-016 – Customer and External Provider Property Register", "PP-QMS-FRM-001-F17 – Nonconformance Report"], "approver": "Operations / Quality", "stop": "Reconcile actual stock and identity; investigate discrepancies without changing verified certificate or traceability links.", "note": "", "task": "t7"}, {"id": "P093", "title": "Business registration, insurance and client prequalification renewal", "role": "Admin / Management", "read": ["PP-QMS-PRO-002 – Context Interested Parties and Compliance Obligations", "PP-QMS-PRO-005 – Tender Contract and Technical Review", "PP-IMS-SCP-001 – Integrated Management System Scope and Applicability"], "fill": ["PP-IMS-REG-003 – Legal and Other Requirements Register", "PP-QMS-FRM-001-F03 – Legal and Other Requirements Compliance Evaluation", "PP-IMS-REG-006 – External Documents Standards and Client Requirements Register"], "approver": "Management / competent adviser / client", "stop": "Verify scope, currency, conditions and evidence of accepted coverage / qualification.", "note": "", "task": "t8"}, {"id": "P088", "title": "Employee / contractor demobilisation and offboarding", "role": "Operations / HR / Admin", "read": ["PP-QMS-PRO-001 – Documented Information and Records Control", "PP-WHS-PRO-006 – Site Work Contractors Permits and HRCW", "PP-IMS-MTX-001 – Roles Responsibilities and Authorities Matrix"], "fill": ["PP-WHS-FRM-001-F34 – Contractor and Labour Hire Mobilisation and Performance", "PP-QMS-REG-016 – Customer and External Provider Property Register", "PP-QMS-FRM-001-F38 – Records Archive Retention and Disposal"], "approver": "Host client / Manager", "stop": "Return property, close access, reconcile hours and retain authorised records.", "note": "", "task": ""}, {"id": "P091", "title": "IT access, record backup and business continuity", "role": "System administrator / record custodian", "read": ["PP-QMS-PRO-001 – Documented Information and Records Control", "PP-IMS-MTX-001 – Roles Responsibilities and Authorities Matrix", "PP-QMS-PRO-003 – Risk Opportunity Objectives and Change"], "fill": ["PP-IMS-REG-004 – Integrated Risk and Opportunity Register", "PP-QMS-FRM-001-F01 – Document Creation and Change Request", "PP-QMS-FRM-001-F38 – Records Archive Retention and Disposal"], "approver": "Management / system owner", "stop": "Approve access, protect records and verify recovery / continuity arrangements before relying on them.", "note": "", "task": ""}, {"id": "P027", "title": "Supplier and specialist-provider approval", "role": "Procurement / Quality", "read": ["PP-QMS-PRO-007 – Purchasing Supplier and Subcontractor Control", "PP-QMS-FRM-001-F05 – Tender Contract and Technical Review"], "fill": ["PP-QMS-FRM-001-F07 – Supplier and Subcontractor Evaluation and Approval", "PP-QMS-REG-003 – Approved Supplier Register"], "approver": "Quality / technical owner", "stop": "Verify scope-specific competence, certificates and technical ability.", "note": "", "task": ""}];
+const KEY = 'panalo-admin-workshop-v1';
+let S = {a:{}, win:60, target:80, so:{}, rt:{}};
+try { const r = JSON.parse(localStorage.getItem(KEY)||'null'); if (r) S = Object.assign(S, r); } catch(e){}
+function save(){ try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){} }
+const money = n => (n<0?'-':'')+'$'+Math.abs(n).toLocaleString('en-AU');
+const sgn = n => n===0 ? '–' : (n>0?'+':'') + n;
+const $ = s => document.querySelector(s);
+
+/* ---------- task data ---------- */
+const O = {pay:['Pay','Hold - query','Hold - verify bank'], ts:['Release to payroll','Hold - get approval','Hold - query hours'],
+  doc:['No action needed','Withdraw superseded copy','Log in REG-006','Raise F01 change request','Escalate - not approved'],
+  ns:['OK - on file','Chase before start','Not required'], loc:['Restricted HR / finance system','Project / process file','Controlled document folder'],
+  stk:['No action','Investigate','Raise NCR (F17)'], yn:['Yes','No']};
+const ASAT = Date.UTC(2026,9,13);
+const days = (y,m,d) => Math.round((Date.UTC(y,m-1,d)-ASAT)/86400000);
+const dfmt = (y,m,d) => new Date(Date.UTC(y,m-1,d)).toLocaleDateString('en-AU',{day:'2-digit',month:'short',year:'numeric',timeZone:'UTC'});
+const CV=48000, V1=3200, V2=1500, PCT=0.6, PREV=20000;
+
+function inv(id,no,sup,po,val,rec,paid,bank,key,why){return {id:'t1-'+id,head:no,sub:sup+' · '+po,
+  facts:[['PO value',money(val[0])],['Goods received',rec],['Invoice value',money(val[1])],['Bank details changed?',bank],['Variance',val[1]-val[0]===0?'–':sgn(val[1]-val[0])]],
+  label:'Your decision',options:O.pay,key,why};}
+function ts(id,w,ro,t,ap,note,key,why){return {id:'t2-'+id,head:w,sub:note,facts:[['Roster hours',ro],['Timesheet hours',t],['Supervisor approved?',ap],['Variance (hrs)',sgn(t-ro)]],label:'Your decision',options:O.ts,key,why};}
+
+const TASKS = [
+{id:'t1',num:1,title:'Supplier invoice check before payment',procs:'P028 · P086',mins:25,
+ brief:[['Scenario','It is Thursday. Six supplier invoices have arrived for payment. You prepare the payment list. You are not the person who approves it.'],
+  ['Read first','<ul><li><span class="mono">PP-QMS-PRO-007</span> Purchasing Supplier and Subcontractor Control</li><li><span class="mono">PP-QMS-FRM-001-F08</span> Purchase Order Technical and Quality Checklist</li><li><span class="mono">PP-QMS-FRM-001-F09</span> Incoming Material and Service Inspection</li></ul>'],
+  ['Your job','Compare each invoice with the PO and with what was received. Choose Pay, Hold - query, or Hold - verify bank.'],
+  ['Stop rule','Match PO, receipt and invoice. Verify any payee change and delegated authority before payment. No IMS accounting form exists, so record in the finance system (Record Gap G08).']],
+ rowsTitle:'Step 1 · Invoice list',
+ rows:[inv('r1','INV-1001','Sample Steel Supply','PO-5001',[2400,2400],'Full',0,'No','Pay','PO, receipt and invoice agree and nothing else is unusual.'),
+  inv('r2','INV-1002','Sample Fasteners','PO-5002',[8750,9250],'Full',0,'No','Hold - query','Invoice is $500 over the PO. Query the supplier before paying.'),
+  inv('r3','INV-1003','Sample Gases','PO-5003',[1180,1180],'None',0,'No','Hold - query','Nothing has been received, so there is no receipt to match.'),
+  inv('r4','INV-1004','Sample Coatings','PO-5004',[3300,3300],'Full',0,'Yes','Hold - verify bank','Bank details changed. Verify with the supplier using contact details already on file.'),
+  inv('r5','INV-1005','Sample Pipe Fittings','PO-5005',[6000,6000],'Partial',0,'No','Hold - query','Only part was received but the invoice is for the full PO value.'),
+  inv('r6','INV-1006','Sample Consumables','PO-5006',[960,960],'Full',0,'No','Pay','PO, receipt and invoice agree and nothing else is unusual.')],
+ qs:[{id:'t1-q1',head:'Who must approve the payment run before money leaves the bank?',options:['Independent authorised financial approver','The person who entered the invoices','Any supervisor'],key:'Independent authorised financial approver',why:'Payment needs an independent authorised financial approver (P086).'},
+  {id:'t1-q2',head:'A supplier emails new bank details with an invoice. What is your first step?',options:['Verify with the supplier using contact details already on file','Update the supplier file and pay','Ask the email sender to confirm by reply'],key:'Verify with the supplier using contact details already on file',why:'Never trust contact details in the same email. Use the details already on file.'}]},
+{id:'t2',num:2,title:'Timesheets before the pay run',procs:'P084',mins:20,
+ brief:[['Scenario','It is pay-run day. You prepare timesheets for payroll. Hours must match the roster or have a reason on file.'],
+  ['Read first','<ul><li><span class="mono">PP-IMS-MTX-001</span> Roles Responsibilities and Authorities Matrix</li><li><span class="mono">PP-QMS-PRO-001</span> Documented Information and Records Control</li><li><span class="mono">PP-WHS-FRM-001-F34</span> Contractor and Labour Hire Mobilisation and Performance</li></ul>'],
+  ['Your job','For each worker choose Release to payroll, Hold - get approval, or Hold - query hours.'],
+  ['Stop rule','Reconcile approved hours and allowances to engagement terms. Payroll calculations and payment need authorised review. The pack has no payroll template (Record Gap G07).']],
+ rowsTitle:'Step 1 · Timesheet list',
+ rows:[ts('r1','Worker 1',76,76,'Yes','No note.','Release to payroll','Hours agree with the roster and the supervisor approved.'),
+  ts('r2','Worker 2',76,84,'Yes','No overtime approval or leave record attached.','Hold - query hours','An extra 8 hours with no approval or reason on file.'),
+  ts('r3','Worker 3',76,76,'No','Supervisor has not signed yet.','Hold - get approval','Hours agree, but there is no supervisor approval.'),
+  ts('r4','Worker 4',76,68,'Yes','Approved leave form for 1 day attached.','Release to payroll','Approved leave on file explains the variance.'),
+  ts('r5','Worker 5',38,38,'Yes','Part-time roster.','Release to payroll','Hours agree with the roster and the supervisor approved.'),
+  ts('r6','Worker 6',76,90,'Yes','Overtime form approved by Operations Manager attached.','Release to payroll','Approved overtime on file explains the extra hours.')],
+ qs:[{id:'t2-q1',head:'Where should the payroll register and payslips be kept?',options:['Restricted payroll / HR system','Shared project folder','Workshop notice board'],key:'Restricted payroll / HR system',why:'Payroll, tax and banking information stays in a restricted authorised system.'},
+  {id:'t2-q2',head:'Who must review payroll calculations before payment?',options:['Authorised payroll officer or management','The admin who prepared them, alone','The employee being paid'],key:'Authorised payroll officer or management',why:'Payroll calculations and payment require authorised review (P084).'}]},
+{id:'t3',num:3,title:'Customer progress claim',procs:'P085',mins:20,
+ brief:[['Scenario','Sample Client has an order for fabricated pipe spools. The job is certified 60% complete. You prepare the progress claim for the Operations and finance approvers. Amounts exclude GST.'],
+  ['Read first','<ul><li><span class="mono">PP-QMS-FRM-001-F05</span> Tender Contract and Technical Review (agreed scope)</li><li><span class="mono">PP-QMS-FRM-001-F14</span> Dimensional Final Inspection and Release</li><li><span class="mono">PP-QMS-REG-013</span> MDR and QA Dossier Index</li></ul>'],
+  ['Your job','Work out the claim for this period, then decide whether it can be issued.'],
+  ['Stop rule','Match approved scope, completed work and contract billing conditions before issue. No IMS invoicing form exists, so use the finance system (Record Gap G08).']],
+ ledger:[['Original contract value',money(CV),'From the accepted order.'],['Variation 1: client signed approval on file',money(V1),'Approved in writing by the client.'],['Variation 2: pending, not approved',money(V2),'Client has not replied.'],['Certified percentage complete','60%','Certified by Operations.'],['Previously claimed',money(PREV),'From the claims record.']],
+ rowsTitle:'Step 2 · Calculate the claim',
+ rows:[{id:'t3-r1',type:'number',head:'Claim amount this period ($)',sub:'Hint: (contract + approved variations) × % complete − previously claimed',facts:[],label:'Your claim ($)',key:(CV+V1)*PCT-PREV,why:'(48,000 + 3,200) × 60% − 20,000 = $10,720. The pending variation is excluded because it is not approved.'}],
+ qs:[{id:'t3-q1',head:'Should the pending $1,500 variation be included in this claim?',options:O.yn,key:'No',why:'Only variations with client approval are billable. Obtain approval first.'},
+  {id:'t3-q2',head:'The contract allows a claim at 60% only when the first batch is delivered. The signed client delivery docket is not on file. Can you issue the claim?',options:O.yn,key:'No',why:'Hold. Match billing conditions and delivery evidence before issue.'},
+  {id:'t3-q3',head:'Who must review the claim before it is issued?',options:['Operations and authorised financial approver','Admin alone','The customer'],key:'Operations and authorised financial approver',why:'Operations and an authorised financial approver (P085).'}]},
+{id:'t4',num:4,title:'Controlled documents and drawings',procs:'P008 · P009',mins:20,
+ brief:[['Scenario','You support Document Control. Six situations land on your desk this week. Decide the right action for each.'],
+  ['Read first','<ul><li><span class="mono">PP-QMS-PRO-001</span> Documented Information and Records Control</li><li><span class="mono">PP-IMS-REG-002</span> Consolidated Master Document Register</li><li><span class="mono">PP-IMS-REG-006</span> External Documents Standards and Client Requirements Register</li><li><span class="mono">PP-QMS-FRM-001-F01</span> Document Creation and Change Request</li></ul>'],
+  ['Your job','Choose one action per situation.'],
+  ['Stop rule','Confirm one current approved version, the applicable edition and drawing status, and remove superseded copies. Draft documents do not authorise work.']],
+ rowsTitle:'Step 1 · Situations',
+ rows:[{id:'t4-r1',head:'PP-QMS-FRM-001-F11',sub:'Job Traveller and Route Card',facts:[['Register shows','Rev 0 current and approved'],['What you found','Workshop copy is Rev 0 and matches the register.']],label:'Your action',options:O.doc,key:'No action needed',why:'The copy matches the register. Nothing to do.'},
+  {id:'t4-r2',head:'PP-ENG-DRW-J001-01 (sample)',sub:'Controlled drawing',facts:[['Register shows','Rev C issued by client'],['What you found','The workshop still holds a printed Rev B.']],label:'Your action',options:O.doc,key:'Withdraw superseded copy',why:'Rev B is superseded. Replace it with Rev C and remove Rev B.'},
+  {id:'t4-r3',head:'PP-WHS-FRM-001-F29',sub:'Hot Work Permit',facts:[['Register shows','Draft Rev0, operational issue not verified'],['What you found','A supervisor wants to use it on site tomorrow.']],label:'Your action',options:O.doc,key:'Escalate - not approved',why:'A draft is not approved for use. Escalate to Document Control or management.'},
+  {id:'t4-r4',head:'PP-QMS-FRM-001-F05',sub:'Tender Contract and Technical Review',facts:[['Register shows','Rev 1 current'],['What you found','The shared folder holds Rev 0 and Rev 1 files, unmarked.']],label:'Your action',options:O.doc,key:'Withdraw superseded copy',why:'Only one current approved version may be available. Withdraw Rev 0.'},
+  {id:'t4-r5',head:'Client specification (sample)',sub:'External document',facts:[['Register shows','REG-006 lists the previous edition'],['What you found','The client emailed a new edition yesterday.']],label:'Your action',options:O.doc,key:'Log in REG-006',why:'Record the new edition in REG-006 and tell Engineering.'},
+  {id:'t4-r6',head:'PP-QMS-PRO-001',sub:'Documented Information and Records Control',facts:[['Register shows','Rev 1 current'],['What you found','An engineer asks you to just change a sentence in the PDF.']],label:'Your action',options:O.doc,key:'Raise F01 change request',why:'Wording changes go through an F01 change request, review and approval.'}],
+ qs:[{id:'t4-q1',head:'How many current approved versions of a controlled document should be available for use?',options:['One','Two - one office and one workshop','As many as people need'],key:'One',why:'Confirm one current approved version and withdraw obsolete copies (P008).'}]},
+{id:'t5',num:5,title:'New starter onboarding',procs:'P020 · P021 · P025',mins:15,
+ brief:[['Scenario','A new fitter (sample) starts Monday and will work in the workshop only. You check the start-up pack on Friday.'],
+  ['Read first','<ul><li><span class="mono">PP-QMS-PRO-004</span> Competence Induction and Awareness</li><li><span class="mono">PP-QMS-PRO-001</span> Documented Information and Records Control</li><li><span class="mono">PP-IMS-MTX-001</span> Roles Responsibilities and Authorities Matrix</li></ul>'],
+  ['Your job','For each item choose OK - on file, Chase before start, or Not required.'],
+  ['Stop rule','Verify identity, engagement terms and credentials. Collect declarations and restrict personnel-file access. Do not deploy a person with unresolved required checks.']],
+ rowsTitle:'Step 1 · Start-up pack check',
+ rows:[['Identity verified','Yes','Sighted by HR.',0,'Already on file.'],['Lawful work-rights check','Yes','Completed this week.',0,'Already on file.'],
+  ['Signed employment agreement and position description','No','The agreement is still with the candidate.',1,'Engagement terms must be agreed before commencement (Record Gap G06).'],
+  ['PP-HR-FRM-001 New Employee Onboarding Form','Yes','Returned and checked.',0,'Already on file.'],
+  ['PP-WHS-FRM-001-F39 Site and Workshop Induction Checklist','No','Not yet booked.',1,'Induction is needed before work. Book it.'],
+  ['Client site induction / access acceptance','No','The new starter will work in the workshop only.',2,'Only needed where required for a client site.'],
+  ['Copies of genuine licences and certificates, sighted','Yes','Copies and sighting recorded.',0,'Already on file.'],
+  ['Entry in PP-WHS-REG-013 Training and Competency Matrix','No','Not started.',1,'Competence must be recorded before independent work.']
+ ].map((r,i)=>({id:'t5-r'+(i+1),head:r[0],sub:r[2],facts:[['On file now?',r[1]]],label:'Your action',options:O.ns,key:O.ns[r[3]],why:r[4]})),
+ qs:[{id:'t5-q1',head:'Can the new fitter start independent work on Monday?',options:O.yn,key:'No',why:'Required checks are unresolved: agreement, induction and competency entry.'},
+  {id:'t5-q2',head:'Where is the personnel file kept?',options:['Restricted HR system','Shared project folder','Workshop notice board'],key:'Restricted HR system',why:'Personnel and identity information stays in restricted authorised systems.'}]},
+{id:'t6',num:6,title:'Filing and confidential records',procs:'P010 · P021',mins:10,
+ brief:[['Scenario','You are clearing your in-tray. Decide where each record belongs. Retention periods and disposal come from the approved retention schedule. Never guess them.'],
+  ['Read first','<ul><li><span class="mono">PP-QMS-PRO-001</span> Documented Information and Records Control</li><li><span class="mono">PP-QMS-FRM-001-F38</span> Records Archive Retention and Disposal</li></ul>'],
+  ['Your job','Choose Restricted HR / finance system, Project / process file, or Controlled document folder.'],
+  ['Stop rule','Apply authorised retention periods, confidentiality and disposal approval. Employee, payroll, tax, banking, health and injury records stay in restricted authorised systems.']],
+ rowsTitle:'Step 1 · Where does it go?',
+ rows:[['Employee bank details form',0,'Banking information is restricted.'],['Payslips for the fortnight',0,'Payroll records are restricted.'],['First aid treatment record',0,'Health and injury records are confidential and restricted.'],
+  ['Welding fume health monitoring result',0,'Health records are confidential and restricted.'],['Supplier invoice and payment approval',0,'Finance records stay in the finance system.'],
+  ['Signed client purchase order',1,'A project record that supports the job file.'],['Toolbox talk attendance sheet',1,'A job / process record.'],['Delivery docket for a job',1,'A job record that supports delivery evidence.'],
+  ['Current approved drawing (latest revision)',2,'Controlled drawing, kept under document control.'],['Current approved procedure PDF',2,'Controlled document, kept under document control.']
+ ].map((r,i)=>({id:'t6-r'+(i+1),head:r[0],sub:'',facts:[],label:'Where does it go?',options:O.loc,key:O.loc[r[1]],why:r[2]})),
+ qs:[{id:'t6-q1',head:'The job is closed. Can you destroy the job records now?',options:['No - only after the approved retention period and disposal approval','Yes - the job is closed','Yes - if the cabinet is full'],key:'No - only after the approved retention period and disposal approval',why:'Disposal needs the authorised retention period and approval (P010).'},
+  {id:'t6-q2',head:'Which form records archive, retention and disposal?',options:['PP-QMS-FRM-001-F38','PP-QMS-FRM-001-F05','PP-WHS-FRM-001-F26'],key:'PP-QMS-FRM-001-F38',why:'F38 is Records Archive Retention and Disposal.'}]},
+{id:'t7',num:7,title:'Stocktake reconciliation',procs:'P090',mins:15,
+ brief:[['Scenario','You are reconciling the monthly stock count against the system. You support Stores. Operations and Quality approve any discrepancy.'],
+  ['Read first','<ul><li><span class="mono">PP-QMS-PRO-009</span> Material Identification Traceability and Preservation</li><li><span class="mono">PP-QMS-PRO-007</span> Purchasing Supplier and Subcontractor Control</li><li><span class="mono">PP-QMS-REG-005</span> Material and Heat Traceability Register</li></ul>'],
+  ['Your job','Read each variance and choose No action, Investigate, or Raise NCR (F17).'],
+  ['Stop rule','Reconcile actual stock and identity. Investigate discrepancies without changing verified certificate or traceability links.']],
+ rowsTitle:'Step 1 · Count sheet',
+ rows:[['DN100 pipe, 6 m lengths',40,40,'Count agrees.',0,'No variance and no identity issue.'],['Plate 10 mm',12,11,'One sheet missing.',1,'A quantity variance must be investigated.'],
+  ['Flanges DN100',24,24,'Heat number on the tag does not match the register.',2,'An identity or traceability mismatch is a nonconformance (F17).'],
+  ['Elbows DN100',30,33,'Three extra elbows on the shelf.',1,'A quantity variance must be investigated.'],['Welding electrodes (boxes)',20,20,'Count agrees.',0,'No variance and no identity issue.'],
+  ['Customer-supplied beam',1,0,'On the property register but not found in the yard.',1,'Investigate. Protect customer property and record the loss or location.']
+ ].map((r,i)=>({id:'t7-r'+(i+1),head:r[0],sub:r[3],facts:[['System qty',r[1]],['Counted qty',r[2]],['Variance',sgn(r[2]-r[1])]],label:'Your decision',options:O.stk,key:O.stk[r[4]],why:r[5]})),
+ qs:[{id:'t7-q1',head:'May you change the system stock to match the count straight away?',options:['No - investigate first and get discrepancy approval','Yes - make the system match the count'],key:'No - investigate first and get discrepancy approval',why:'Stock discrepancies need approval from Operations / Quality.'},
+  {id:'t7-q2',head:'May you edit heat-number links in the traceability register so they match the shelf?',options:['No','Yes'],key:'No',why:'Do not change verified certificate or traceability links.'}]},
+{id:'t8',num:8,title:'Insurance and prequalification renewals',procs:'P093',mins:15,
+ brief:[['Scenario','You keep the renewals list for registrations, insurance and client prequalification. Check what is due, then tell management about anything overdue.'],
+  ['Read first','<ul><li><span class="mono">PP-IMS-MTX-001</span> Roles Responsibilities and Authorities Matrix</li><li><span class="mono">PP-QMS-PRO-001</span> Documented Information and Records Control</li></ul>'],
+  ['Your job','Use Days left and the warning window to choose Expired, Due soon, or OK.'],
+  ['Stop rule','An expired or missing record is escalated to Management with an owner and due date.']],
+ settings:true,
+ rowsTitle:'Step 2 · Renewals list',
+ rows:[['Public liability insurance',[2026,11,20]],['Workers compensation policy',[2027,3,31]],['Client prequalification (sample client)',[2026,9,30]],['Business registration',[2027,6,15]],['Plant registration (sample)',[2026,12,5]],['Professional indemnity insurance',[2026,12,20]]]
+  .map((r,i)=>{const d=days(...r[1]);return {id:'t8-r'+(i+1),head:r[0],sub:'',facts:[['Expiry date',dfmt(...r[1])],['Days left',String(d)]],label:'Your status',options:['Expired','Due soon','OK'],key:()=>d<0?'Expired':(d<=Number(S.win)?'Due soon':'OK'),why:'Expired if days left is below 0. Due soon if within the warning window. Otherwise OK.'};}),
+ qs:[{id:'t8-q1',head:'The client prequalification has expired. What do you do?',options:['Tell Management now and log an action with owner and due date','Wait until the client asks','Quietly change the expiry date'],key:'Tell Management now and log an action with owner and due date',why:'Escalate overdue items with an owner and due date. Never alter a date to hide an expiry.'}]}
+];
+TASKS.forEach(t=>{t.items=t.rows.concat(t.qs);t.items.forEach(i=>i.task=t.id);});
+
+const ROUTINE = [
+ ['Daily','Log new client drawings, standards and transmittals. Tell Engineering of any new revision.','PP-IMS-REG-006 External Documents Register (P009)','Document Control / Engineering'],
+ ['Daily','Match supplier invoices to PO and receipt. Hold any that do not match.','Finance system; PP-QMS-FRM-001-F08 / F09 (P086)','Authorised financial approver'],
+ ['Daily','Pass any customer feedback or complaint to Quality.','PP-QMS-FRM-001-F20 Customer Feedback and Complaint Record (P016)','Quality'],
+ ['Weekly (proposed)','Chase unapproved timesheets before the pay run.','Payroll system, restricted (P084)','Supervisors / authorised payroll officer'],
+ ['Weekly (proposed)','Check new purchase orders carry the technical and quality checklist.','PP-QMS-FRM-001-F08 (P028)','Procurement / Quality'],
+ ['Weekly (proposed)','Review open admin actions and the filing backlog.','Project / process files (P010)','Operations'],
+ ['Monthly (proposed)','Prepare progress claims and invoices at agreed milestones.','Finance system; PP-QMS-FRM-001-F14 / REG-013 evidence (P085)','Operations / financial approver'],
+ ['Monthly (proposed)','Supply verified admin and financial data for the KPI review.','PP-IMS-REG-005 Objectives and KPI Register (RV08)','Management'],
+ ['Monthly (proposed)','Update personnel records and the training matrix for changes.','PP-WHS-REG-013; PP-HR-FRM-001, restricted (P021)','HR / Operations'],
+ ['Quarterly (proposed)','Support the supplier approval and performance review.','PP-QMS-FRM-001-F07; PP-QMS-REG-003; PP-QMS-REG-015 (RV10)','Procurement / Quality'],
+ ['Quarterly (proposed)','Support the check of personnel credentials and expiry dates.','PP-WHS-REG-013; PP-HR-REG-002 (RV11)','Operations / HR'],
+ ['Each period','Check insurance, registration and prequalification expiry dates.','Renewals list (P093)','Management'],
+ ['Each period','Check IT access changes, backup log and recovery test dates.','Access log; backup log; PP-QMS-FRM-001-F01 for system changes (P091)','System owner / Management'],
+ ['Each event','New starter, leaver, new supplier or job closeout: complete the matching checklist and return property.','PP-WHS-FRM-001-F34; PP-QMS-REG-016; PP-QMS-FRM-001-F38 (RV18, P088)','Operations / HR']
+];
+
+/* ---------- scoring ---------- */
+const keyOf = it => typeof it.key==='function' ? it.key() : it.key;
+function evalItem(it){
+  const v = S.a[it.id]; if (v===undefined||v==='') return null;
+  return it.type==='number' ? Math.abs(parseFloat(v)-keyOf(it))<0.01 : v===keyOf(it);
+}
+function taskScore(t){ let c=0; t.items.forEach(i=>{ if(evalItem(i)===true) c++; }); return [c,t.items.length]; }
+function totals(){ let c=0,n=0; TASKS.forEach(t=>{const s=taskScore(t); c+=s[0]; n+=s[1];}); return [c,n]; }
+
+/* ---------- render helpers ---------- */
+const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+function statusHTML(it){
+  const r = evalItem(it);
+  if (r===null) return '';
+  return r ? `<b>✔ Correct</b><span>${esc(it.why)}</span>` : '<b>✘ Check again</b><span>Re-read the brief and try another answer.</span>';
+}
+function itemHTML(it){
+  const facts = (it.facts||[]).length ? `<dl class="facts">${it.facts.map(f=>`<div><dt>${esc(f[0])}</dt><dd>${esc(f[1])}</dd></div>`).join('')}</dl>` : '';
+  const v = S.a[it.id] ?? '';
+  const ctl = it.type==='number'
+    ? `<input type="number" step="0.01" inputmode="decimal" id="${it.id}" data-item="${it.id}" value="${esc(v)}" placeholder="e.g. 5000">`
+    : `<select id="${it.id}" data-item="${it.id}"><option value="">Choose…</option>${it.options.map(o=>`<option${o===v?' selected':''}>${esc(o)}</option>`).join('')}</select>`;
+  const r = evalItem(it);
+  return `<div class="row${r===true?' ok':r===false?' no':''}" data-row="${it.id}">
+    <div><div class="row-head">${esc(it.head)}${it.sub?`<small>${esc(it.sub)}</small>`:''}</div>${facts}</div>
+    <div class="row-answer"><label for="${it.id}">${esc(it.label||'Your answer')}</label>${ctl}<p class="status ${r===true?'ok':r===false?'no':''}" aria-live="polite">${statusHTML(it)}</p></div></div>`;
+}
+function refreshItem(id){
+  const it = TASKS.flatMap(t=>t.items).find(i=>i.id===id); const el = document.querySelector(`[data-row="${id}"]`); if(!it||!el) return;
+  const r = evalItem(it);
+  el.className = 'row'+(r===true?' ok':r===false?' no':'');
+  const st = el.querySelector('.status'); st.className = 'status '+(r===true?'ok':r===false?'no':''); st.innerHTML = statusHTML(it);
+}
+function refreshAll(){
+  const [c,n] = totals();
+  $('#mbar').style.width = (n?c/n*100:0)+'%'; $('#mtxt').textContent = c+' / '+n;
+  buildNav();
+  const sc = document.querySelector('[data-score]'); if (sc){ const t=TASKS.find(x=>x.id===sc.dataset.score); const s=taskScore(t); sc.querySelector('b').textContent = s[0]+' / '+s[1]; }
+}
+
+/* ---------- views ---------- */
+const NAVSECS = [['Start',[['start','Start here'],['processes','Your processes']]],['Tasks',TASKS.map((t,i)=>[t.id,'Task '+t.num+' · '+['Invoices','Timesheets','Progress claim','Document control','New starter','Filing','Stocktake','Renewals'][i]])],['Reference',[['routine','Routine checklist']]]];
+let route = 'start';
+function buildNav(){
+  $('#nav').innerHTML = NAVSECS.map(([sec,links])=>`<div class="sec">${sec}</div>`+links.map(([id,label])=>{
+    const t = TASKS.find(x=>x.id===id); let b='';
+    if (t){ const s=taskScore(t); b=`<span class="badge${s[0]===s[1]?' done':''}">${s[0]}/${s[1]}</span>`; }
+    return `<a href="#${id}"${id===route?' aria-current="page"':''}>${esc(label)}${b}</a>`; }).join('')).join('');
+}
+function viewStart(){
+  const [c,n] = totals();
+  const rows = TASKS.map(t=>{const s=taskScore(t);const st=s[0]===0?'Not started':s[0]===s[1]?'Complete':'In progress';
+    return `<tr><td><a href="#${t.id}">Task ${t.num} · ${esc(t.title)}</a></td><td>${t.mins}</td><td>${s[0]}</td><td>${s[1]}</td><td><span class="pill${st==='Complete'?' done':''}">${st}</span></td></tr>`;}).join('');
+  const mins = TASKS.reduce((a,t)=>a+t.mins,0);
+  const pct = n? Math.round(c/n*100):0;
+  return `<div class="pagehead"><div><p class="eyebrow">Hands-on workshop</p><h1>Admin &amp; Support Controller</h1>
+    <p class="lead">Practise the Panalo document workbook on real-looking admin jobs: what to read, what to fill in, who approves it, and when to stop.</p></div></div>
+  <section class="panel"><dl class="brief">
+    <dt>Who it is for</dt><dd>Admin and Support Controller: accounts, payroll preparation, purchasing support, document control, onboarding, stores and records.</dd>
+    <dt>How long</dt><dd>About ${(mins/60).toFixed(1)} hours: 8 tasks of 10–25 minutes. Do one at a time.</dd>
+    <dt>Built from</dt><dd>Panalo Pipes Process and Document Workbook, Draft Rev0 (13 Oct 2026). Tasks use the same process IDs (P0xx).</dd>
+    <dt>Sample data</dt><dd>All names, amounts, dates and invoices are made up for training. They are not real Panalo records.</dd>
+    <dt>Important</dt><dd>The draft pack does not authorise work. On the job, use the actual current approved document and the finance or payroll system. Keep employee, payroll, tax, banking, health and injury information in restricted authorised systems.</dd></dl></section>
+  <h2>Five questions for every admin task</h2>
+  <div class="cols5" style="margin-bottom:22px">
+    <div class="q5"><b>What do I read first?</b><p>The procedure, approved drawing, order or earlier record that sets the rule.</p></div>
+    <div class="q5"><b>What do I fill in?</b><p>Only the forms and registers that apply to this job.</p></div>
+    <div class="q5"><b>Who approves?</b><p>The named role. Never approve your own work or payment unless authorised.</p></div>
+    <div class="q5"><b>What stops me?</b><p>Missing approval, a mismatch, unverified bank details, an expired record. Stop and escalate.</p></div>
+    <div class="q5"><b>Where is it filed?</b><p>Project file, controlled document folder, or a restricted HR / finance system.</p></div></div>
+  <h2>How it works</h2>
+  <section class="panel"><p style="margin-top:0">Open a task, read the brief, then answer each yellow field. The result shows straight away with the reason. Your progress is saved in this browser.</p>
+    <div class="example"><div><div class="row-head">INV-0000 (worked example, not scored)<small>Invoice equals the PO, goods fully received, bank details unchanged.</small></div></div>
+    <div><div class="fake">Pay</div><p class="status ok"><b>✔ Correct</b><span>Everything agrees.</span></p></div></div>
+    <div class="legend" style="margin-top:14px"><div class="sw"><i style="background:var(--surface)">Info</i>Given to you. Read it.</div>
+      <div class="sw"><i style="background:var(--input-bg);color:var(--input-ink);border-color:var(--input-line)">Answer</i>You choose or type here.</div>
+      <div class="sw"><i style="background:var(--good-bg);color:var(--good)">✔</i>Correct, with the reason.</div>
+      <div class="sw"><i style="background:var(--bad-bg);color:var(--bad)">✘</i>Check again.</div></div></section>
+  <h2>Your progress</h2>
+  <section class="panel"><div class="tbl-wrap"><table class="prog"><thead><tr><th>Task</th><th>Minutes</th><th>Correct</th><th>Out of</th><th>Status</th></tr></thead><tbody>${rows}</tbody>
+    <tfoot><tr><td><b>Total</b></td><td><b>${mins}</b></td><td><b>${c}</b></td><td><b>${n}</b></td><td><b>${pct}% correct</b></td></tr></tfoot></table></div>
+    <div class="settings" style="margin-top:14px"><div><label for="target" class="hint" style="margin:0 0 3px">Workshop target (%), an assumption you can change</label><input type="number" id="target" min="0" max="100" value="${esc(S.target)}"></div>
+    <div><p id="targetres" class="status ${pct>=S.target&&n?'ok':''}" style="font-weight:600">${n? (pct>=S.target?'<b>✔ Target met</b>':'Keep practising'):''}</p></div></div>
+    <p class="hint">The target is a workshop pass mark only. It is not a competency decision.</p></section>
+  <h2>Sign-off</h2>
+  <section class="panel"><div class="signoff">
+    <div><label for="so-tr">Trainee name</label><input type="text" id="so-tr" data-so="trainee" value="${esc(S.so.trainee||'')}"></div>
+    <div><label for="so-fa">Facilitator name</label><input type="text" id="so-fa" data-so="facilitator" value="${esc(S.so.facilitator||'')}"></div>
+    <div><label for="so-dt">Date completed</label><input type="text" id="so-dt" data-so="date" placeholder="dd/mm/yyyy" value="${esc(S.so.date||'')}"></div>
+    <div class="wide"><label for="so-cm">Comments / follow-up training</label><textarea id="so-cm" data-so="comments">${esc(S.so.comments||'')}</textarea></div></div>
+    <p class="hint">Saved only in this browser. Record the official sign-off in your normal training records.</p>
+    <button class="btn warn" id="resetall" type="button">Reset all answers</button></section>`;
+}
+function viewProcesses(){
+  return `<div class="pagehead"><div><p class="eyebrow">Quick reference</p><h1>Your processes</h1>
+   <p class="lead">The processes the Admin and Support Controller owns or supports, taken from the Process Map: read, fill in, approve, stop rule.</p></div></div>
+   <div class="search"><label class="hint" for="psearch" style="margin:0 0 3px;display:block">Filter by ID, process or document</label><input type="text" id="psearch" placeholder="e.g. payroll, P085, F08"></div>
+   <div id="plist">${PROCS.map(p=>`<article class="proc" data-text="${esc((p.id+' '+p.title+' '+p.role+' '+p.read.join(' ')+' '+p.fill.join(' ')).toLowerCase())}">
+    <header><span class="mono">${esc(p.id)}</span><h3>${esc(p.title)}</h3><span class="role">${esc(p.role)}</span></header>
+    <div class="g"><div><h4>Read first</h4><ul>${p.read.map(x=>`<li>${docLine(x)}</li>`).join('')}</ul></div>
+    <div><h4>Fill in / update</h4><ul>${p.fill.map(x=>`<li>${docLine(x)}</li>`).join('')}</ul></div>
+    <div><h4>Approved by</h4><p>${esc(p.approver)}</p></div>
+    <div><h4>Proceed / stop rule</h4><p>${esc(p.stop)}</p></div></div>
+    ${p.note?`<p class="note">${esc(p.note)}</p>`:''}${p.task?`<p class="note">Practise it: <a href="#${p.task}">${esc(TASKS.find(t=>t.id===p.task).title)}</a></p>`:''}</article>`).join('')}</div>`;
+}
+function docLine(x){ const m = x.match(/^(PP-[A-Z0-9\-\[\]]+)\s[–-]\s(.*)$/); return m ? `<span class="mono">${esc(m[1])}</span> ${esc(m[2])}` : esc(x); }
+function viewTask(t){
+  const s = taskScore(t);
+  let h = `<div class="pagehead"><div><p class="eyebrow">Task ${t.num} of 8 · ${esc(t.procs)} · about ${t.mins} min · sample data</p><h1>${esc(t.title)}</h1></div>
+    <div class="score" data-score="${t.id}"><b>${s[0]} / ${s[1]}</b><span>correct</span></div></div>
+    <section class="panel"><dl class="brief">${t.brief.map(b=>`<dt>${esc(b[0])}</dt><dd>${b[1]}</dd>`).join('')}</dl></section>`;
+  if (t.ledger){
+    h += `<h2>Step 1 · The facts</h2><section class="panel"><table class="ledger"><tbody>${t.ledger.map(l=>`<tr><td>${esc(l[0])}</td><td>${esc(l[1])}</td><td>${esc(l[2])}</td></tr>`).join('')}</tbody></table></section>`;
+  }
+  if (t.settings){
+    h += `<h2>Step 1 · Settings</h2><section class="panel"><div class="settings"><div><label class="hint" style="margin:0 0 3px;display:block">As-at date (fixed for this workshop)</label><div class="fixed">13 Oct 2026</div></div>
+      <div><label class="hint" for="win" style="margin:0 0 3px;display:block">Warning window (days), proposed</label><input type="number" id="win" min="1" max="365" value="${esc(S.win)}"></div></div></section>`;
+  }
+  h += `<h2>${esc(t.rowsTitle)}</h2><div class="rows">${t.rows.map(itemHTML).join('')}</div><h2>Quick questions</h2><div class="rows">${t.qs.map(itemHTML).join('')}</div>`;
+  const i = TASKS.indexOf(t), nx = TASKS[i+1];
+  h += `<div class="foot"><button class="btn" type="button" data-reset="${t.id}">Reset this task</button>${nx?`<a class="btn primary" href="#${nx.id}">Next: Task ${nx.num}</a>`:`<a class="btn primary" href="#start">See my progress</a>`}</div>`;
+  return h;
+}
+function viewRoutine(){
+  return `<div class="pagehead"><div><p class="eyebrow">After the workshop</p><h1>Routine checklist</h1>
+   <p class="lead">Suggested repeat work from the workbook Review Schedule. Frequencies marked proposed are management routines unless the approved document sets them. Confirm them with management. Ticks reset with the button below.</p></div></div>
+   <div class="rt">${ROUTINE.map((r,i)=>`<label><input type="checkbox" data-rt="${i}"${S.rt[i]?' checked':''}><span><span class="when">${esc(r[0])}</span><br>${esc(r[1])}<br><span class="meta">Where: ${esc(r[2])} · Tell: ${esc(r[3])}</span></span></label>`).join('')}</div>
+   <div class="foot" style="margin-top:14px"><button class="btn" id="rtreset" type="button">Clear ticks for this period</button></div>`;
+}
+let showKey = false;
+function viewKey(){
+  let h = `<div class="pagehead"><div><p class="eyebrow">Facilitator only</p><h1>Answer key</h1><p class="lead">Keep this closed until trainees finish. Answers are hidden until you show them.</p></div></div>
+    <p><button class="btn primary" id="togglekey" type="button">${showKey?'Hide answer key':'Show answer key'}</button></p>`;
+  if (showKey) TASKS.forEach(t=>{ h += `<h2 style="margin-top:18px">Task ${t.num} · ${esc(t.title)}</h2><section class="panel">${t.items.map(it=>{const k=keyOf(it);return `<div class="keyitem"><b>${esc(it.head)}${it.sub&&!it.id.includes('-q')?`<br><small>${esc(it.sub)}</small>`:''}</b><span>${esc(it.type==='number'?money(k):k)}</span><small>${esc(it.why)}</small></div>`;}).join('')}</section>`; });
+  return h;
+}
+
+/* ---------- router ---------- */
+function render(){
+  const h = location.hash.slice(1);
+  route = (h==='start'||h==='processes'||h==='routine'||TASKS.some(t=>t.id===h)) ? h : 'start';
+  const t = TASKS.find(x=>x.id===route);
+  $('#main').innerHTML = t ? viewTask(t) : route==='processes' ? viewProcesses() : route==='routine' ? viewRoutine() : viewStart();
+  buildNav(); refreshAll();
+}
+window.addEventListener('hashchange', ()=>{ render(); window.scrollTo(0,0); });
+
+const main = $('#main');
+main.addEventListener('change', e=>{
+  const el = e.target;
+  if (el.dataset.item){ S.a[el.dataset.item] = el.value; save(); refreshItem(el.dataset.item); refreshAll(); }
+  else if (el.id==='win'){ const v=Math.max(1,parseInt(el.value)||60); S.win=v; save(); TASKS.find(t=>t.id==='t8').items.forEach(i=>refreshItem(i.id)); refreshAll(); }
+  else if (el.id==='target'){ S.target=Math.min(100,Math.max(0,parseFloat(el.value)||0)); save(); render(); }
+  else if (el.dataset.rt!==undefined){ S.rt[el.dataset.rt]=el.checked; save(); }
+});
+main.addEventListener('input', e=>{
+  const el=e.target;
+  if (el.dataset.so){ S.so[el.dataset.so]=el.value; save(); }
+  else if (el.id==='psearch'){ const q=el.value.toLowerCase().trim(); document.querySelectorAll('#plist .proc').forEach(p=>{p.hidden = q && !p.dataset.text.includes(q);}); }
+});
+let armed = null;
+main.addEventListener('click', e=>{
+  const b = e.target.closest('button'); if(!b) return;
+  const twoStep = (btn, label, fn)=>{ if (armed===btn){ armed=null; fn(); } else { armed=btn; const old=btn.textContent; btn.textContent='Click again to confirm'; setTimeout(()=>{ if(armed===btn){armed=null; btn.textContent=old;} },3500); } };
+  if (b.dataset.reset){ twoStep(b,'',()=>{ TASKS.find(t=>t.id===b.dataset.reset).items.forEach(i=>delete S.a[i.id]); save(); render(); }); }
+  else if (b.id==='resetall'){ twoStep(b,'',()=>{ S.a={}; save(); render(); }); }
+  else if (b.id==='rtreset'){ S.rt={}; save(); render(); }
+  else if (b.id==='togglekey'){ showKey=!showKey; render(); }
+});
+render();
+</script>
+</body>
+</html>
