@@ -159,7 +159,8 @@ async function loadPathway(box, e) {
         <small>${pr.documents.map(d => !d.inIms ? `${safe(d.docNumber)} (not in IMS yet)` : !d.approved ? `${safe(d.docNumber)} (awaiting approval)` : `${safe(d.docNumber)}${d.hasAccess ? " ✓" : ""}`).join(" · ") || "No documents listed"}</small></li>`;
     }).join("") || '<p class="muted small">No processes matched this position yet.</p>';
     const enabledMods = p.modules.filter(m => m.enabled);
-    const note = `Hi ${p.employee.fullName.split(" ")[0]},\n\nYou now have access to Panalo Pipes training${enabledMods.length ? ":\n" + enabledMods.map(m => `- ${m.title || m.code}`).join("\n") : "."}\n\nSign in here with your own account: ${config.appUrl}\n\nIf you can't sign in, reply to me and I will reset it.\n\nThanks`;
+    const moduleLink = m => new URL(`./modules/pp-trn-wld-001/?assignment=${encodeURIComponent(m.assignmentId)}`, config.appUrl).href;
+    const note = `Hi ${p.employee.fullName.split(" ")[0]},\n\nYou now have access to Panalo Pipes training${enabledMods.length ? ":\n\n" + enabledMods.map(m => `${m.title || m.code}\n${moduleLink(m)}`).join("\n\n") : "."}\n\nSign in with your own account when asked.\n\nIf you can't sign in, reply to me and I will reset it.\n\nThanks`;
     const mailto = `mailto:${encodeURIComponent(p.employee.email || "")}?subject=${encodeURIComponent("Your Panalo Pipes training access")}&body=${encodeURIComponent(note)}`;
     const folderChecks = [...folders].map(([id, name]) => `<label class="check-field"><input type="checkbox" data-pw-folder="${safe(id)}" checked><span>Viewer access to the <strong>${safe(name)}</strong> folder</span></label>`).join("");
     box.innerHTML = `<h3>Role pathway · ${safe(p.employee.position)}</h3>

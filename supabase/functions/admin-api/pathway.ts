@@ -68,13 +68,13 @@ export async function pathwayGet(admin: Client, _actor: any, body: any) {
   let assignments: any[] = [];
   const versionIds = (requirements.data || []).map((r: any) => r.training_modules?.current_version_id).filter(Boolean);
   if (profileId && versionIds.length) {
-    const found = await admin.from("training_assignments").select("module_version_id,status,expires_at").eq("learner_id", profileId).in("module_version_id", versionIds).in("status", ["assigned", "theory_passed"]);
+    const found = await admin.from("training_assignments").select("id,module_version_id,status,expires_at").eq("learner_id", profileId).in("module_version_id", versionIds).in("status", ["assigned", "theory_passed"]);
     assignments = found.data || [];
   }
   const modules = (requirements.data || []).map((r: any) => {
     const a = assignments.find(x => x.module_version_id === r.training_modules?.current_version_id);
     return { code: r.training_modules?.code, title: r.training_modules?.title, published: !!r.training_modules?.current_version_id,
-      requiredBeforeStart: r.required_before_start, enabled: !!a && new Date(a.expires_at).getTime() > Date.now(), passed: a?.status === "theory_passed" };
+      assignmentId: a?.id || null, requiredBeforeStart: r.required_before_start, enabled: !!a && new Date(a.expires_at).getTime() > Date.now(), passed: a?.status === "theory_passed" };
   });
   return { employee: { id: emp.data.id, fullName: emp.data.full_name, email: emp.data.email, hasLogin: !!profileId, position: title },
     positionId, saved, processes, modules };

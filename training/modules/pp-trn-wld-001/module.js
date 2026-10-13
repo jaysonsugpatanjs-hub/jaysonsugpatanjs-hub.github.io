@@ -328,7 +328,10 @@ async function init() {
     return;
   }
   if (!await getSession()) {
-    showGate("Email verification required", "Sign in through the training portal with the email address used for this assignment.");
+    // Straight from an emailed link: sign in on the portal, which returns here afterwards.
+    const back = `/training/modules/pp-trn-wld-001/?assignment=${encodeURIComponent(assignmentId)}`;
+    showGate("Sign in to open this module", "Taking you to the training sign-in. You will return to this module afterwards.");
+    window.setTimeout(() => window.location.assign(`../../?next=${encodeURIComponent(back)}`), 1200);
     return;
   }
 

@@ -78,7 +78,7 @@ function renderAssignments(assignments) {
   assignments.forEach(assignment => {
     const card = document.createElement("a");
     card.className = "module-card available secure-module";
-    card.href = `./modules/?assignment=${encodeURIComponent(assignment.id)}`;
+    card.href = `./modules/pp-trn-wld-001/?assignment=${encodeURIComponent(assignment.id)}`;
     const progress = Number(assignment.progressPercent || 0);
     const status = assignment.theoryPassedAt ? "THEORY PASSED" : progress ? "IN PROGRESS" : "ASSIGNED";
     card.innerHTML = `<div class="module-visual secure-cover"><div><span>${safe(assignment.module.code)}</span><strong>${safe(assignment.module.title)}</strong></div><span class="status">${status}</span></div>
@@ -431,7 +431,7 @@ ui.signOut.addEventListener("click", async () => {
 // ?next=/accounts/ returns to another Panalo page on this site after sign-in.
 function goNext() {
   const next = new URLSearchParams(location.search).get("next") || "";
-  if (!/^\/(accounts|training)\/[A-Za-z0-9/_#.-]*$/.test(next)) return false;
+  if (!/^\/(accounts|training)\/[A-Za-z0-9/_#.?=&%-]*$/.test(next) || next.includes("//")) return false;
   location.assign(next);
   return true;
 }
