@@ -85,6 +85,15 @@
           <div class="table-wrap"><table class="module-table"><thead><tr><th>Module</th><th>Version</th><th>Private assets</th><th>IMS approval</th><th>Release</th><th>Action</th></tr></thead><tbody id="module-register-body"></tbody></table></div>
           <p id="module-register-message" class="form-message"></p>
         </section>
+        <section id="module-access" class="portal-card module-access hidden" aria-live="polite">
+          <div class="register-head"><div><p class="eyebrow">EMPLOYEE ACCESS</p><h2 id="module-access-title">Panalo Pipes employees</h2><p id="module-access-sub" class="privacy-note"></p></div><button id="module-access-close" class="secondary-action" type="button">Close</button></div>
+          <div class="field-row">
+            <div class="field"><label for="module-access-expiry">Access ends after</label><input id="module-access-expiry" type="date"></div>
+            <div class="field"><label for="module-access-search">Find an employee</label><input id="module-access-search" type="search" placeholder="Name, number or position"></div>
+          </div>
+          <div class="table-wrap"><table><thead><tr><th>Employee</th><th>Position</th><th>Access</th><th>Action</th></tr></thead><tbody id="module-access-body"></tbody></table></div>
+          <p id="module-access-message" class="form-message" role="status"></p>
+        </section>
       </div>
     </section>
 

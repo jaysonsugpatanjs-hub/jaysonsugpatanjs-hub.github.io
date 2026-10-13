@@ -74,6 +74,7 @@ const ACTION_PERMISSIONS: Record<string, string | string[]> = {
   module_publish: "training.manage",
   module_ims_revisions: "training.manage",
   module_link_ims: "training.manage",
+  module_access: "training.manage",
   people_reference: ["people.view", "people.manage", "access.manage", "hr.manage", "competency.all", "competency.team"],
   people_list: ["people.view", "people.manage", "access.manage", "hr.manage"],
   employee_save: "people.manage",
@@ -540,6 +541,40 @@ async function invite(admin: Client, administrator: any, body: any) {
   };
 }
 
+async function moduleAccess(admin: Client, body: any) {
+  const moduleCode = cleanText(body.moduleCode, "Module", 50);
+  const moduleResult = await admin.from("training_modules").select("id,code,title,status,current_version_id").eq("code", moduleCode).maybeSingle();
+  if (moduleResult.error || !moduleResult.data?.current_version_id || moduleResult.data.status === "retired") {
+    throw httpError(400, "That module has no published version to give access to.");
+  }
+  const people = await admin.from("employees")
+    .select("id,employee_number,full_name,email,status,profile_id,positions(title)")
+    .eq("employment_type", "employee").in("status", ["active", "on_leave"]).order("full_name").limit(1000);
+  if (people.error) throw httpError(500, "The employee register could not be read.");
+  const profileIds = (people.data || []).map((p: any) => p.profile_id).filter(Boolean);
+  const open = new Map<string, any>();
+  if (profileIds.length) {
+    const assignments = await admin.from("training_assignments")
+      .select("id,learner_id,status,expires_at,theory_passed_at")
+      .eq("module_version_id", moduleResult.data.current_version_id).in("learner_id", profileIds).in("status", ["assigned", "theory_passed"]);
+    if (assignments.error) throw httpError(500, "Assignments could not be read.");
+    for (const a of assignments.data || []) open.set(a.learner_id, a);
+  }
+  return {
+    module: { code: moduleResult.data.code, title: moduleResult.data.title },
+    employees: (people.data || []).map((p: any) => {
+      const a = p.profile_id ? open.get(p.profile_id) : null;
+      const expired = a ? new Date(a.expires_at).getTime() <= Date.now() : false;
+      return {
+        id: p.id, employeeNumber: p.employee_number, fullName: p.full_name, email: p.email,
+        position: p.positions?.title || "", hasLogin: !!p.profile_id,
+        access: !a ? "none" : expired ? "expired" : "active",
+        assignmentId: a?.id || null, expiresAt: a?.expires_at || null, passed: a?.status === "theory_passed"
+      };
+    })
+  };
+}
+
 async function revoke(admin: Client, administrator: any, body: any) {
   const assignmentId = String(body.assignmentId || "");
   const reason = cleanText(body.reason, "Revocation reason", 240, false) || "Access ended by training administrator";
@@ -585,6 +620,7 @@ export default {
           case "module_publish": result = await publishModule(admin, administrator, body.versionId); break;
           case "module_ims_revisions": result = await imsTrainingRevisions(admin); break;
           case "module_link_ims": result = await linkImsRevision(admin, administrator, body); break;
+          case "module_access": result = await moduleAccess(admin, body); break;
           default: result = await peopleActions[action](admin, administrator, body);
         }
       }

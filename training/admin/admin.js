@@ -101,7 +101,7 @@ function renderModuleCatalog() {
       ? `<strong>${safe(version.ims.docNumber)} ${safe(version.ims.revision)}</strong><small><span class="chip ${imsApproved ? "good" : "pending"}">${imsApproved ? "Approved" : "Awaiting approval"}</span></small>`
       : version.published ? '<small>Published before IMS control</small>' : linkSelect(version);
     const action = version.published
-      ? '<span class="status-chip theory-passed">Published</span>'
+      ? `<span class="status-chip theory-passed">Published</span>${version.current ? `<button class="secondary-action small employee-access" type="button" data-code="${safe(version.code)}" data-title="${safe(module.title || version.code)}">Employee access</button>` : ""}`
       : `<button class="secondary-action publish-module" type="button" data-version="${safe(version.id)}" data-label="${safe(`${version.code} ${version.revision}`)}" ${version.assets?.ready && imsApproved ? "" : "disabled"}>Publish</button>
          <small>${!version.assets?.ready ? "Upload every slide first." : !version.ims ? "Link its IMS revision first." : !imsApproved ? "Waiting for IMS approval." : "Ready to publish."}</small>`;
     return `<tr><td><strong>${safe(version.code)}</strong><small>${safe(module.title || "")}</small><small>${safe(module.status || "draft")}</small></td>
@@ -113,7 +113,85 @@ function renderModuleCatalog() {
   ui.moduleRegisterMessage.textContent = versions.length ? "" : "No module versions have been created.";
   ui.moduleRegisterBody.querySelectorAll(".publish-module").forEach(button => button.addEventListener("click", publishModule));
   ui.moduleRegisterBody.querySelectorAll(".link-ims").forEach(button => button.addEventListener("click", linkIms));
+  ui.moduleRegisterBody.querySelectorAll(".employee-access").forEach(button => button.addEventListener("click", openEmployeeAccess));
 }
+
+/* ---- Employee access: enable or revoke one module for Panalo Pipes employees ---- */
+let access = { code: "", title: "", employees: [] };
+const accessUi = {
+  panel: document.getElementById("module-access"),
+  body: document.getElementById("module-access-body"),
+  message: document.getElementById("module-access-message"),
+  expiry: document.getElementById("module-access-expiry"),
+  search: document.getElementById("module-access-search")
+};
+
+function renderEmployeeAccess() {
+  const q = accessUi.search.value.trim().toLowerCase();
+  const rows = access.employees.filter(e => !q || `${e.fullName} ${e.employeeNumber} ${e.position}`.toLowerCase().includes(q));
+  const on = access.employees.filter(e => e.access === "active").length;
+  document.getElementById("module-access-title").textContent = `${access.title}: employee access`;
+  document.getElementById("module-access-sub").textContent = `${on} of ${access.employees.length} employees can open this module. Revoking keeps their audit history.`;
+  accessUi.body.innerHTML = rows.map(e => {
+    const chip = e.access === "active" ? `<span class="chip good">${e.passed ? "Theory passed" : "Enabled"}</span><small>Until ${formatDate(e.expiresAt)}</small>`
+      : e.access === "expired" ? `<span class="chip pending">Expired</span><small>${formatDate(e.expiresAt)}</small>` : '<span class="chip">No access</span>';
+    const button = e.access === "active"
+      ? `<button class="revoke" type="button" data-act="revoke" data-id="${safe(e.id)}">Revoke</button>`
+      : e.email ? `<button class="secondary-action small" type="button" data-act="enable" data-id="${safe(e.id)}">${e.access === "expired" ? "Re-enable" : "Enable"}</button>${e.hasLogin ? "" : "<small>Sends a sign-in invitation</small>"}`
+      : "<small>Add an email in People first</small>";
+    return `<tr><td><strong>${safe(e.fullName)}</strong><small>${safe(e.employeeNumber)}</small></td><td>${safe(e.position) || "—"}</td><td>${chip}</td><td>${button}</td></tr>`;
+  }).join("") || '<tr><td colspan="4">No employees match.</td></tr>';
+  accessUi.body.querySelectorAll("button[data-act]").forEach(b => b.addEventListener("click", changeEmployeeAccess));
+}
+
+async function loadEmployeeAccess() {
+  accessUi.message.textContent = "Loading employees…";
+  const result = await api(config.adminFunction, { action: "module_access", moduleCode: access.code });
+  access.employees = result.employees;
+  accessUi.message.textContent = result.employees.length ? "" : "No active employees are on the register yet. Add them under People.";
+  renderEmployeeAccess();
+}
+
+async function openEmployeeAccess(event) {
+  const button = event.currentTarget;
+  access = { code: button.dataset.code, title: button.dataset.title, employees: [] };
+  accessUi.expiry.value = defaultExpiry();
+  accessUi.search.value = "";
+  accessUi.panel.classList.remove("hidden");
+  accessUi.panel.scrollIntoView({ behavior: "smooth", block: "start" });
+  try { await loadEmployeeAccess(); } catch (error) { accessUi.message.textContent = friendlyError(error); }
+}
+
+async function changeEmployeeAccess(event) {
+  const button = event.currentTarget;
+  const person = access.employees.find(e => e.id === button.dataset.id);
+  if (!person) return;
+  const enabling = button.dataset.act === "enable";
+  if (!enabling && !window.confirm(`Revoke ${person.fullName}'s access to ${access.title}? Their audit records are kept.`)) return;
+  button.disabled = true;
+  accessUi.message.textContent = enabling ? "Enabling access…" : "Revoking access…";
+  try {
+    if (enabling) {
+      const result = await api(config.adminFunction, {
+        action: "invite", fullName: person.fullName, email: person.email, learnerType: "employee",
+        externalId: person.employeeNumber, moduleCode: access.code,
+        expiresAt: endOfSydneyDayIso(accessUi.expiry.value), signIn: "invite"
+      });
+      accessUi.message.textContent = result.invitationSent ? `${person.fullName} was emailed an invitation and now has access.` : `${person.fullName} now has access.`;
+    } else {
+      await api(config.adminFunction, { action: "revoke", assignmentId: person.assignmentId, reason: "Access ended by training administrator" });
+      accessUi.message.textContent = `${person.fullName}'s access was revoked and recorded.`;
+    }
+    const message = accessUi.message.textContent;
+    await Promise.all([loadEmployeeAccess(), loadDashboard()]);
+    accessUi.message.textContent = message;
+  } catch (error) {
+    accessUi.message.textContent = friendlyError(error);
+    button.disabled = false;
+  }
+}
+accessUi.search.addEventListener("input", renderEmployeeAccess);
+document.getElementById("module-access-close").addEventListener("click", () => accessUi.panel.classList.add("hidden"));
 
 function linkSelect(version) {
   const docs = (imsRevisions?.documents || []).filter(doc => !doc.trainingModuleId || doc.trainingModuleId === version.moduleId);
