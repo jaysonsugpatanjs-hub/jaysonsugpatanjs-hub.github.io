@@ -158,6 +158,9 @@ async function loadPathway(box, e) {
       return `<li data-pw-process="${safe(pr.code)}"><strong>${safe(pr.code)} · ${safe(pr.title)}</strong><small>${safe(pr.area)}</small>
         <small>${pr.documents.map(d => !d.inIms ? `${safe(d.docNumber)} (not in IMS yet)` : !d.approved ? `${safe(d.docNumber)} (awaiting approval)` : `${safe(d.docNumber)}${d.hasAccess ? " ✓" : ""}`).join(" · ") || "No documents listed"}</small></li>`;
     }).join("") || '<p class="muted small">No processes matched this position yet.</p>';
+    const enabledMods = p.modules.filter(m => m.enabled);
+    const note = `Hi ${p.employee.fullName.split(" ")[0]},\n\nYou now have access to Panalo Pipes training${enabledMods.length ? ":\n" + enabledMods.map(m => `- ${m.title || m.code}`).join("\n") : "."}\n\nSign in here with your own account: ${config.appUrl}\n\nIf you can't sign in, reply to me and I will reset it.\n\nThanks`;
+    const mailto = `mailto:${encodeURIComponent(p.employee.email || "")}?subject=${encodeURIComponent("Your Panalo Pipes training access")}&body=${encodeURIComponent(note)}`;
     const folderChecks = [...folders].map(([id, name]) => `<label class="check-field"><input type="checkbox" data-pw-folder="${safe(id)}" checked><span>Viewer access to the <strong>${safe(name)}</strong> folder</span></label>`).join("");
     box.innerHTML = `<h3>Role pathway · ${safe(p.employee.position)}</h3>
       <p class="muted small">${p.saved ? "Using the saved process list for this position." : "Suggested by matching the position name to the Process Map roles. Review it, then save it for the position."}</p>
@@ -168,8 +171,18 @@ async function loadPathway(box, e) {
       <div class="field"><label for="pw-expiry">Access ends after</label><input id="pw-expiry" type="date" value="${pathwayExpiry()}"></div>
       <div class="form-actions"><button type="button" class="primary" data-pw-apply ${p.employee.hasLogin ? "" : "disabled"}>Grant ticked items</button>
       ${can("people.manage") ? '<button type="button" class="secondary-action" data-pw-save>Save process list for this position</button>' : ""}</div>
-      <p class="form-message" data-pw-msg role="status" aria-live="polite"></p>`;
+      <p class="form-message" data-pw-msg role="status" aria-live="polite"></p>
+      <h4>Tell them</h4>
+      ${enabledMods.length || p.employee.hasLogin ? `<p class="muted small">${enabledMods.length ? `${enabledMods.length} module${enabledMods.length === 1 ? " is" : "s are"} enabled for ${safe(p.employee.fullName)} right now.` : "No modules are enabled for them yet."} Status refreshes each time you grant or press Refresh.</p>
+      <div class="form-actions">${p.employee.email ? `<a class="secondary-action" data-pw-mail href="${safe(mailto)}">Email them</a>` : ""}
+      <button type="button" class="secondary-action" data-pw-copy>Copy link and message</button>
+      <button type="button" class="secondary-action" data-pw-refresh>Refresh status</button></div>` : ""}`;
     const msg = box.querySelector("[data-pw-msg]");
+    box.querySelector("[data-pw-copy]")?.addEventListener("click", async () => {
+      try { await navigator.clipboard.writeText(note); msg.textContent = "Copied. Paste it into a message to them."; }
+      catch { msg.textContent = "Copy was blocked by the browser. Use Email them instead."; }
+    });
+    box.querySelector("[data-pw-refresh]")?.addEventListener("click", () => loadPathway(box, e));
     box.querySelector("[data-pw-apply]").addEventListener("click", async event => {
       const btn = event.currentTarget; btn.disabled = true; msg.textContent = "Granting…";
       try {
