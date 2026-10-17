@@ -2,6 +2,7 @@
 // review each upload. Also hosts the one-time temporary password dialog.
 import { api, config, friendlyError } from "../auth.js";
 import { createPlacer } from "./contract-placer.js";
+import { attachPad } from "../signature-pad.js";
 
 const call = (action, body = {}) => api(config.adminFunction, { action, ...body });
 const state = { types: [], people: [], requests: [], items: [], openId: null, canIssuePasswords: false };
@@ -52,6 +53,24 @@ function signHtml(i) {
       <p class="eyebrow">FINALIZE</p>
       <p class="muted small">The signature is stamped onto the contract and the finished copy is filed in the HR folder only when you finalize. Show where the signature and date go, check the preview, then finalize.</p>
       <div class="placer" data-placer="${id}" hidden></div>
+      <div class="counter-sign">
+        <label class="check-field"><input type="checkbox" data-company-on><span><strong>Also sign for Panalo</strong>
+          <small>The HR representative or the Managing Director signs the contract on Panalo's behalf. It goes on the same page.</small></span></label>
+        <div class="counter-fields" data-company-fields hidden>
+          <div class="field-row">
+            <div class="field"><label for="co-name-${id}">Name</label><input id="co-name-${id}" data-company-name maxlength="80" autocomplete="off" placeholder="For example, Rene Fiestada"></div>
+            <div class="field"><label for="co-pos-${id}">Position</label><input id="co-pos-${id}" data-company-position maxlength="60" autocomplete="off" list="co-positions" placeholder="For example, Managing Director"></div>
+          </div>
+          <datalist id="co-positions"><option value="Managing Director"><option value="HR representative"></datalist>
+          <fieldset class="sign-methods"><legend>How they sign</legend>
+            <label><input type="radio" name="co-method-${id}" value="typed" data-company-method checked> Type their name</label>
+            <label><input type="radio" name="co-method-${id}" value="drawn" data-company-method> Write it on screen</label></fieldset>
+          <div class="field onb-field" data-company-pane="drawn" hidden><label for="co-pad-${id}">Write the name in the box</label>
+            <canvas id="co-pad-${id}" class="sign-pad" data-company-pad width="600" height="200" role="img" aria-label="Signature box for Panalo. Write the name here."></canvas>
+            <button type="button" class="text-button" data-company-clear="${id}">Clear</button></div>
+          <small class="muted">Entered under your sign-in (you are recorded as who entered it); the signatory's name and position are recorded as typed.</small>
+        </div>
+      </div>
       <div class="form-actions">
         <button type="button" class="secondary-action" data-place-open="${id}">Place the signature on the contract</button>
         <button type="button" class="secondary-action" data-sign-preview="${id}" disabled>Preview signed contract</button>
@@ -195,6 +214,42 @@ function finalizeParts(button) {
   return { panel, id: panel.dataset.finalize, msg: panel.querySelector("[data-finalize-msg]") };
 }
 
+/** Shows or hides the counter-signature fields and tells the page viewer about Panalo's signatory. */
+function syncCompany(panel) {
+  if (!panel) return;
+  const on = panel.querySelector("[data-company-on]").checked;
+  panel.querySelector("[data-company-fields]").hidden = !on;
+  const drawn = on && panel.querySelector("[data-company-method]:checked")?.value === "drawn";
+  const pane = panel.querySelector("[data-company-pane]");
+  pane.hidden = !drawn;
+  if (drawn) attachPad(panel.querySelector("[data-company-pad]"));
+  const name = panel.querySelector("[data-company-name]").value.trim();
+  placers.get(panel.dataset.finalize)?.setCompany(on ? { name: name || "Panalo" } : null);
+}
+
+/**
+ * What HR has set up in a finalize panel: where the signature (and Panalo's, if
+ * counter-signing) goes, and who signs for Panalo. Returns { error } when
+ * something is missing.
+ */
+function readFinalize(panel) {
+  const placed = placers.get(panel.dataset.finalize)?.getPlacement();
+  if (!placed) return { error: "Click on the page where the signature goes first." };
+  const { company: marks, ...placement } = placed;
+  if (!panel.querySelector("[data-company-on]").checked) return { placement, company: null };
+  const name = panel.querySelector("[data-company-name]").value.trim();
+  if (name.length < 2) return { error: "Enter the name of the person signing for Panalo." };
+  if (!marks) return { error: "Click on the page where Panalo's signature goes." };
+  const method = panel.querySelector("[data-company-method]:checked")?.value || "typed";
+  const company = { name, position: panel.querySelector("[data-company-position]").value.trim(), method, signature: marks.signature, date: marks.date };
+  if (method === "drawn") {
+    const pad = attachPad(panel.querySelector("[data-company-pad]"));
+    if (!pad?.isDirty()) return { error: "Write the signature for Panalo in the box first." };
+    company.signatureImage = pad.toDataURL();
+  }
+  return { placement, company };
+}
+
 /** Opens the page viewer so HR can click where the signature and date go. */
 async function openPlacer(root, button) {
   const { panel, id, msg } = finalizeParts(button);
@@ -213,12 +268,13 @@ async function openPlacer(root, button) {
         panel.querySelector("[data-finalize-go]").disabled = !ready;
       };
       placers.set(id, await createPlacer(host, {
-        signedName, dateText: todayText(item.submittedAt),
+        signedName, dateText: todayText(item.submittedAt), companyDateText: todayText(new Date().toISOString()),
         docs: item.signDocs.map(d => ({ label: d.label, load: async () => bytesFromBase64((await call("onboarding_sign_bytes", { docId: d.id })).pdf) })),
         onChange: refresh
       }));
     }
     host.hidden = false;
+    syncCompany(panel);
     button.textContent = "Hide the pages";
     msg.textContent = "";
   } catch (error) {
@@ -232,15 +288,15 @@ async function openPlacer(root, button) {
 
 /** Builds the signed contract with the chosen placement and opens it for HR to check. Nothing is stored. */
 async function previewContract(root, button) {
-  const { id, msg } = finalizeParts(button);
-  const placement = placers.get(id)?.getPlacement();
-  if (!placement) { msg.textContent = "Click on the page where the signature goes first."; return; }
+  const { panel, id, msg } = finalizeParts(button);
+  const choice = readFinalize(panel);
+  if (choice.error) { msg.textContent = choice.error; return; }
   // Open the tab first, while the click is still fresh, or the browser blocks it.
   const tab = window.open("", "_blank");
   button.disabled = true;
   msg.textContent = "Building the preview…";
   try {
-    const { pdf } = await call("onboarding_sign_preview", { itemId: id, placement });
+    const { pdf } = await call("onboarding_sign_preview", { itemId: id, placement: choice.placement, company: choice.company });
     const url = URL.createObjectURL(new Blob([bytesFromBase64(pdf)], { type: "application/pdf" }));
     if (tab) tab.location.href = url; else window.open(url, "_blank");
     msg.textContent = "Preview opened in a new tab. It is not filed yet.";
@@ -254,13 +310,14 @@ async function previewContract(root, button) {
 
 /** Accepts the signature and files the stamped contract in the HR folder. */
 async function finalizeContract(root, button) {
-  const { id, msg } = finalizeParts(button);
-  const placement = placers.get(id)?.getPlacement();
-  if (!placement) { msg.textContent = "Click on the page where the signature goes first."; return; }
-  if (!window.confirm("Finalize this contract? The signature is stamped on page " + placement.page + " and the signed copy is filed in the person's HR folder.")) return;
+  const { panel, id, msg } = finalizeParts(button);
+  const choice = readFinalize(panel);
+  if (choice.error) { msg.textContent = choice.error; return; }
+  const counter = choice.company ? ` It is also signed for Panalo by ${choice.company.name}${choice.company.position ? ` (${choice.company.position})` : ""}.` : "";
+  if (!window.confirm(`Finalize this contract? The signature is stamped on page ${choice.placement.page} and the signed copy is filed in the person's HR folder.${counter}`)) return;
   button.disabled = true;
   try {
-    const r = await call("onboarding_review", { itemId: id, accept: true, placement });
+    const r = await call("onboarding_review", { itemId: id, accept: true, placement: choice.placement, company: choice.company });
     await loadOnboarding(root, { canIssuePasswords: state.canIssuePasswords });
     const note = root.querySelector("[data-detail-msg]");
     if (note) note.textContent = r.filingDeferred
@@ -301,6 +358,10 @@ export function bindOnboarding(root) {
   root.addEventListener("change", event => {
     if (event.target.name === "employeeId") renderForm(root);
     else if (event.target.matches("input[type=file][data-sign-upload]")) uploadContract(root, event.target);
+    else if (event.target.matches("[data-company-on], [data-company-method]")) syncCompany(event.target.closest("[data-finalize]"));
+  });
+  root.addEventListener("input", event => {
+    if (event.target.matches("[data-company-name]")) syncCompany(event.target.closest("[data-finalize]"));
   });
   root.addEventListener("submit", async event => {
     if (!event.target.matches("[data-onb-form]")) return;
@@ -343,6 +404,8 @@ export function bindOnboarding(root) {
         const r = await call("onboarding_sign_view", b.dataset.signView ? { docId: b.dataset.signView } : { itemId: b.dataset.signSignature });
         window.open(r.url, "_blank", "noopener");
         b.disabled = false;
+      } else if (b.dataset.companyClear) {
+        attachPad(b.closest("[data-finalize]").querySelector("[data-company-pad]"))?.clear();
       } else if (b.dataset.placeOpen) {
         await openPlacer(root, b);
       } else if (b.dataset.signPreview) {

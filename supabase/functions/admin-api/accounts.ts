@@ -2,7 +2,7 @@
 // Passwords go only to Supabase Auth; temporary ones are returned once to the
 // administrator who issued them and never stored or logged here.
 import { generateTemporaryPassword } from "../_shared/accounts.ts";
-import { CONTRACT_MAX_BYTES, SignError, describeSignature, looksLikePdf, parsePlacement, sha256Hex, signatureImagePath, toBase64, type Placement } from "../_shared/contract-signing.ts";
+import { CONTRACT_MAX_BYTES, SignError, describeSignature, looksLikePdf, parseCompanySignature, parsePlacement, sha256Hex, signatureImagePath, toBase64, type CompanySignature, type Placement, type StoredCompanySignature } from "../_shared/contract-signing.ts";
 import { describeAnswers } from "../_shared/onboarding-forms.ts";
 import { httpError, rpc } from "../_shared/http.ts";
 import { fileAcceptedOnboarding, previewSignedContract } from "./personnel.ts";
@@ -273,30 +273,65 @@ function placementFrom(raw: unknown): Placement {
   catch (error) { if (error instanceof SignError) throw httpError(400, error.message); throw error; }
 }
 
-async function onboardingReview(admin: Client, actor: Actor, body: any) {
-  const itemId = uuid(body.itemId, "Document");
-  // A signed contract is finalized, not just accepted: HR says where the
-  // signature goes, and the finished document is built (and checked) before
-  // anything is accepted or filed.
-  const placements: Record<string, Placement> = {};
-  if (body.accept === true) {
-    const kind = await admin.from("onboarding_items").select("hr_document_types(kind)").eq("id", itemId).maybeSingle();
-    if (kind.error) throw httpError(500, "The document could not be loaded.");
-    if (kind.data?.hr_document_types?.kind === "sign") {
-      placements[itemId] = placementFrom(body.placement);
-      await previewSignedContract(admin, actor, itemId, placements[itemId]);
+/** Panalo's counter-signature, if HR is adding one; a half-filled one is a 400. */
+function companyFrom(raw: unknown): CompanySignature | null {
+  try { return parseCompanySignature(raw); }
+  catch (error) { if (error instanceof SignError) throw httpError(400, error.message); throw error; }
+}
+
+/**
+ * Finalizes a signed contract: the stamped document is built (and every
+ * contract file re-checked) first, then the signature is accepted and HR's
+ * choices stored in one transaction, so a bad placement or a changed file
+ * leaves the signature waiting.
+ */
+async function finalizeContract(admin: Client, actor: Actor, itemId: string, requestId: string, body: any) {
+  const placement = placementFrom(body.placement);
+  const company = companyFrom(body.company);
+  await previewSignedContract(admin, actor, itemId, placement, company, false);
+  let stored: StoredCompanySignature | null = null;
+  let imagePath: string | null = null;
+  if (company) {
+    const { image: _image, ...rest } = company;
+    stored = rest;
+    if (company.image) {
+      imagePath = `${requestId}/${itemId}/company-signature-${crypto.randomUUID()}.png`;
+      const up = await admin.storage.from(HR_BUCKET).upload(imagePath, company.image, { contentType: "image/png", upsert: false });
+      if (up.error) throw httpError(500, "The counter-signature could not be saved.");
+      stored = { ...rest, imagePath };
     }
   }
-  const result: any = await rpc(admin, "onboarding_review", {
-    p_actor: actor.id, p_item: itemId, p_accept: body.accept === true, p_reason: String(body.reason || "").slice(0, 500)
-  });
-  if (body.accept !== true) return result;
+  try {
+    return await rpc<any>(admin, "onboarding_finalize_contract", { p_actor: actor.id, p_item: itemId, p_placement: placement, p_company: stored });
+  } catch (error) {
+    // Nothing was accepted, so the image would be an orphan.
+    if (imagePath) await admin.storage.from(HR_BUCKET).remove([imagePath]).catch(() => null);
+    throw error;
+  }
+}
+
+async function onboardingReview(admin: Client, actor: Actor, body: any) {
+  const itemId = uuid(body.itemId, "Document");
+  const accepting = body.accept === true;
+  let result: any;
+  const meta = accepting ? await admin.from("onboarding_items").select("request_id,hr_document_types(kind)").eq("id", itemId).maybeSingle() : null;
+  if (meta?.error) throw httpError(500, "The document could not be loaded.");
+  // A signed contract is finalized, not just accepted: HR says where the
+  // signature goes and may counter-sign for Panalo.
+  if (meta?.data?.hr_document_types?.kind === "sign") {
+    result = await finalizeContract(admin, actor, itemId, meta.data.request_id, body);
+  } else {
+    result = await rpc(admin, "onboarding_review", {
+      p_actor: actor.id, p_item: itemId, p_accept: accepting, p_reason: String(body.reason || "").slice(0, 500)
+    });
+  }
+  if (!accepting) return result;
   // File it in the person's HR folder straight away. If that fails the
   // acceptance still stands; opening their HR file retries the filing.
   try {
     const item = await admin.from("onboarding_items").select("onboarding_requests(employee_id)").eq("id", itemId).maybeSingle();
     const employeeId = item.data?.onboarding_requests?.employee_id;
-    const filed = employeeId ? await fileAcceptedOnboarding(admin, actor, employeeId, placements) : 0;
+    const filed = employeeId ? await fileAcceptedOnboarding(admin, actor, employeeId) : 0;
     return { ...result, filed };
   } catch (error) {
     console.error("personnel filing", error);
@@ -417,7 +452,7 @@ const PREVIEW_MAX_BYTES = 12 * 1024 * 1024;
 
 /** The signed contract as it will be filed, for HR to check before finalizing. Nothing is stored. */
 async function onboardingSignPreview(admin: Client, actor: Actor, body: any) {
-  const { bytes } = await previewSignedContract(admin, actor, uuid(body.itemId, "Document"), placementFrom(body.placement));
+  const { bytes } = await previewSignedContract(admin, actor, uuid(body.itemId, "Document"), placementFrom(body.placement), companyFrom(body.company));
   if (bytes.length > PREVIEW_MAX_BYTES) throw httpError(413, "This contract is too large to preview here. Check the placement against the pages above, then finalize.");
   return { pdf: toBase64(bytes), size: bytes.length };
 }

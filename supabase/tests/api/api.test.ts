@@ -2,7 +2,7 @@
 // PostgREST over a database with every migration applied (see run.sh).
 // Only Supabase Auth and Storage are stubbed.
 import { pdfDraws, pdfText } from "./pdf-lib-stub.ts";
-import { hasStorage, putStorage, storageCalls } from "./client.ts";
+import { failNextStore, hasStorage, putStorage, storageCalls } from "./client.ts";
 
 const BASE = Deno.env.get("POSTGREST_URL") || "http://127.0.0.1:3999";
 const fns = new URL("../../functions/", import.meta.url);
@@ -403,23 +403,50 @@ Deno.test("contract signing: HR attaches the contract, the applicant signs, HR a
   await stillWaiting("a changed contract");
   if ((await ok(adminApi, HR, { action: "personnel_view", employeeId: emp.id })).categories.find((c: any) => c.key === "employment").documents.length) throw new Error("a changed contract must not be filed");
 
-  // The file is put back: finalizing accepts, stamps the handwriting where HR clicked, and files the signed copy.
+  // The file is put back. HR also counter-signs for Panalo (the Managing Director), by hand, on the same page.
   putStorage(BUCKET, path2, pdfV2);
-  const drawsAtFinalize = pdfDraws.length;
-  const finalized = await ok(adminApi, HR, { action: "onboarding_review", itemId: item.id, accept: true, placement: drawn });
-  if (finalized.filed !== 1 || finalized.filingDeferred || !finalized.requestComplete) throw new Error(`finalize should file the signed copy: ${JSON.stringify(finalized)}`);
-  const stamped = pdfDraws.slice(drawsAtFinalize).filter(d => d.image && Math.abs(d.x - (0.12 * 595 + 2)) < 0.01);
-  // Finalizing builds the document twice (once to check it, once to file it): both put the handwriting in the same place.
-  if (stamped.length !== 2 || Math.abs(stamped[0].y - (0.2 * 842 + 3)) > 0.01 || Math.abs((stamped[0].width ?? 0) - 120) > 0.01) throw new Error(`handwriting not stamped on the chosen line: ${JSON.stringify(pdfDraws.slice(drawsAtFinalize))}`);
+  const company = { name: "  Rene   Fiestada ", position: "Managing Director", method: "drawn", signature: { x: 0.62, y: 0.8 }, date: { x: 0.62, y: 0.83 }, signatureImage: pngUrl };
+  const refusedCompany = async (extra: Record<string, unknown>, pattern: RegExp, label: string) => {
+    const r = await call(adminApi, HR, { action: "onboarding_review", itemId: item.id, accept: true, placement: drawn, company: { ...company, ...extra } });
+    expectStatus(r, 400, label);
+    if (!pattern.test(r.body.message)) throw new Error(`${label}: ${r.body.message}`);
+  };
+  await refusedCompany({ name: "" }, /name of the person signing for Panalo/, "counter-signature without a name");
+  await refusedCompany({ method: "stamp" }, /how to sign for Panalo/, "counter-signature with an unknown method");
+  await refusedCompany({ signature: undefined }, /place the Panalo signature/, "counter-signature not placed");
+  await refusedCompany({ signatureImage: undefined }, /Write your name in the box/, "handwriting missing");
+  await stillWaiting("a half-filled counter-signature");
+  if (storageCalls.some(c => c.includes("/company-signature-"))) throw new Error("a refused counter-signature must not store an image");
+
+  // Finalizing accepts and records what HR chose. This time filing hits a storage hiccup right after the acceptance.
+  failNextStore(`${BUCKET}/personnel/${emp.id}/`);
+  const finalized = await ok(adminApi, HR, { action: "onboarding_review", itemId: item.id, accept: true, placement: drawn, company });
+  if (finalized.filed !== 0 || finalized.filingDeferred !== true || !finalized.requestComplete) throw new Error(`the acceptance should stand even if filing is deferred: ${JSON.stringify(finalized)}`);
+  const companyImage = storageCalls.filter(c => c.startsWith(`store ${BUCKET}/${sent.requestId}/${item.id}/company-signature-`));
+  if (companyImage.length !== 1) throw new Error(`the counter-signature image should be stored once: ${JSON.stringify(companyImage)}`);
+  const kept = (await rest(`onboarding_items?select=finalize&id=eq.${item.id}`))[0].finalize;
+  if (kept.placement.page !== 2 || kept.company.name !== "Rene Fiestada" || kept.company.position !== "Managing Director" || !kept.company.imagePath || kept.company.image) throw new Error(`what HR chose should be kept for the retry: ${JSON.stringify(kept)}`);
+  const finalizedEvent = await rest("training_audit_events?select=details&event_type=eq.onboarding_contract_finalized");
+  if (!JSON.stringify(finalizedEvent).includes("Rene Fiestada")) throw new Error("finalizing should be audited with who signed for Panalo");
+
+  // Opening the HR folder retries the filing. It rebuilds the document exactly as HR finalized it.
+  const drawsAtRetry = pdfDraws.length;
   const file = await ok(adminApi, HR, { action: "personnel_view", employeeId: emp.id });
-  if (file.filedNow !== 0) throw new Error(`nothing more should be left to file: ${file.filedNow}`);
+  if (file.filedNow !== 1) throw new Error(`the retry should file the signed copy: ${file.filedNow}`);
+  const rebuilt = pdfDraws.slice(drawsAtRetry);
+  const near = (d: { x: number; y: number }, x: number, y: number) => Math.abs(d.x - x) < 0.01 && Math.abs(d.y - y) < 0.01;
+  const ink = rebuilt.filter(d => d.image);
+  if (!ink.some(d => near(d, 0.12 * 595 + 2, 0.2 * 842 + 3) && Math.abs((d.width ?? 0) - 120) < 0.01)) throw new Error(`applicant handwriting not stamped on the chosen line: ${JSON.stringify(ink)}`);
+  if (!ink.some(d => near(d, 0.62 * 595 + 2, 0.2 * 842 + 3) && Math.abs((d.width ?? 0) - 120) < 0.01)) throw new Error(`Panalo's handwriting not stamped on its line: ${JSON.stringify(ink)}`);
+  if (!rebuilt.some(d => /^\d{1,2} \w{3,4} \d{4}$/.test(d.text ?? "") && near(d, 0.62 * 595 + 2, 0.17 * 842 + 3))) throw new Error("Panalo's date not stamped on its date line");
+  if (!pdfText.some(t => t === "Rene Fiestada (Managing Director)") || !pdfText.some(t => t === "Signed for Panalo by") || !pdfText.some(t => t === "Entered by (HR sign-in)")) throw new Error("the record should say who signed for Panalo and who entered it");
+  if ((await ok(adminApi, HR, { action: "personnel_view", employeeId: emp.id })).filedNow !== 0) throw new Error("nothing should be filed twice");
   const employment = file.categories.find((c: any) => c.key === "employment").documents;
   if (employment.length !== 1 || employment[0].title !== "Employment contract (signed)") throw new Error(`HR folder wrong: ${JSON.stringify(employment)}`);
   if (!storageCalls.some(c => c.startsWith(`store ${BUCKET}/personnel/${emp.id}/employment/`) && c.includes("-signed-"))) throw new Error("signed PDF not stored in the employment folder");
   if (!pdfText.some(t => t.includes("Wrote their name on screen")) || !pdfText.some(t => t.includes("Contract Signer"))) throw new Error("signature record missing from the filed PDF");
   expectStatus(await call(adminApi, HR, { action: "onboarding_review", itemId: item.id, accept: true, placement: drawn }), 409, "already finalized");
   if (!(await ok(adminApi, HR, { action: "personnel_open", documentId: employment[0].id })).url) throw new Error("no link to the signed copy");
-  if ((await ok(adminApi, HR, { action: "personnel_view", employeeId: emp.id })).filedNow !== 0) throw new Error("nothing should be filed twice");
   const done = await ok(trainingApi, applicant, { action: "onboarding_view" });
   if (done.request?.status !== "complete") throw new Error("request should be complete");
 });

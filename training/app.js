@@ -9,6 +9,7 @@ import {
   signInWithPassword,
   signOut
 } from "./auth.js";
+import { attachPad } from "./signature-pad.js";
 
 const $ = id => document.getElementById(id);
 const ui = {
@@ -224,61 +225,14 @@ async function readContract(button) {
   }
 }
 
-// The signature box: pointer events cover mouse, touch and pen.
+// The signature box (see signature-pad.js).
 const pads = new WeakMap();
 function preparePad(canvas) {
-  const ctx = canvas.getContext?.("2d");
-  if (!ctx) return;
-  ctx.fillStyle = "#fff";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.strokeStyle = "#101014";
-  ctx.lineWidth = 3.2;
-  ctx.lineCap = "round";
-  ctx.lineJoin = "round";
-  pads.set(canvas, { ctx, drawing: false, last: null, dirty: false });
-}
-function padPoint(canvas, event) {
-  const rect = canvas.getBoundingClientRect();
-  return { x: (event.clientX - rect.left) * (canvas.width / rect.width), y: (event.clientY - rect.top) * (canvas.height / rect.height) };
-}
-function padDown(event) {
-  const canvas = event.target.closest("canvas.sign-pad");
-  const pad = canvas && pads.get(canvas);
-  if (!pad || (event.pointerType === "mouse" && event.button !== 0)) return;
-  event.preventDefault();
-  canvas.setPointerCapture?.(event.pointerId);
-  pad.drawing = true;
-  pad.last = padPoint(canvas, event);
-  // A tap leaves a dot.
-  pad.ctx.beginPath();
-  pad.ctx.arc(pad.last.x, pad.last.y, 1.6, 0, Math.PI * 2);
-  pad.ctx.fillStyle = "#101014";
-  pad.ctx.fill();
-  pad.dirty = true;
-}
-function padMove(event) {
-  const canvas = event.target.closest?.("canvas.sign-pad");
-  const pad = canvas && pads.get(canvas);
-  if (!pad?.drawing) return;
-  event.preventDefault();
-  const point = padPoint(canvas, event);
-  pad.ctx.beginPath();
-  pad.ctx.moveTo(pad.last.x, pad.last.y);
-  pad.ctx.lineTo(point.x, point.y);
-  pad.ctx.stroke();
-  pad.last = point;
-}
-function padUp(event) {
-  const canvas = event.target.closest?.("canvas.sign-pad");
-  const pad = canvas && pads.get(canvas);
-  if (pad) pad.drawing = false;
+  const pad = attachPad(canvas);
+  if (pad) pads.set(canvas, pad);
 }
 function clearPad(canvas) {
-  const pad = pads.get(canvas);
-  if (!pad) return;
-  pad.ctx.fillStyle = "#fff";
-  pad.ctx.fillRect(0, 0, canvas.width, canvas.height);
-  pad.dirty = false;
+  pads.get(canvas)?.clear();
 }
 
 function switchSignMethod(form) {
@@ -308,8 +262,8 @@ async function submitSignature(form) {
   } else {
     const canvas = form.querySelector("canvas.sign-pad");
     const pad = canvas && pads.get(canvas);
-    if (!pad?.dirty) return fail("signature", "Write your name in the box first.");
-    payload.signatureImage = canvas.toDataURL("image/png");
+    if (!pad?.isDirty()) return fail("signature", "Write your name in the box first.");
+    payload.signatureImage = pad.toDataURL();
   }
   button.disabled = true;
   msg.textContent = "Signing…";
@@ -603,10 +557,6 @@ $("onboarding-items").addEventListener("submit", event => {
   event.preventDefault();
   submitOnboardingForm(event.target);
 });
-$("onboarding-items").addEventListener("pointerdown", padDown);
-$("onboarding-items").addEventListener("pointermove", padMove);
-$("onboarding-items").addEventListener("pointerup", padUp);
-$("onboarding-items").addEventListener("pointercancel", padUp);
 $("onboarding-items").addEventListener("click", event => {
   const edit = event.target.closest("[data-edit]");
   if (edit) {

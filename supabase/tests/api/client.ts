@@ -77,6 +77,9 @@ class Query implements PromiseLike<Result> {
 
 // Storage: remembers uploaded paths so "list" reports them as present.
 export const storageCalls: string[] = [];
+let failStoreFor: string | null = null;
+/** Makes the next upload under this "bucket/path" prefix fail once, like a storage hiccup. */
+export const failNextStore = (prefix: string) => { failStoreFor = prefix; };
 const uploaded = new Set<string>();
 // File contents, for handlers that download what was stored (a browser PUT to a
 // signed upload URL is simulated with putStorage).
@@ -112,6 +115,7 @@ export function createClient() {
         },
         createSignedUrl: async (path: string) => { storageCalls.push(`sign ${bucket}/${path}`); return { data: { signedUrl: `https://storage.test/${path}` }, error: null }; },
         upload: async (path: string, body: unknown) => {
+          if (failStoreFor && `${bucket}/${path}`.startsWith(failStoreFor)) { failStoreFor = null; return { data: null, error: { message: "storage unavailable" } }; }
           storageCalls.push(`store ${bucket}/${path}`);
           uploaded.add(`${bucket}/${path}`);
           if (body instanceof Uint8Array) storedBytes.set(`${bucket}/${path}`, body);

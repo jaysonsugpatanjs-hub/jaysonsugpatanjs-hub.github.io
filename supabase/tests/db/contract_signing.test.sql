@@ -112,7 +112,27 @@ begin
   perform pg_temp.eq((select count(*)::int from public.training_audit_events where event_type = 'onboarding_contract_signed'), 2, 'both signatures stay in the audit log');
 
   -- Accepted: complete, locked, and a sign item cannot be treated as a form or an upload.
-  v_res := public.onboarding_review(pg_temp.s('boss'), v_item, true, null);
+  -- HR finalizes: where the signature goes, and optionally a counter-signature for Panalo. All checked before anything is accepted.
+  perform pg_temp.expect_error(format('select public.onboarding_finalize_contract(%L, %L, %L, null)', pg_temp.s('applicant'), v_item, '{"page":"last","signature":{"x":0.5,"y":0.9}}'), 'permission|not allowed|required');
+  perform pg_temp.expect_error(format('select public.onboarding_finalize_contract(%L, %L, %L, null)', pg_temp.s('boss'), v_item, '{}'), 'where the signature goes');
+  perform pg_temp.expect_error(format('select public.onboarding_finalize_contract(%L, %L, %L, null)', pg_temp.s('boss'), v_item, '{"page":"first","signature":{"x":0.5,"y":0.9}}'), 'where the signature goes');
+  perform pg_temp.expect_error(format('select public.onboarding_finalize_contract(%L, %L, %L, %L)', pg_temp.s('boss'), v_item, '{"page":2,"signature":{"x":0.5,"y":0.9}}', '{"name":"R","method":"typed","signature":{"x":0.6,"y":0.9}}'), 'counter-signature is incomplete');
+  perform pg_temp.expect_error(format('select public.onboarding_finalize_contract(%L, %L, %L, %L)', pg_temp.s('boss'), v_item, '{"page":2,"signature":{"x":0.5,"y":0.9}}', '{"name":"Rene Fiestada","method":"stamp","signature":{"x":0.6,"y":0.9}}'), 'counter-signature is incomplete');
+  perform pg_temp.expect_error(format('select public.onboarding_finalize_contract(%L, %L, %L, %L)', pg_temp.s('boss'), v_item, '{"page":2,"signature":{"x":0.5,"y":0.9}}', '{"name":"Rene Fiestada","method":"drawn","signature":{"x":0.6,"y":0.9}}'), 'handwritten counter-signature is missing');
+  perform pg_temp.expect_error(format('select public.onboarding_finalize_contract(%L, %L, %L, %L)', pg_temp.s('boss'), v_item, '{"page":2,"signature":{"x":0.5,"y":0.9}}',
+    format('{"name":"Rene Fiestada","method":"drawn","signature":{"x":0.6,"y":0.9},"imagePath":"%s/other/company-signature-x.png"}', v_req)), 'handwritten counter-signature is missing');
+  perform pg_temp.eq((select status from public.onboarding_items where id = v_item), 'uploaded', 'refused finalizing leaves the signature waiting');
+
+  v_res := public.onboarding_finalize_contract(pg_temp.s('boss'), v_item, '{"page":2,"signature":{"x":0.55,"y":0.9},"date":{"x":0.55,"y":0.93}}',
+    format('{"name":"Rene Fiestada","position":"Managing Director","method":"drawn","signature":{"x":0.6,"y":0.9},"date":null,"imagePath":"%s/%s/company-signature-abc.png"}', v_req, v_item)::jsonb);
+  perform pg_temp.eq((select status from public.onboarding_items where id = v_item), 'accepted', 'finalizing accepts the signature');
+  perform pg_temp.eq((select finalize #>> '{placement,page}' from public.onboarding_items where id = v_item), '2', 'where HR put the signature is kept');
+  perform pg_temp.eq((select finalize #>> '{company,name}' from public.onboarding_items where id = v_item), 'Rene Fiestada', 'who signed for Panalo is kept');
+  perform pg_temp.eq((select finalize #>> '{company,position}' from public.onboarding_items where id = v_item), 'Managing Director', 'and their position');
+  perform pg_temp.eq((select finalize ->> 'by' from public.onboarding_items where id = v_item), pg_temp.s('boss')::text, 'and which HR sign-in entered it');
+  perform pg_temp.eq((select count(*)::int from public.training_audit_events where event_type = 'onboarding_contract_finalized' and details @> '{"counterSigned": true, "companySignatory": "Rene Fiestada"}'), 1, 'finalizing is audited with the counter-signatory');
+  perform pg_temp.eq((select count(*)::int from public.training_audit_events where event_type = 'onboarding_document_accepted' and details->>'itemId' = v_item::text), 1, 'and the acceptance is audited as before');
+  perform pg_temp.expect_error(format('select public.onboarding_finalize_contract(%L, %L, %L, null)', pg_temp.s('boss'), v_item, '{"page":"last","signature":{"x":0.5,"y":0.9}}'), 'closed');
   perform pg_temp.eq((v_res->>'requestComplete')::boolean, true, 'request complete once the contract is accepted');
   perform pg_temp.expect_error(format('select public.onboarding_record_signature(%L, %L, %L, %L, %L, null)', pg_temp.s('applicant'), v_item, 'typed', 'Jose Dela Cruz', v_text), 'closed');
 
@@ -127,6 +147,9 @@ begin
   perform pg_temp.eq(has_function_privilege('authenticated', 'public.onboarding_record_signature(uuid,uuid,text,text,text,text)', 'execute'), false, 'signing runs only through the API');
   perform pg_temp.eq(has_function_privilege('authenticated', 'public.onboarding_sign_doc_add(uuid,uuid,text,text,text,text,bigint)', 'execute'), false, 'attaching runs only through the API');
   perform pg_temp.eq(has_function_privilege('service_role', 'public.onboarding_record_signature(uuid,uuid,text,text,text,text)', 'execute'), true, 'the API can sign');
+  perform pg_temp.eq(has_function_privilege('authenticated', 'public.onboarding_finalize_contract(uuid,uuid,jsonb,jsonb)', 'execute'), false, 'finalizing runs only through the API');
+  perform pg_temp.eq(has_function_privilege('service_role', 'public.onboarding_finalize_contract(uuid,uuid,jsonb,jsonb)', 'execute'), true, 'the API can finalize');
+  perform pg_temp.eq(has_column_privilege('authenticated', 'public.onboarding_items', 'finalize', 'select'), false, 'browsers cannot read how HR finalized');
 end $$;
 
 select 'contract_signing tests passed' as result;

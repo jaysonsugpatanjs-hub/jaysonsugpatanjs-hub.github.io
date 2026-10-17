@@ -193,6 +193,10 @@ code.secret { font-size: 20px; letter-spacing: .06em; color: var(--gold); backgr
 .placer-layer { position: absolute; inset: 0; pointer-events: none; }
 .placer-mark { position: absolute; display: flex; align-items: center; padding: 0 4px; overflow: hidden; border: 1.5px dashed #1d4ed8; background: rgba(29, 78, 216, 0.10); color: #1d3a8a; font-size: 12px; font-style: italic; white-space: nowrap; }
 .placer-date { font-style: normal; font-size: 11px; }
+.placer-company { border-color: #b45309; background: rgba(180, 83, 9, 0.12); color: #7c2d12; }
+.counter-sign { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border); }
+.counter-fields { margin-top: 12px; display: grid; gap: 10px; }
+.counter-fields .sign-pad { max-width: 420px; }
 
 /* HR files */
 .hr-folders { display: flex; flex-direction: column; gap: 8px; margin: 14px 0 20px; }

@@ -36,15 +36,24 @@ function loadPdfJs() {
 
 const esc = value => String(value ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 
+const MARKS = {
+  signature: { kind: "signature", cls: "placer-signature", hint: "Click on the applicant's signature line, where the signature should start. The dashed box shows its size." },
+  date: { kind: "date", cls: "placer-date", hint: "Click on the applicant's date line, where the date should start." },
+  companySignature: { kind: "signature", cls: "placer-company", hint: "Click on Panalo's signature line, where Panalo's signature should start." },
+  companyDate: { kind: "date", cls: "placer-company placer-date", hint: "Click on Panalo's date line, where the date should start." }
+};
+const NEXT = { signature: "date", companySignature: "companyDate" };
+
 /**
  * @param {HTMLElement} host      where to draw the viewer
  * @param {object} options
  * @param {Array<{label: string, load: () => Promise<Uint8Array>}>} options.docs  the contract files, in order
- * @param {string} options.signedName  shown inside the signature marker
- * @param {string} options.dateText    shown at the date marker (for example "18 Oct 2026")
+ * @param {string} options.signedName  shown inside the applicant's signature marker
+ * @param {string} options.dateText    shown at the applicant's date marker (for example "18 Oct 2026")
+ * @param {string} [options.companyDateText]  shown at Panalo's date marker (the day HR finalizes)
  * @param {() => void} [options.onChange]
  */
-export async function createPlacer(host, { docs, signedName, dateText, onChange = () => {} }) {
+export async function createPlacer(host, { docs, signedName, dateText, companyDateText = dateText, onChange = () => {} }) {
   host.innerHTML = '<p class="muted small">Loading the contract pages…</p>';
   const pdfjs = await loadPdfJs();
 
@@ -57,13 +66,16 @@ export async function createPlacer(host, { docs, signedName, dateText, onChange 
   }
   if (!pages.length) throw new Error("The contract has no pages to show.");
 
-  const state = { index: pages.length - 1, mode: "signature", signature: null, date: null, markedPage: null };
+  // Panalo's counter-signature is optional; HR turns it on with setCompany().
+  const state = { index: pages.length - 1, mode: "signature", marks: {}, markedPage: null, company: null };
   host.innerHTML = `
     <div class="placer-bar">
       <div class="placer-modes" role="group" aria-label="What to place">
-        <button type="button" class="secondary-action small" data-mode="signature" aria-pressed="true">Place signature</button>
-        <button type="button" class="secondary-action small" data-mode="date" aria-pressed="false">Place date</button>
-        <button type="button" class="text-button" data-clear-date hidden>Remove date</button>
+        <button type="button" class="secondary-action small" data-mode="signature" aria-pressed="true">Applicant signature</button>
+        <button type="button" class="secondary-action small" data-mode="date" aria-pressed="false">Applicant date</button>
+        <button type="button" class="secondary-action small" data-mode="companySignature" aria-pressed="false" hidden>Panalo signature</button>
+        <button type="button" class="secondary-action small" data-mode="companyDate" aria-pressed="false" hidden>Panalo date</button>
+        <button type="button" class="text-button" data-clear-mark hidden>Remove this mark</button>
       </div>
       <div class="placer-pages">
         <button type="button" class="secondary-action small" data-prev aria-label="Previous page">‹</button>
@@ -76,37 +88,36 @@ export async function createPlacer(host, { docs, signedName, dateText, onChange 
   const canvas = host.querySelector("[data-canvas]");
   const layer = host.querySelector("[data-layer]");
   const hint = host.querySelector("[data-hint]");
+  const clearButton = host.querySelector("[data-clear-mark]");
   let scale = 1, drawing = 0;
 
   const modeButtons = [...host.querySelectorAll("[data-mode]")];
   const setMode = mode => {
     state.mode = mode;
     modeButtons.forEach(b => b.setAttribute("aria-pressed", String(b.dataset.mode === mode)));
-    hint.textContent = mode === "signature"
-      ? "Click on the signature line where the signature should start. The dashed box shows its size."
-      : "Click on the date line where the date should start.";
+    hint.textContent = MARKS[mode].hint;
+    clearButton.hidden = mode === "signature" || !state.marks[mode];
   };
 
   const drawMarkers = () => {
     layer.innerHTML = "";
+    clearButton.hidden = state.mode === "signature" || !state.marks[state.mode];
     if (state.markedPage !== state.index) return;
-    const box = (cls, left, top, w, h, text) => {
-      const el = document.createElement("div");
-      el.className = `placer-mark ${cls}`;
-      Object.assign(el.style, { left: `${left}px`, top: `${top}px`, width: `${w}px`, height: `${h}px` });
-      el.innerHTML = `<span>${esc(text)}</span>`;
-      layer.appendChild(el);
-    };
     const [w, h] = [canvas.clientWidth, canvas.clientHeight];
-    if (state.signature) {
-      const [bw, bh] = [SIGN_W * scale, SIGN_H * scale];
-      box("placer-signature", state.signature.x * w + 2 * scale, state.signature.y * h - bh - 3 * scale, bw, bh, signedName);
+    for (const [key, spec] of Object.entries(MARKS)) {
+      const at = state.marks[key];
+      if (!at) continue;
+      const signature = spec.kind === "signature";
+      const [bw, bh] = signature ? [SIGN_W * scale, SIGN_H * scale] : [78 * scale, 14 * scale];
+      const el = document.createElement("div");
+      el.className = `placer-mark ${spec.cls}`;
+      Object.assign(el.style, {
+        left: `${at.x * w + 2 * scale}px`, top: `${at.y * h - bh - (signature ? 3 : 2) * scale}px`, width: `${bw}px`, height: `${bh}px`
+      });
+      const label = key === "signature" ? signedName : key === "companySignature" ? state.company?.name || "Panalo" : key === "companyDate" ? companyDateText : dateText;
+      el.innerHTML = `<span>${esc(label)}</span>`;
+      layer.appendChild(el);
     }
-    if (state.date) {
-      const bh = 14 * scale;
-      box("placer-date", state.date.x * w + 2 * scale, state.date.y * h - bh - 2 * scale, 78 * scale, bh, dateText);
-    }
-    host.querySelector("[data-clear-date]").hidden = !state.date;
   };
 
   const render = async () => {
@@ -143,7 +154,7 @@ export async function createPlacer(host, { docs, signedName, dateText, onChange 
       if (button.dataset.mode) setMode(button.dataset.mode);
       else if ("prev" in button.dataset) go(state.index - 1);
       else if ("next" in button.dataset) go(state.index + 1);
-      else if ("clearDate" in button.dataset) { state.date = null; drawMarkers(); onChange(); }
+      else if ("clearMark" in button.dataset) { delete state.marks[state.mode]; drawMarkers(); onChange(); }
       return;
     }
     if (!event.target.closest(".placer-stage")) return;
@@ -152,10 +163,11 @@ export async function createPlacer(host, { docs, signedName, dateText, onChange 
       x: Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width)),
       y: Math.min(1, Math.max(0, (event.clientY - rect.top) / rect.height))
     };
-    // The signature and the date go on the same page: marking a new page starts again.
-    if (state.markedPage !== state.index) { state.signature = null; state.date = null; state.markedPage = state.index; setMode("signature"); }
-    state[state.mode] = point;
-    if (state.mode === "signature" && !state.date) setMode("date");
+    // Everything goes on the same page: marking a new page starts again.
+    if (state.markedPage !== state.index) { state.marks = {}; state.markedPage = state.index; setMode(state.mode.startsWith("company") ? state.mode : "signature"); }
+    state.marks[state.mode] = point;
+    const next = NEXT[state.mode];
+    if (next && !state.marks[next]) setMode(next);
     drawMarkers();
     onChange();
   });
@@ -164,10 +176,28 @@ export async function createPlacer(host, { docs, signedName, dateText, onChange 
   await render();
 
   return {
-    /** The placement to send to the server, or null until the signature has been placed. */
+    /**
+     * The placement to send to the server, or null until the applicant's signature has been placed.
+     * `company` holds Panalo's marks (or null when there is no counter-signature or it isn't placed yet).
+     */
     getPlacement() {
-      if (!state.signature || state.markedPage === null) return null;
-      return { page: state.markedPage + 1, signature: state.signature, date: state.date };
+      const m = state.marks;
+      if (!m.signature || state.markedPage === null) return null;
+      return {
+        page: state.markedPage + 1, signature: m.signature, date: m.date ?? null,
+        company: state.company && m.companySignature ? { signature: m.companySignature, date: m.companyDate ?? null } : null
+      };
+    },
+    /** Turns Panalo's counter-signature on (with the signatory's name for the marker) or off. */
+    setCompany(company) {
+      state.company = company;
+      for (const key of ["companySignature", "companyDate"]) {
+        host.querySelector(`[data-mode="${key}"]`).hidden = !company;
+        if (!company) delete state.marks[key];
+      }
+      if (!company && state.mode.startsWith("company")) setMode("signature");
+      drawMarkers();
+      onChange();
     },
     pageCount: pages.length
   };

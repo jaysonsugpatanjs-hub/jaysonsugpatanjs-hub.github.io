@@ -176,3 +176,53 @@ export function toBase64(bytes: Uint8Array): string {
   for (let i = 0; i < bytes.length; i += 0x8000) out += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
   return btoa(out);
 }
+
+/* ---------------- Counter-signing for Panalo ---------------- */
+
+/**
+ * Panalo's counter-signature, added by the HR representative or the Managing
+ * Director when they finalize. It goes on the same page as the applicant's.
+ */
+export type CompanySignature = {
+  name: string;
+  position: string;
+  method: SignMethod;
+  /** Handwriting (PNG bytes), when method is "drawn". */
+  image?: Uint8Array;
+  signature: PagePoint;
+  date: PagePoint | null;
+};
+
+/** What is kept on the item and in the audit log (the image lives in storage). */
+export type StoredCompanySignature = Omit<CompanySignature, "image"> & { imagePath?: string };
+
+/** Checks what HR sent. No counter-signature (null/undefined) is fine; a half-filled one is refused. */
+export function parseCompanySignature(raw: unknown): CompanySignature | null {
+  if (raw == null) return null;
+  const input = raw && typeof raw === "object" && !Array.isArray(raw) ? raw as Record<string, unknown> : {};
+  const name = normalizeName(input.name);
+  if (name.length < 2) throw new SignError("companyName", "Enter the name of the person signing for Panalo.");
+  if (name.length > 80) throw new SignError("companyName", "That name is too long.");
+  const position = normalizeName(input.position);
+  if (position.length > 60) throw new SignError("companyPosition", "That position is too long.");
+  const method = String(input.method ?? "");
+  if (!(SIGN_METHODS as readonly string[]).includes(method)) throw new SignError("companyMethod", "Choose how to sign for Panalo.");
+  const out: CompanySignature = {
+    name, position, method: method as SignMethod,
+    signature: point(input.signature, "companySignature", "Panalo signature"),
+    date: input.date == null ? null : point(input.date, "companyDate", "Panalo date")
+  };
+  if (method === "drawn") out.image = decodeSignatureImage(input.signatureImage);
+  return out;
+}
+
+/** The counter-signature as labelled rows for the signature record. */
+export function describeCompany(company: Pick<StoredCompanySignature, "name" | "position" | "method"> | null | undefined, enteredBy: string | null) {
+  if (!company?.name) return [];
+  const rows = [
+    { label: "Signed for Panalo by", value: `${company.name}${company.position ? ` (${company.position})` : ""}` },
+    { label: "How they signed", value: company.method === "drawn" ? "Wrote their name on screen" : "Typed their name" }
+  ];
+  if (enteredBy) rows.push({ label: "Entered by (HR sign-in)", value: enteredBy });
+  return rows;
+}
