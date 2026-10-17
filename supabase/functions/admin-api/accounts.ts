@@ -280,6 +280,23 @@ function companyFrom(raw: unknown): CompanySignature | null {
 }
 
 /**
+ * Runs one stage of finalizing. A failure the code did not expect would
+ * otherwise reach HR as a bare "could not complete the request", so it is
+ * reported with the stage that failed and a short reason (nothing is
+ * accepted when a stage fails, so HR can simply try again or report it).
+ */
+async function atStep<T>(step: string, what: string, run: () => Promise<T>): Promise<T> {
+  try { return await run(); }
+  catch (error) {
+    const status = Number((error as { status?: number })?.status) || 500;
+    if (status < 500) throw error;
+    console.error(`finalize ${step} failed`, error);
+    const reason = String((error as Error)?.message || error).replace(/\s+/g, " ").slice(0, 160);
+    throw httpError(422, `${what} (${reason}).`, `finalize_${step}`);
+  }
+}
+
+/**
  * Finalizes a signed contract: the stamped document is built (and every
  * contract file re-checked) first, then the signature is accepted and HR's
  * choices stored in one transaction, so a bad placement or a changed file
@@ -288,7 +305,7 @@ function companyFrom(raw: unknown): CompanySignature | null {
 async function finalizeContract(admin: Client, actor: Actor, itemId: string, requestId: string, body: any) {
   const placement = placementFrom(body.placement);
   const company = companyFrom(body.company);
-  await previewSignedContract(admin, actor, itemId, placement, company, false);
+  await atStep("build", "The signed contract could not be built", () => previewSignedContract(admin, actor, itemId, placement, company, false));
   let stored: StoredCompanySignature | null = null;
   let imagePath: string | null = null;
   if (company) {
@@ -297,12 +314,12 @@ async function finalizeContract(admin: Client, actor: Actor, itemId: string, req
     if (company.image) {
       imagePath = `${requestId}/${itemId}/company-signature-${crypto.randomUUID()}.png`;
       const up = await admin.storage.from(HR_BUCKET).upload(imagePath, company.image, { contentType: "image/png", upsert: false });
-      if (up.error) throw httpError(500, "The counter-signature could not be saved.");
+      if (up.error) throw httpError(422, `The counter-signature could not be saved (${String(up.error.message).slice(0, 120)}).`, "finalize_store");
       stored = { ...rest, imagePath };
     }
   }
   try {
-    return await rpc<any>(admin, "onboarding_finalize_contract", { p_actor: actor.id, p_item: itemId, p_placement: placement, p_company: stored });
+    return await atStep("accept", "The signature could not be accepted", () => rpc<any>(admin, "onboarding_finalize_contract", { p_actor: actor.id, p_item: itemId, p_placement: placement, p_company: stored }));
   } catch (error) {
     // Nothing was accepted, so the image would be an orphan.
     if (imagePath) await admin.storage.from(HR_BUCKET).remove([imagePath]).catch(() => null);
