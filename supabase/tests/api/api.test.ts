@@ -421,6 +421,13 @@ Deno.test("contract signing: HR attaches the contract, the applicant signs, HR a
   await stillWaiting("a half-filled counter-signature");
   if (storageCalls.some(c => c.includes("/company-signature-"))) throw new Error("a refused counter-signature must not store an image");
 
+  // A storage failure while keeping the counter-signature says which step failed (not a bare "could not complete") and accepts nothing.
+  failNextStore(`${BUCKET}/${sent.requestId}/${item.id}/company-signature-`);
+  const hiccup = await call(adminApi, HR, { action: "onboarding_review", itemId: item.id, accept: true, placement: drawn, company });
+  expectStatus(hiccup, 422, "a counter-signature that could not be saved");
+  if (!/counter-signature could not be saved/.test(hiccup.body.message) || hiccup.body.code !== "finalize_store") throw new Error(`should name the step: ${JSON.stringify(hiccup.body)}`);
+  await stillWaiting("a counter-signature that could not be saved");
+
   // Finalizing accepts and records what HR chose. This time filing hits a storage hiccup right after the acceptance.
   failNextStore(`${BUCKET}/personnel/${emp.id}/`);
   const finalized = await ok(adminApi, HR, { action: "onboarding_review", itemId: item.id, accept: true, placement: drawn, company });
