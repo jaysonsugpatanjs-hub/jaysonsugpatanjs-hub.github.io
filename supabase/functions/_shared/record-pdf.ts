@@ -11,6 +11,10 @@ export type RecordInput = {
   acceptedBy: string | null;
   rows: { label: string; value: string }[];
   note?: string;
+  /** A handwritten signature (PNG) drawn under the rows. */
+  signaturePng?: Uint8Array;
+  /** Footer text instead of "Page n of N", for records that are appended to another document. */
+  footer?: string;
 };
 
 const latin = (v: string) => String(v ?? "").replace(/[^\x20-\x7E -ÿ]/g, "-");
@@ -20,9 +24,10 @@ const when = (iso: string | null) => iso
 
 function wrap(text: string, font: any, size: number, width: number) {
   const out: string[] = [];
-  for (const para of latin(text).split("\n")) {
+  // Split on newlines first: latin() would turn them into hyphens.
+  for (const para of String(text ?? "").split("\n")) {
     let line = "";
-    for (const word of para.split(/\s+/)) {
+    for (const word of latin(para).split(/\s+/)) {
       const next = line ? `${line} ${word}` : word;
       if (!line || font.widthOfTextAtSize(next, size) <= width) line = next;
       else { out.push(line); line = word; }
@@ -82,6 +87,24 @@ export async function createRecordPdf(input: RecordInput): Promise<Uint8Array> {
     y -= lines * 13 + 8;
   }
 
+  if (input.signaturePng) {
+    try {
+      const image = await pdf.embedPng(input.signaturePng);
+      const scale = Math.min(240 / image.width, 80 / image.height, 1);
+      const [w, h] = [image.width * scale, image.height * scale];
+      ensure(h + 40);
+      y -= 4;
+      page.drawText("Handwritten signature", { x: M, y, size: 9, font: regular, color: grey });
+      y -= 10;
+      page.drawRectangle({ x: M - 4, y: y - h - 4, width: w + 8, height: h + 8, borderColor: grey, borderWidth: 0.5 });
+      page.drawImage(image, { x: M, y: y - h, width: w, height: h });
+      y -= h + 24;
+    } catch (error) {
+      // An unreadable image must not stop the record being filed; the stored image is kept.
+      console.error("signature image could not be embedded", error);
+    }
+  }
+
   ensure(60);
   y -= 10;
   for (const l of wrap(input.note || "Typed and declared by the person on the Panalo portal after signing in with their own account. Generated automatically from the submitted answers; the original submission and its audit trail are kept in the system.", regular, 8, W - 2 * M)) {
@@ -89,6 +112,8 @@ export async function createRecordPdf(input: RecordInput): Promise<Uint8Array> {
     y -= 11;
   }
   const pages = pdf.getPages();
-  pages.forEach((p: any, i: number) => p.drawText(`Page ${i + 1} of ${pages.length} - Confidential personnel record`, { x: M, y: 24, size: 7, font: regular, color: grey }));
+  pages.forEach((p: any, i: number) => p.drawText(
+    latin(input.footer ? `${input.footer} - Confidential personnel record` : `Page ${i + 1} of ${pages.length} - Confidential personnel record`),
+    { x: M, y: 24, size: 7, font: regular, color: grey }));
   return await pdf.save();
 }

@@ -13,6 +13,12 @@ function fmt(iso) {
   return new Intl.DateTimeFormat("en-AU", { dateStyle: "medium", timeZone: "Australia/Sydney" }).format(new Date(iso));
 }
 const ITEM = { pending: ["Not sent yet", ""], uploaded: ["To review", "pending"], accepted: ["Accepted", "good"], rejected: ["Sent back", "bad"] };
+// A contract HR has not attached, or the applicant has not signed yet, reads differently from other items.
+function itemStatus(i) {
+  if (i.kind === "sign" && i.status === "pending") return i.signDocs?.length ? ["Waiting for signature", "info"] : ["Add the contract", "pending"];
+  if (i.kind === "sign" && i.status === "uploaded") return ["Signed · to review", "pending"];
+  return ITEM[i.status] || [i.status, ""];
+}
 const mask = v => (v.length > 3 ? "•".repeat(Math.min(v.length - 3, 8)) + v.slice(-3) : "•••");
 
 function filesHtml(item) {
@@ -20,6 +26,27 @@ function filesHtml(item) {
   return `<ul class="file-list admin-files">${item.files.map(f => `<li><div><strong>${safe(f.label)}</strong>
       <small>${safe(f.fileName)} · ${fmt(f.uploadedAt)}${f.expiresOn ? ` · <span class="${f.expiresOn < new Date().toISOString().slice(0, 10) ? "reject-note" : ""}">expires ${fmt(f.expiresOn)}</span>` : ""}</small></div>
       <button type="button" class="secondary-action small" data-view-file="${safe(f.id)}">View</button></li>`).join("")}</ul>`;
+}
+
+const kb = n => (n >= 1048576 ? `${(n / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`);
+
+/** Online contract signing: HR attaches the PDF(s); the applicant signs on the portal. */
+function signHtml(i) {
+  if (i.kind !== "sign") return "";
+  const id = safe(i.id);
+  const docs = i.signDocs?.length ? `<ul class="file-list admin-files">${i.signDocs.map(d => `<li><div><strong>${safe(d.label)}</strong>
+      <small>${safe(d.fileName)} · ${kb(d.size)} · added ${fmt(d.addedAt)} · SHA-256 ${safe(d.sha256.slice(0, 12))}…</small></div>
+      <span class="row-actions"><button type="button" class="secondary-action small" data-sign-view="${safe(d.id)}">View</button>${i.canChangeContract
+        ? `<button type="button" class="revoke" data-sign-remove="${safe(d.id)}">Remove</button>` : ""}</span></li>`).join("")}</ul>` : "";
+  const upload = i.canChangeContract ? `<div class="add-file">
+      <div class="field onb-field"><label for="sign-label-${id}">Document name</label><input id="sign-label-${id}" data-sign-label maxlength="80" value="Employment contract"></div>
+      <label class="upload-button"><input type="file" accept=".pdf,application/pdf" data-sign-upload="${id}"><span>${i.signDocs?.length ? "Add another PDF" : "Upload contract (PDF)"}</span></label>
+      <small class="muted">${i.signDocs?.length
+        ? "The applicant signs once and covers every file listed."
+        : "PDF only, up to 20 MB. Save Word files as PDF first. The applicant can sign as soon as a file is attached."}</small>
+      <p class="form-message" data-sign-msg role="status" aria-live="polite"></p></div>` : "";
+  const hand = i.hasHandwriting ? `<button type="button" class="text-button" data-sign-signature="${id}">View handwritten signature</button>` : "";
+  return docs + upload + hand;
 }
 
 function answersHtml(item) {
@@ -80,7 +107,7 @@ function renderForm(root) {
       </select><small>Add new applicants under People first, with their email address.</small></div>
     ${person ? `<fieldset class="doc-picks"><legend>Documents for ${safe(person.employmentType)}s</legend>
       ${typesFor(person).map(t => `<label class="check-field"><input type="checkbox" name="types" value="${safe(t.key)}" ${t.required ? "checked" : ""}>
-        <span><strong>${safe(t.name)}</strong> <span class='chip'>${t.kind === "form" ? "Fill in" : "Photo/PDF"}</span>${t.required ? "" : " <span class='chip'>Optional</span>"}${t.sensitive ? " <span class='chip info'>Sensitive</span>" : ""}<small>${safe(t.guidance)}</small></span></label>`).join("")}
+        <span><strong>${safe(t.name)}</strong> <span class='chip'>${t.kind === "form" ? "Fill in" : t.kind === "sign" ? "Sign online" : "Photo/PDF"}</span>${t.required ? "" : " <span class='chip'>Optional</span>"}${t.sensitive ? " <span class='chip info'>Sensitive</span>" : ""}<small>${safe(t.guidance)}</small></span></label>`).join("")}
       </fieldset>
       <div class="field-row">
         <div class="field"><label for="onb-due">Due by</label><input id="onb-due" name="dueOn" type="date"></div>
@@ -121,14 +148,16 @@ async function openRequest(root, id) {
         ${request.status === "open" ? '<button type="button" class="revoke" data-cancel>Cancel request</button>' : ""}</div>
       ${request.cancelledReason ? `<p class="muted">Cancelled: ${safe(request.cancelledReason)}</p>` : ""}
       <div class="list">${items.map(i => {
-        const [label, tone] = ITEM[i.status] || [i.status, ""];
+        const [label, tone] = itemStatus(i);
         return `<div class="list-row review-row"><div>
             <strong>${safe(i.name)}</strong>${i.required ? "" : " <span class='chip'>Optional</span>"}${i.sensitive ? " <span class='chip info'>Sensitive</span>" : ""}
-            <small>${i.kind === "form"
+            <small>${i.kind === "sign"
+              ? (["uploaded", "accepted"].includes(i.status) && i.submittedAt ? `Signed ${fmt(i.submittedAt)}` : i.signDocs?.length ? "Contract attached · the applicant hasn't signed yet" : "Attach the contract so the applicant can sign it")
+              : i.kind === "form"
               ? (i.submittedAt ? `Filled in ${fmt(i.submittedAt)}` : "Not filled in yet")
               : (i.files?.length ? `${i.files.length} file${i.files.length === 1 ? "" : "s"} · last added ${fmt(i.uploadedAt)}` : "Nothing uploaded yet")}${i.kind === "form" && i.fileName ? ` · earlier file: ${safe(i.fileName)}` : ""}${i.reviewer ? ` · reviewed by ${safe(i.reviewer)}` : ""}</small>
             ${i.status === "rejected" ? `<small class="reject-note">Sent back: ${safe(i.rejectReason)}</small>` : ""}
-            ${answersHtml(i)}${filesHtml(i)}</div>
+            ${answersHtml(i)}${filesHtml(i)}${signHtml(i)}</div>
           <div class="row-actions"><span class="chip ${tone}">${label}</span>
             ${i.kind === "form" && i.fileName && !i.files?.length ? `<button type="button" class="secondary-action small" data-view="${safe(i.id)}">View earlier file</button>` : ""}
             ${i.status === "uploaded" && request.status === "open" ? `<button type="button" class="primary small" data-accept="${safe(i.id)}">Accept</button><button type="button" class="revoke" data-reject="${safe(i.id)}">Send back</button>` : ""}
@@ -142,8 +171,36 @@ async function openRequest(root, id) {
   }
 }
 
+/** Uploads a contract PDF: signed upload link, PUT, then the server checks and fingerprints it. */
+async function uploadContract(root, input) {
+  const file = input.files?.[0];
+  if (!file) return;
+  const box = input.closest(".add-file");
+  const msg = box.querySelector("[data-sign-msg]");
+  if (!/\.pdf$/i.test(file.name)) { msg.textContent = "Choose a PDF. Save Word files as PDF first."; input.value = ""; return; }
+  if (file.size > 20 * 1024 * 1024) { msg.textContent = `${file.name} is over 20 MB.`; input.value = ""; return; }
+  const label = (box.querySelector("[data-sign-label]")?.value || "").trim() || "Employment contract";
+  input.disabled = true;
+  msg.textContent = `Uploading ${file.name}…`;
+  try {
+    const itemId = input.dataset.signUpload;
+    const prepared = await call("onboarding_sign_prepare", { itemId, fileName: file.name, size: file.size });
+    const res = await fetch(prepared.signedUrl, { method: "PUT", headers: { "Content-Type": "application/pdf" }, body: file });
+    if (!res.ok) throw new Error(`The upload failed (${res.status}). Please try again.`);
+    await call("onboarding_sign_attach", { itemId, path: prepared.path, fileName: file.name, label });
+    await loadOnboarding(root, { canIssuePasswords: state.canIssuePasswords });
+  } catch (error) {
+    msg.textContent = friendlyError(error);
+    input.disabled = false;
+    input.value = "";
+  }
+}
+
 export function bindOnboarding(root) {
-  root.addEventListener("change", event => { if (event.target.name === "employeeId") renderForm(root); });
+  root.addEventListener("change", event => {
+    if (event.target.name === "employeeId") renderForm(root);
+    else if (event.target.matches("input[type=file][data-sign-upload]")) uploadContract(root, event.target);
+  });
   root.addEventListener("submit", async event => {
     if (!event.target.matches("[data-onb-form]")) return;
     event.preventDefault();
@@ -180,6 +237,16 @@ export function bindOnboarding(root) {
         const r = await call("onboarding_file", { fileId: b.dataset.viewFile });
         window.open(r.url, "_blank", "noopener");
         b.disabled = false;
+      } else if (b.dataset.signView || b.dataset.signSignature) {
+        b.disabled = true;
+        const r = await call("onboarding_sign_view", b.dataset.signView ? { docId: b.dataset.signView } : { itemId: b.dataset.signSignature });
+        window.open(r.url, "_blank", "noopener");
+        b.disabled = false;
+      } else if (b.dataset.signRemove) {
+        if (!window.confirm("Remove this file from the contract? The applicant hasn't signed yet.")) return;
+        b.disabled = true;
+        await call("onboarding_sign_remove", { docId: b.dataset.signRemove });
+        await loadOnboarding(root, { canIssuePasswords: state.canIssuePasswords });
       } else if (b.dataset.view) {
         b.disabled = true;
         const r = await call("onboarding_file", { itemId: b.dataset.view });

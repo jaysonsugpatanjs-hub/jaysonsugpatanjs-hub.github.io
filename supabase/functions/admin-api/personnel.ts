@@ -2,8 +2,10 @@
 // Accepted onboarding items are filed automatically: uploads in place, typed
 // answers as a generated PDF record. HR can add, view and archive documents.
 // Nothing is deleted. Every view, filing and archive is audited.
+import { describeSignature, sha256Hex, signatureImagePath } from "../_shared/contract-signing.ts";
 import { describeAnswers } from "../_shared/onboarding-forms.ts";
 import { createRecordPdf } from "../_shared/record-pdf.ts";
+import { createSignedContractPdf } from "../_shared/signed-contract-pdf.ts";
 import { httpError, rpc } from "../_shared/http.ts";
 import type { Actor } from "./accounts.ts";
 
@@ -25,6 +27,49 @@ async function categories(admin: Client) {
   const { data, error } = await admin.from("personnel_categories").select("key,name,description,sensitive,sort").order("sort");
   if (error) throw httpError(500, "HR folder categories could not be loaded.");
   return data;
+}
+
+async function downloadHrFile(admin: Client, path: string, what: string): Promise<Uint8Array> {
+  const { data, error } = await admin.storage.from(BUCKET).download(path);
+  if (error || !data) throw httpError(500, `${what} could not be read from storage.`);
+  return new Uint8Array(await data.arrayBuffer());
+}
+
+/**
+ * Files a signed contract as one PDF: the contract pages, then the signature
+ * record. Each contract file is checked against the fingerprint taken when HR
+ * attached it, so a signature is never filed against a file that has changed.
+ */
+async function fileSignedContract(admin: Client, actor: Actor, employeeId: string, emp: any, item: any, type: any, category: string) {
+  const docs = await admin.from("onboarding_sign_documents").select("path,file_name,label,sha256").eq("item_id", item.id).order("added_at");
+  if (docs.error) throw httpError(500, "The contract files could not be read.");
+  const contracts: Uint8Array[] = [];
+  for (const doc of docs.data) {
+    const bytes = await downloadHrFile(admin, doc.path, "A contract file");
+    if (await sha256Hex(bytes) !== doc.sha256) throw httpError(500, "A contract file no longer matches the fingerprint taken when it was signed.");
+    contracts.push(bytes);
+  }
+  const imagePath = signatureImagePath(item.answers);
+  const reviewer = item.reviewed_by
+    ? (await admin.from("training_profiles").select("full_name,email").eq("id", item.reviewed_by).maybeSingle()).data
+    : null;
+  const { bytes } = await createSignedContractPdf({
+    contracts,
+    record: {
+      title: type.name || item.doc_type,
+      personName: emp.data?.full_name || "", employeeNumber: emp.data?.employee_number || "",
+      submittedAt: item.submitted_at, acceptedAt: item.reviewed_at, acceptedBy: reviewer?.full_name || reviewer?.email || null,
+      rows: describeSignature(item.answers, { pdf: true }).map(r => ({ label: r.label, value: r.value })),
+      signaturePng: imagePath ? await downloadHrFile(admin, imagePath, "The handwritten signature") : undefined
+    }
+  });
+  const path = `personnel/${employeeId}/${category}/${slug(type.name || item.doc_type)}-signed-${Date.now().toString(36)}.pdf`;
+  const up = await admin.storage.from(BUCKET).upload(path, bytes, { contentType: "application/pdf", upsert: false });
+  if (up.error) throw httpError(500, "The signed contract could not be saved.");
+  await rpc(admin, "personnel_file_document", {
+    p_actor: actor.id, p_employee: employeeId, p_category: category, p_title: `${type.name || item.doc_type} (signed)`,
+    p_path: path, p_file_name: path.split("/").pop(), p_source: "onboarding_form", p_item: item.id, p_file: null, p_expires: null
+  });
 }
 
 /**
@@ -54,6 +99,10 @@ export async function fileAcceptedOnboarding(admin: Client, actor: Actor, employ
         p_actor: actor.id, p_employee: employeeId, p_category: category, p_title: file.label || type.name || item.doc_type,
         p_path: file.path, p_file_name: file.file_name, p_source: "onboarding_upload", p_item: item.id, p_file: file.id, p_expires: file.expires_on
       });
+      added++;
+    }
+    if (type.kind === "sign" && item.answers && !filedForms.has(item.id)) {
+      await fileSignedContract(admin, actor, employeeId, emp, item, type, category);
       added++;
     }
     if (type.kind === "form" && item.answers && !filedForms.has(item.id)) {

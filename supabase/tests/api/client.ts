@@ -78,6 +78,14 @@ class Query implements PromiseLike<Result> {
 // Storage: remembers uploaded paths so "list" reports them as present.
 export const storageCalls: string[] = [];
 const uploaded = new Set<string>();
+// File contents, for handlers that download what was stored (a browser PUT to a
+// signed upload URL is simulated with putStorage).
+const storedBytes = new Map<string, Uint8Array>();
+export function putStorage(bucket: string, path: string, bytes: Uint8Array) {
+  uploaded.add(`${bucket}/${path}`);
+  storedBytes.set(`${bucket}/${path}`, bytes);
+}
+export const hasStorage = (bucket: string, path: string) => storedBytes.has(`${bucket}/${path}`);
 
 async function rpcCall(fn: string, args: Record<string, unknown>) {
   const res = await fetch(`${BASE}/rpc/${fn}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(args) });
@@ -103,16 +111,20 @@ export function createClient() {
           return { data: { signedUrl: `https://storage.test/${bucket}/${path}` }, error: null };
         },
         createSignedUrl: async (path: string) => { storageCalls.push(`sign ${bucket}/${path}`); return { data: { signedUrl: `https://storage.test/${path}` }, error: null }; },
-        upload: async (path: string, _body: unknown) => {
+        upload: async (path: string, body: unknown) => {
           storageCalls.push(`store ${bucket}/${path}`);
           uploaded.add(`${bucket}/${path}`);
+          if (body instanceof Uint8Array) storedBytes.set(`${bucket}/${path}`, body);
           return { data: { path }, error: null };
         },
         remove: async (paths: string[]) => {
-          for (const path of paths) { storageCalls.push(`remove ${bucket}/${path}`); uploaded.delete(`${bucket}/${path}`); }
+          for (const path of paths) { storageCalls.push(`remove ${bucket}/${path}`); uploaded.delete(`${bucket}/${path}`); storedBytes.delete(`${bucket}/${path}`); }
           return { data: paths.map(name => ({ name })), error: null };
         },
-        download: async () => ({ data: null, error: { message: "not in test" } })
+        download: async (path: string) => {
+          const bytes = storedBytes.get(`${bucket}/${path}`);
+          return bytes ? { data: new Blob([bytes]), error: null } : { data: null, error: { message: "Object not found" } };
+        }
       })
     },
     auth: {

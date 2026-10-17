@@ -144,7 +144,193 @@ function formHtml(item, open) {
   </form>`;
 }
 
+/* ---------------- Contract signing ---------------- */
+
+function signStatus(item) {
+  const hasDocs = (item.signDocs || []).length > 0;
+  if (item.status === "accepted") return ["Signed · accepted", "good"];
+  if (item.status === "uploaded") return ["Signed · waiting for HR", "info"];
+  if (!hasDocs) return ["Waiting for HR to add it", "info"];
+  return item.status === "rejected" ? ["Needs signing again", "bad"] : ["Ready to sign", "pending"];
+}
+
+function signFormHtml(item) {
+  const id = safe(item.id);
+  return `<form class="sign-form" data-sign-item="${id}" novalidate>
+    <p class="muted small">Read the contract above, then sign below.</p>
+    <div class="field onb-field"><label class="check-field"><input type="checkbox" name="agreed"><span>${safe(item.agreementText)}</span></label>
+      <small class="field-error" data-error-for="agreed"></small></div>
+    <fieldset class="sign-methods"><legend>How do you want to sign?</legend>
+      <label><input type="radio" name="method" value="typed" checked> Type my name</label>
+      <label><input type="radio" name="method" value="drawn"> Write my name</label></fieldset>
+    <div class="field onb-field" data-sign-pane="typed"><label for="sign-name-${id}">Type your full name as your signature</label>
+      <input id="sign-name-${id}" name="name" type="text" autocomplete="off" autocapitalize="words" spellcheck="false" maxlength="120" placeholder="${safe(item.signAs)}">
+      <small>Your name on file is <strong>${safe(item.signAs)}</strong>. Type it exactly like that.</small>
+      <small class="field-error" data-error-for="name"></small></div>
+    <div class="field onb-field hidden" data-sign-pane="drawn"><label for="sign-pad-${id}">Write your name in the box, with your finger or mouse</label>
+      <canvas id="sign-pad-${id}" class="sign-pad" width="600" height="200" role="img" aria-label="Signature box. Write your name here."></canvas>
+      <button type="button" class="text-button" data-pad-clear>Clear and start again</button>
+      <small class="field-error" data-error-for="signature"></small></div>
+    <div class="form-actions"><button class="primary" type="submit">Sign contract</button></div>
+    <p class="form-message" data-form-msg role="status" aria-live="polite"></p>
+  </form>`;
+}
+
+function signItemHtml(item) {
+  formItems.set(item.id, item);
+  const [label, tone] = signStatus(item);
+  const docs = item.signDocs || [];
+  const chips = `${item.required ? "" : '<span class="chip">Optional</span>'}<span class="chip">Sign online</span>`;
+  const reject = item.status === "rejected" && item.rejectReason ? `<p class="reject-note">HR says: ${safe(item.rejectReason)}</p>` : "";
+  const list = docs.length ? `<ul class="file-list contract-docs">${docs.map(d => `<li>
+      <div><strong>${safe(d.label)}</strong><small>PDF · opens in a new tab</small></div>
+      <button type="button" class="secondary-action small" data-read-contract="${safe(d.id)}">Read</button></li>`).join("")}</ul>` : "";
+  let body = "";
+  if (item.signed) {
+    body = `<p class="sign-done">Signed by <strong>${safe(item.signed.name)}</strong> on ${safe(formatDate(item.signed.at))} (${item.signed.method === "drawn" ? "written on screen" : "typed"}).${item.status === "uploaded" ? " HR will review it." : ""}</p>`;
+  } else if (!docs.length) {
+    body = '<p class="muted small">HR hasn\'t added your contract yet. It will appear here, so check back soon.</p>';
+  } else {
+    body = signFormHtml(item);
+  }
+  return `<article class="onboarding-item onb-form-item" data-item-card="${safe(item.id)}">
+      <div class="onb-head"><div class="onboarding-text">
+          <div class="onboarding-title"><strong>${safe(item.name)}</strong>${chips}</div>
+          <p class="muted small">${safe(item.guidance)}</p>${reject}</div>
+        <div class="onboarding-actions"><span class="chip ${tone}">${label}</span></div></div>
+      ${list}${body}
+    </article>`;
+}
+
+// Opens the contract in a new tab. The tab is opened first, in response to the
+// tap, because phones block tabs opened after waiting for the network.
+async function readContract(button) {
+  const tab = window.open("", "_blank");
+  button.disabled = true;
+  try {
+    const { url } = await api(config.trainingFunction, { action: "onboarding_contract_url", docId: button.dataset.readContract });
+    if (!tab) {
+      $("onboarding-message").textContent = "Your browser blocked the new tab. Allow pop-ups for this page, then press Read again.";
+      return;
+    }
+    tab.opener = null;
+    tab.location.href = url;
+    $("onboarding-message").textContent = "";
+  } catch (error) {
+    tab?.close();
+    $("onboarding-message").textContent = friendlyError(error);
+  } finally {
+    button.disabled = false;
+  }
+}
+
+// The signature box: pointer events cover mouse, touch and pen.
+const pads = new WeakMap();
+function preparePad(canvas) {
+  const ctx = canvas.getContext?.("2d");
+  if (!ctx) return;
+  ctx.fillStyle = "#fff";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.strokeStyle = "#101014";
+  ctx.lineWidth = 3.2;
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  pads.set(canvas, { ctx, drawing: false, last: null, dirty: false });
+}
+function padPoint(canvas, event) {
+  const rect = canvas.getBoundingClientRect();
+  return { x: (event.clientX - rect.left) * (canvas.width / rect.width), y: (event.clientY - rect.top) * (canvas.height / rect.height) };
+}
+function padDown(event) {
+  const canvas = event.target.closest("canvas.sign-pad");
+  const pad = canvas && pads.get(canvas);
+  if (!pad || (event.pointerType === "mouse" && event.button !== 0)) return;
+  event.preventDefault();
+  canvas.setPointerCapture?.(event.pointerId);
+  pad.drawing = true;
+  pad.last = padPoint(canvas, event);
+  // A tap leaves a dot.
+  pad.ctx.beginPath();
+  pad.ctx.arc(pad.last.x, pad.last.y, 1.6, 0, Math.PI * 2);
+  pad.ctx.fillStyle = "#101014";
+  pad.ctx.fill();
+  pad.dirty = true;
+}
+function padMove(event) {
+  const canvas = event.target.closest?.("canvas.sign-pad");
+  const pad = canvas && pads.get(canvas);
+  if (!pad?.drawing) return;
+  event.preventDefault();
+  const point = padPoint(canvas, event);
+  pad.ctx.beginPath();
+  pad.ctx.moveTo(pad.last.x, pad.last.y);
+  pad.ctx.lineTo(point.x, point.y);
+  pad.ctx.stroke();
+  pad.last = point;
+}
+function padUp(event) {
+  const canvas = event.target.closest?.("canvas.sign-pad");
+  const pad = canvas && pads.get(canvas);
+  if (pad) pad.drawing = false;
+}
+function clearPad(canvas) {
+  const pad = pads.get(canvas);
+  if (!pad) return;
+  pad.ctx.fillStyle = "#fff";
+  pad.ctx.fillRect(0, 0, canvas.width, canvas.height);
+  pad.dirty = false;
+}
+
+function switchSignMethod(form) {
+  const method = form.querySelector('input[name="method"]:checked')?.value || "typed";
+  form.querySelectorAll("[data-sign-pane]").forEach(el => el.classList.toggle("hidden", el.dataset.signPane !== method));
+  form.querySelectorAll("[data-error-for]").forEach(e => { e.textContent = ""; });
+  if (method === "typed") form.elements.name?.focus();
+}
+
+async function submitSignature(form) {
+  const item = formItems.get(form.dataset.signItem);
+  if (!item) return;
+  const msg = form.querySelector("[data-form-msg]");
+  const button = form.querySelector('button[type="submit"]');
+  form.querySelectorAll("[data-error-for]").forEach(e => { e.textContent = ""; });
+  const fail = (key, text) => {
+    const slot = form.querySelector(`[data-error-for="${CSS.escape(key)}"]`);
+    if (slot) slot.textContent = text;
+    msg.textContent = "Check the highlighted part.";
+  };
+  const method = form.querySelector('input[name="method"]:checked')?.value || "typed";
+  const payload = { action: "onboarding_sign", itemId: item.id, agreed: form.elements.agreed.checked, method };
+  if (!payload.agreed) return fail("agreed", "Tick the box to confirm you have read the contract and agree to it.");
+  if (method === "typed") {
+    payload.name = form.elements.name.value;
+    if (!payload.name.trim()) return fail("name", "Type your full name to sign.");
+  } else {
+    const canvas = form.querySelector("canvas.sign-pad");
+    const pad = canvas && pads.get(canvas);
+    if (!pad?.dirty) return fail("signature", "Write your name in the box first.");
+    payload.signatureImage = canvas.toDataURL("image/png");
+  }
+  button.disabled = true;
+  msg.textContent = "Signing…";
+  try {
+    await api(config.trainingFunction, payload);
+    await loadOnboarding();
+    $("onboarding-message").textContent = `${item.name} signed. HR will review it.`;
+  } catch (error) {
+    msg.textContent = friendlyError(error);
+    const key = String(error.code || "").startsWith("field:") ? error.code.slice(6) : "";
+    const slot = key && form.querySelector(`[data-error-for="${CSS.escape(key)}"]`);
+    if (slot) {
+      slot.textContent = error.message;
+      msg.textContent = "Check the highlighted part.";
+    }
+    button.disabled = false;
+  }
+}
+
 function itemHtml(item) {
+  if (item.kind === "sign") return signItemHtml(item);
   const [label, tone] = ITEM_STATUS[item.status] || [item.status, ""];
   const chips = `${item.required ? "" : '<span class="chip">Optional</span>'}${item.sensitive ? '<span class="chip info">Restricted to HR</span>' : ""}`;
   const reject = item.status === "rejected" && item.rejectReason ? `<p class="reject-note">HR says: ${safe(item.rejectReason)}</p>` : "";
@@ -199,11 +385,12 @@ async function loadOnboarding() {
   $("onboarding-intro").textContent = [
     data.request.message,
     data.request.dueOn ? `Due by ${formatDate(data.request.dueOn)}.` : ""
-  ].filter(Boolean).join(" ") || "Fill in each item below. Only certificates and your signed contract need a photo or PDF.";
+  ].filter(Boolean).join(" ") || "Fill in each item below. Only certificates need a photo or PDF, and you sign your contract right here.";
   formItems.clear();
-  // Forms first, then the few uploads.
-  const ordered = [...items.filter(i => i.kind === "form"), ...items.filter(i => i.kind !== "form")];
+  // Forms first, then the contract, then the few uploads.
+  const ordered = [...items.filter(i => i.kind === "form"), ...items.filter(i => i.kind === "sign"), ...items.filter(i => i.kind !== "form" && i.kind !== "sign")];
   $("onboarding-items").innerHTML = ordered.map(itemHtml).join("") + CERT_NAMES;
+  $("onboarding-items").querySelectorAll("canvas.sign-pad").forEach(preparePad);
   ui.onboarding.classList.remove("hidden");
 }
 
@@ -403,13 +590,23 @@ ui.passwordForm.addEventListener("submit", async event => {
 
 $("onboarding-items").addEventListener("change", event => {
   if (event.target.matches("input[type=file][data-item]")) uploadOnboardingFile(event.target);
+  else if (event.target.matches('.sign-form input[name="method"]')) switchSignMethod(event.target.closest(".sign-form"));
   else if (event.target.closest(".onb-form")) refreshConditions(event.target.closest(".onb-form"));
 });
 $("onboarding-items").addEventListener("submit", event => {
+  if (event.target.matches(".sign-form")) {
+    event.preventDefault();
+    submitSignature(event.target);
+    return;
+  }
   if (!event.target.matches(".onb-form")) return;
   event.preventDefault();
   submitOnboardingForm(event.target);
 });
+$("onboarding-items").addEventListener("pointerdown", padDown);
+$("onboarding-items").addEventListener("pointermove", padMove);
+$("onboarding-items").addEventListener("pointerup", padUp);
+$("onboarding-items").addEventListener("pointercancel", padUp);
 $("onboarding-items").addEventListener("click", event => {
   const edit = event.target.closest("[data-edit]");
   if (edit) {
@@ -421,6 +618,10 @@ $("onboarding-items").addEventListener("click", event => {
   if (event.target.closest("[data-cancel-edit]")) loadOnboarding();
   const remove = event.target.closest("[data-remove-file]");
   if (remove) removeOnboardingFile(remove);
+  const read = event.target.closest("[data-read-contract]");
+  if (read) readContract(read);
+  const clear = event.target.closest("[data-pad-clear]");
+  if (clear) clearPad(clear.closest(".sign-form").querySelector("canvas.sign-pad"));
 });
 
 ui.signOut.addEventListener("click", async () => {
