@@ -139,7 +139,7 @@ function renderForm(root) {
       </select><small>Add new applicants under People first, with their email address.</small></div>
     ${person ? `<fieldset class="doc-picks"><legend>Documents for ${safe(person.employmentType)}s</legend>
       ${typesFor(person).map(t => `<label class="check-field"><input type="checkbox" name="types" value="${safe(t.key)}" ${t.required ? "checked" : ""}>
-        <span><strong>${safe(t.name)}</strong> <span class='chip'>${t.kind === "form" ? "Fill in" : t.kind === "sign" ? "Sign online" : "Photo/PDF"}</span>${t.required ? "" : " <span class='chip'>Optional</span>"}${t.sensitive ? " <span class='chip info'>Sensitive</span>" : ""}<small>${safe(t.guidance)}${t.link ? ` <a href="${safe(t.link.href)}" target="_blank" rel="noopener">${safe(t.link.label)} ↗</a>` : ""}</small></span></label>`).join("")}
+        <span><strong>${safe(t.name)}</strong> <span class='chip'>${t.kind === "form" ? "Fill in" : t.kind === "sign" ? "Sign online" : "Photo/PDF"}</span>${t.required ? "" : " <span class='chip'>Optional</span>"}${t.sensitive ? " <span class='chip info'>Sensitive</span>" : ""}<small>${safe(t.guidance)}${t.link ? ` <span class="doc-link-row"><strong>Click here to read it:</strong> <a class="doc-link" href="${safe(t.link.href)}" target="_blank" rel="noopener">${safe(t.link.label)} ↗</a></span>` : ""}</small></span></label>`).join("")}
       </fieldset>
       <div class="field-row">
         <div class="field"><label for="onb-due">Due by</label><input id="onb-due" name="dueOn" type="date"></div>

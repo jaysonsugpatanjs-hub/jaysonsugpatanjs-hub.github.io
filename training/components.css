@@ -235,3 +235,8 @@ code.secret { font-size: 20px; letter-spacing: .06em; color: var(--gold); backgr
 .sign-done { margin: 12px 0 0; padding: 12px 14px; border: 1px solid var(--border); border-left: 4px solid var(--green); border-radius: 10px; background: var(--green-bg); color: var(--text); }
 .contract-docs li { align-items: center; }
 @media (max-width: 640px) { .sign-form { padding: 12px; } .sign-form .form-actions .primary { width: 100%; } }
+
+/* "Click here" call-to-action beside a link the person has to read (e.g. the Fair Work statements). */
+.doc-link-row { display: block; margin-top: 6px; }
+.doc-link { font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
+.doc-link:hover, .doc-link:focus-visible { text-decoration-thickness: 2px; }
