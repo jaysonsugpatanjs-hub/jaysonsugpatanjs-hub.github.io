@@ -106,14 +106,14 @@ export const FORMS: Record<string, FormDef> = {
     ]
   },
   fwis_ack: {
-    link: { label: "Read the Fair Work Information Statement", href: "https://www.fairwork.gov.au/employment-conditions/national-employment-standards/fair-work-information-statement" },
+    link: { label: "Fair Work Information Statement - Fair Work Ombudsman", href: "https://www.fairwork.gov.au/employment-conditions/information-statements/fair-work-information-statement" },
     fields: [
       { key: "received", label: "I have received and read the Fair Work Information Statement.", type: "confirm" },
       { key: "signature", label: "Type your full name as your signature", type: "text", format: "name", autocomplete: "name" }
     ]
   },
   casual_statement: {
-    link: { label: "Read the Casual Employment Information Statement", href: "https://www.fairwork.gov.au/employment-conditions/types-of-employees/casual-part-time-and-full-time/casual-employees" },
+    link: { label: "Casual Employment Information Statement - Fair Work Ombudsman", href: "https://www.fairwork.gov.au/employment-conditions/information-statements/casual-employment-information-statement" },
     fields: [
       { key: "received", label: "I have received and read the Casual Employment Information Statement.", type: "confirm" },
       { key: "signature", label: "Type your full name as your signature", type: "text", format: "name", autocomplete: "name" }
