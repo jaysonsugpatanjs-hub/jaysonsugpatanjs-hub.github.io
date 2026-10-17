@@ -98,3 +98,42 @@ test("the stored handwriting image is only offered for handwritten signatures", 
   assert.equal(signatureImagePath({ method: "drawn" }), null);
   assert.equal(signatureImagePath(null), null);
 });
+
+import { DEFAULT_PLACEMENT, parsePlacement, pdfPoint, resolvePage, toBase64 } from "../../supabase/functions/_shared/contract-signing.ts";
+
+test("placement: HR's click is a page and fractions of it, nothing else is trusted", () => {
+  const ok = parsePlacement({ page: 2, signature: { x: 0.5, y: 0.9 }, date: { x: 0.6, y: 0.93 } });
+  assert.deepEqual(ok, { page: 2, signature: { x: 0.5, y: 0.9 }, date: { x: 0.6, y: 0.93 } });
+  assert.equal(parsePlacement({ page: "last", signature: { x: 0, y: 1 } }).date, null);
+  assert.deepEqual(parsePlacement({ page: 1, signature: { x: 0.123456789, y: 0.5 } }).signature, { x: 0.1235, y: 0.5 });
+
+  failsOn(() => parsePlacement(undefined), "placement");
+  failsOn(() => parsePlacement([]), "placement");
+  failsOn(() => parsePlacement({ page: 0, signature: { x: 0.5, y: 0.5 } }), "page");
+  failsOn(() => parsePlacement({ page: 1.5, signature: { x: 0.5, y: 0.5 } }), "page");
+  failsOn(() => parsePlacement({ page: "first", signature: { x: 0.5, y: 0.5 } }), "page");
+  failsOn(() => parsePlacement({ page: 1 }), "signature");
+  failsOn(() => parsePlacement({ page: 1, signature: { x: 1.2, y: 0.5 } }), "signature");
+  failsOn(() => parsePlacement({ page: 1, signature: { x: "0.5", y: 0.5 } }), "signature");
+  failsOn(() => parsePlacement({ page: 1, signature: { x: Number.NaN, y: 0.5 } }), "signature");
+  failsOn(() => parsePlacement({ page: 1, signature: { x: 0.5, y: 0.5 }, date: { x: 0.5, y: -1 } }), "date");
+  assert.doesNotThrow(() => parsePlacement(DEFAULT_PLACEMENT));
+});
+
+test("placement: the page must exist, and a click maps to PDF coordinates (origin bottom-left)", () => {
+  assert.equal(resolvePage({ page: "last", signature: { x: 0, y: 0 }, date: null }, 3), 2);
+  assert.equal(resolvePage({ page: 1, signature: { x: 0, y: 0 }, date: null }, 3), 0);
+  assert.throws(() => resolvePage({ page: 4, signature: { x: 0, y: 0 }, date: null }, 3), /has 3 pages. Choose a page from 1 to 3/);
+  assert.throws(() => resolvePage({ page: 2, signature: { x: 0, y: 0 }, date: null }, 1), /has 1 page\. Choose a page from 1 to 1/);
+  assert.throws(() => resolvePage({ page: "last", signature: { x: 0, y: 0 }, date: null }, 0), SignError);
+
+  const p = pdfPoint(600, 800, { x: 0.25, y: 0.75 });
+  assert.equal(p.x, 150);
+  assert.equal(p.y, 200); // 75% of the way down the page is 25% up from the bottom
+});
+
+test("base64 survives large files", () => {
+  const big = Uint8Array.from({ length: 300_000 }, (_, i) => i % 256);
+  assert.deepEqual(new Uint8Array(Buffer.from(toBase64(big), "base64")), big);
+  assert.equal(toBase64(new Uint8Array(0)), "");
+});

@@ -1,9 +1,12 @@
 // Onboarding tab: send applicants the document checklist, track progress and
 // review each upload. Also hosts the one-time temporary password dialog.
 import { api, config, friendlyError } from "../auth.js";
+import { createPlacer } from "./contract-placer.js";
 
 const call = (action, body = {}) => api(config.adminFunction, { action, ...body });
-const state = { types: [], people: [], requests: [], openId: null, canIssuePasswords: false };
+const state = { types: [], people: [], requests: [], items: [], openId: null, canIssuePasswords: false };
+// Page viewers HR has opened to place a signature, by item id. Cleared whenever the request is redrawn.
+const placers = new Map();
 
 function safe(value) {
   return String(value ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
@@ -45,8 +48,18 @@ function signHtml(i) {
         ? "The applicant signs once and covers every file listed."
         : "PDF only, up to 20 MB. Save Word files as PDF first. The applicant can sign as soon as a file is attached."}</small>
       <p class="form-message" data-sign-msg role="status" aria-live="polite"></p></div>` : "";
+  const finalize = i.canFinalize ? `<div class="finalize-panel" data-finalize="${id}">
+      <p class="eyebrow">FINALIZE</p>
+      <p class="muted small">The signature is stamped onto the contract and the finished copy is filed in the HR folder only when you finalize. Show where the signature and date go, check the preview, then finalize.</p>
+      <div class="placer" data-placer="${id}" hidden></div>
+      <div class="form-actions">
+        <button type="button" class="secondary-action" data-place-open="${id}">Place the signature on the contract</button>
+        <button type="button" class="secondary-action" data-sign-preview="${id}" disabled>Preview signed contract</button>
+        <button type="button" class="primary" data-finalize-go="${id}" disabled>Finalize &amp; file</button>
+      </div>
+      <p class="form-message" data-finalize-msg role="status" aria-live="polite"></p></div>` : "";
   const hand = i.hasHandwriting ? `<button type="button" class="text-button" data-sign-signature="${id}">View handwritten signature</button>` : "";
-  return docs + upload + hand;
+  return docs + upload + hand + finalize;
 }
 
 function answersHtml(item) {
@@ -140,8 +153,10 @@ async function openRequest(root, id) {
   const panel = root.querySelector("[data-onb-detail]");
   panel.innerHTML = '<p class="muted">Loading…</p>';
   panel.classList.remove("hidden");
+  placers.clear();
   try {
     const { request, items } = await call("onboarding_detail", { requestId: id });
+    state.items = items;
     panel.innerHTML = `
       <div class="register-head"><div><p class="eyebrow">ONBOARDING · ${safe(request.status.toUpperCase())}</p><h2>${safe(request.person.name)}</h2>
         <p class="muted small">${safe(request.person.email || "")} · sent ${fmt(request.createdAt)}${request.dueOn ? ` · due ${fmt(request.dueOn)}` : ""}</p></div>
@@ -160,14 +175,100 @@ async function openRequest(root, id) {
             ${answersHtml(i)}${filesHtml(i)}${signHtml(i)}</div>
           <div class="row-actions"><span class="chip ${tone}">${label}</span>
             ${i.kind === "form" && i.fileName && !i.files?.length ? `<button type="button" class="secondary-action small" data-view="${safe(i.id)}">View earlier file</button>` : ""}
-            ${i.status === "uploaded" && request.status === "open" ? `<button type="button" class="primary small" data-accept="${safe(i.id)}">Accept</button><button type="button" class="revoke" data-reject="${safe(i.id)}">Send back</button>` : ""}
+            ${i.status === "uploaded" && request.status === "open" ? `${i.kind === "sign" ? "" : `<button type="button" class="primary small" data-accept="${safe(i.id)}">Accept</button>`}<button type="button" class="revoke" data-reject="${safe(i.id)}">Send back</button>` : ""}
           </div></div>`;
       }).join("")}</div>
-      ${request.status === "open" && items.filter(i => i.status === "uploaded").length > 1 ? '<div class="form-actions"><button type="button" class="primary" data-accept-all>Accept everything waiting for review</button></div>' : ""}
+      ${request.status === "open" && items.filter(i => i.status === "uploaded" && i.kind !== "sign").length > 1 ? '<div class="form-actions"><button type="button" class="primary" data-accept-all>Accept everything waiting for review</button></div>' : ""}
       <p class="muted small">Opening a request with answers, and viewing each file, is recorded in the audit log. File links last two minutes.</p>
       <p class="form-message" data-detail-msg role="status" aria-live="polite"></p>`;
   } catch (error) {
     panel.innerHTML = `<p class="form-message">${safe(friendlyError(error))}</p>`;
+  }
+}
+
+const bytesFromBase64 = text => Uint8Array.from(atob(text), c => c.charCodeAt(0));
+const todayText = iso => new Intl.DateTimeFormat("en-AU", { day: "numeric", month: "short", year: "numeric", timeZone: "Australia/Sydney" }).format(new Date(iso));
+
+/** The finalize panel an element belongs to, and its message line. */
+function finalizeParts(button) {
+  const panel = button.closest("[data-finalize]");
+  return { panel, id: panel.dataset.finalize, msg: panel.querySelector("[data-finalize-msg]") };
+}
+
+/** Opens the page viewer so HR can click where the signature and date go. */
+async function openPlacer(root, button) {
+  const { panel, id, msg } = finalizeParts(button);
+  const host = panel.querySelector("[data-placer]");
+  if (!host.hidden) { host.hidden = true; button.textContent = "Place the signature on the contract"; return; }
+  button.disabled = true;
+  msg.textContent = "Loading the contract pages…";
+  try {
+    if (!placers.has(id)) {
+      const item = state.items.find(i => i.id === id);
+      const signedName = item?.answers?.find(a => a.key === "signedName")?.value || "Signature";
+      host.hidden = false;
+      const refresh = () => {
+        const ready = Boolean(placers.get(id)?.getPlacement());
+        panel.querySelector("[data-sign-preview]").disabled = !ready;
+        panel.querySelector("[data-finalize-go]").disabled = !ready;
+      };
+      placers.set(id, await createPlacer(host, {
+        signedName, dateText: todayText(item.submittedAt),
+        docs: item.signDocs.map(d => ({ label: d.label, load: async () => bytesFromBase64((await call("onboarding_sign_bytes", { docId: d.id })).pdf) })),
+        onChange: refresh
+      }));
+    }
+    host.hidden = false;
+    button.textContent = "Hide the pages";
+    msg.textContent = "";
+  } catch (error) {
+    host.hidden = true;
+    placers.delete(id);
+    msg.textContent = friendlyError(error);
+  } finally {
+    button.disabled = false;
+  }
+}
+
+/** Builds the signed contract with the chosen placement and opens it for HR to check. Nothing is stored. */
+async function previewContract(root, button) {
+  const { id, msg } = finalizeParts(button);
+  const placement = placers.get(id)?.getPlacement();
+  if (!placement) { msg.textContent = "Click on the page where the signature goes first."; return; }
+  // Open the tab first, while the click is still fresh, or the browser blocks it.
+  const tab = window.open("", "_blank");
+  button.disabled = true;
+  msg.textContent = "Building the preview…";
+  try {
+    const { pdf } = await call("onboarding_sign_preview", { itemId: id, placement });
+    const url = URL.createObjectURL(new Blob([bytesFromBase64(pdf)], { type: "application/pdf" }));
+    if (tab) tab.location.href = url; else window.open(url, "_blank");
+    msg.textContent = "Preview opened in a new tab. It is not filed yet.";
+  } catch (error) {
+    if (tab) tab.close();
+    msg.textContent = friendlyError(error);
+  } finally {
+    button.disabled = false;
+  }
+}
+
+/** Accepts the signature and files the stamped contract in the HR folder. */
+async function finalizeContract(root, button) {
+  const { id, msg } = finalizeParts(button);
+  const placement = placers.get(id)?.getPlacement();
+  if (!placement) { msg.textContent = "Click on the page where the signature goes first."; return; }
+  if (!window.confirm("Finalize this contract? The signature is stamped on page " + placement.page + " and the signed copy is filed in the person's HR folder.")) return;
+  button.disabled = true;
+  try {
+    const r = await call("onboarding_review", { itemId: id, accept: true, placement });
+    await loadOnboarding(root, { canIssuePasswords: state.canIssuePasswords });
+    const note = root.querySelector("[data-detail-msg]");
+    if (note) note.textContent = r.filingDeferred
+      ? "Finalized, but filing in the HR folder failed. Open the person's HR file to retry."
+      : r.requestComplete ? "Contract finalized and filed. All required documents accepted. Onboarding is complete." : "Contract finalized and filed in the HR folder.";
+  } catch (error) {
+    button.disabled = false;
+    msg.textContent = friendlyError(error);
   }
 }
 
@@ -242,6 +343,12 @@ export function bindOnboarding(root) {
         const r = await call("onboarding_sign_view", b.dataset.signView ? { docId: b.dataset.signView } : { itemId: b.dataset.signSignature });
         window.open(r.url, "_blank", "noopener");
         b.disabled = false;
+      } else if (b.dataset.placeOpen) {
+        await openPlacer(root, b);
+      } else if (b.dataset.signPreview) {
+        await previewContract(root, b);
+      } else if (b.dataset.finalizeGo) {
+        await finalizeContract(root, b);
       } else if (b.dataset.signRemove) {
         if (!window.confirm("Remove this file from the contract? The applicant hasn't signed yet.")) return;
         b.disabled = true;

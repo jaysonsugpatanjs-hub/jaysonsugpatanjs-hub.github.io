@@ -123,7 +123,7 @@ export function createClient() {
         },
         download: async (path: string) => {
           const bytes = storedBytes.get(`${bucket}/${path}`);
-          return bytes ? { data: new Blob([bytes]), error: null } : { data: null, error: { message: "Object not found" } };
+          return bytes ? { data: new Blob([new Uint8Array(bytes)]), error: null } : { data: null, error: { message: "Object not found" } };
         }
       })
     },

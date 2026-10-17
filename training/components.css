@@ -179,6 +179,21 @@ code.secret { font-size: 20px; letter-spacing: .06em; color: var(--gold); backgr
 .add-file .upload-button { margin-bottom: 10px; min-height: 44px; }
 .add-file .form-message { flex-basis: 100%; margin: 0; min-height: 0; }
 
+/* Finalizing a signed contract: page viewer with the signature and date marked on it */
+.finalize-panel { margin-top: 14px; padding: 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-2); }
+.finalize-panel .eyebrow { margin: 0 0 4px; }
+.finalize-panel .form-actions { margin-top: 12px; flex-wrap: wrap; }
+.placer { margin-top: 12px; }
+.placer[hidden] { display: none; }
+.placer-bar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px 16px; }
+.placer-modes, .placer-pages { display: flex; align-items: center; gap: 8px; }
+.placer [aria-pressed="true"] { background: var(--gold); border-color: var(--gold); color: #141414; }
+.placer-stage { position: relative; width: fit-content; max-width: 100%; margin-top: 8px; border: 1px solid var(--border); background: #fff; cursor: crosshair; touch-action: manipulation; }
+.placer-stage canvas { display: block; max-width: 100%; }
+.placer-layer { position: absolute; inset: 0; pointer-events: none; }
+.placer-mark { position: absolute; display: flex; align-items: center; padding: 0 4px; overflow: hidden; border: 1.5px dashed #1d4ed8; background: rgba(29, 78, 216, 0.10); color: #1d3a8a; font-size: 12px; font-style: italic; white-space: nowrap; }
+.placer-date { font-style: normal; font-size: 11px; }
+
 /* HR files */
 .hr-folders { display: flex; flex-direction: column; gap: 8px; margin: 14px 0 20px; }
 .hr-folder { border: 1px solid var(--border); border-radius: 12px; background: var(--surface-2); }

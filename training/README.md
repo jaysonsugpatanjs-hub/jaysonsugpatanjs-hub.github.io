@@ -29,15 +29,17 @@ Applicants no longer print, sign and re-upload their contract. HR attaches it an
 1. **HR sends the onboarding request** (*Administration → Onboarding*) with **Employment contract** ticked. It is a "Sign online" item and is ticked by default for employees and applicants.
 2. **HR opens the request and uploads the contract as a PDF** (up to 20 MB, up to five files, for example the contract plus a position description). Word files must be saved as PDF first. The server checks each file really is a PDF and records its SHA-256 fingerprint.
 3. **The applicant sees the contract on their portal.** *Read* opens it in a new tab. They tick the agreement, then sign by **typing their full name** (it must match their name on the register, ignoring case and spacing) or by **writing their name on screen** with a finger or mouse.
-4. **HR reviews and accepts**, or sends it back with a reason. If the contract needs changing, sending it back unlocks the files; HR swaps them and the applicant signs again.
-5. **On acceptance the system files one signed PDF** in the person's HR folder (*06 Contract & employment terms*): the exact contract pages, then a signature record page.
+4. **HR finalizes the signature**, or sends it back with a reason. Under *Finalize*, HR opens the contract's pages, clicks the signature line (and the date line) where the signature belongs, and can *Preview* the stamped contract. Nothing is accepted or filed until HR presses **Finalize & file**. If the contract needs changing, sending it back unlocks the files; HR swaps them and the applicant signs again.
+5. **On finalizing, the system files one signed PDF** in the person's HR folder (*06 Contract & employment terms*): the exact contract pages with the signature (handwriting, or the typed name) and the signing date placed where HR clicked, then a signature record page.
+
+The page viewer uses pdf.js 3.11.174 (Apache-2.0), shipped unmodified in `vendor/pdfjs/` because the admin page only allows scripts from this site.
 
 What is recorded with each signature, in the same database transaction as its audit event: who signed, when, how (typed or written), the exact agreement wording shown to them, and the SHA-256 fingerprint of every contract file. Each time the applicant opens the contract is audited too.
 
 Rules the system enforces:
 
 - A contract cannot be signed until HR has attached it, and cannot be changed after it has been signed. Sending it back is the only way to change it, and every earlier signature stays in the audit log.
-- Before filing, each stored contract file is re-checked against its fingerprint. If a file no longer matches, nothing is filed and HR is told it was deferred.
+- Before finalizing, each stored contract file is re-checked against its fingerprint, and the stamped document is built first. If a file no longer matches, or the chosen page doesn't exist, the signature stays waiting for HR and nothing is accepted or filed.
 - Files are never deleted from the private HR bucket. Removing a file before signing only unlinks it.
 - The older **Signed employment contract** upload item is retired for new requests. Requests already using it continue to work.
 
