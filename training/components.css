@@ -197,3 +197,22 @@ code.secret { font-size: 20px; letter-spacing: .06em; color: var(--gold); backgr
 .inline-check { display: inline-flex; gap: 8px; align-items: center; background: none; border: 0; font-size: 13px; }
 .personnel-tile { text-decoration: none; color: inherit; border-color: var(--gold) !important; }
 .hr-layout .people-side .table-wrap { max-height: 70vh; overflow: auto; }
+
+/* ---- Contract signing ---- */
+.sign-form { display: grid; gap: 14px; margin-top: 12px; padding: 16px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-2); }
+.sign-form .onb-field { margin: 0; }
+.sign-form .check-field { background: none; border: 0; padding: 0; }
+.sign-form .form-actions { margin-top: 0; }
+.sign-form .form-actions .primary { flex: none; width: auto; padding: 12px 22px; background: var(--gold); color: #0d0d0e; }
+.sign-form .form-message { margin: 0; min-height: 0; }
+.sign-methods { display: flex; flex-wrap: wrap; gap: 8px 22px; margin: 0; padding: 0; border: 0; }
+.sign-methods legend { padding: 0; margin-bottom: 8px; font-size: 13px; font-weight: 800; }
+.sign-methods label { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; font-weight: 600; cursor: pointer; }
+.sign-methods input { flex: none; width: auto; margin: 0; }
+.sign-pad { display: block; width: 100%; max-width: 600px; aspect-ratio: 3 / 1; background: #fff; border: 2px solid var(--border); border-radius: 10px; cursor: crosshair; touch-action: none; }
+.sign-pad:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; }
+.sign-form .onb-field > small { display: block; margin-top: 6px; color: var(--muted); }
+.sign-form .onb-field > small strong { color: var(--heading); }
+.sign-done { margin: 12px 0 0; padding: 12px 14px; border: 1px solid var(--border); border-left: 4px solid var(--green); border-radius: 10px; background: var(--green-bg); color: var(--text); }
+.contract-docs li { align-items: center; }
+@media (max-width: 640px) { .sign-form { padding: 12px; } .sign-form .form-actions .primary { width: 100%; } }

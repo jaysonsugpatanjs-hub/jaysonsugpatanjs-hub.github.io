@@ -2,7 +2,7 @@
 // PostgREST over a database with every migration applied (see run.sh).
 // Only Supabase Auth and Storage are stubbed.
 import { pdfText } from "./pdf-lib-stub.ts";
-import { storageCalls } from "./client.ts";
+import { hasStorage, putStorage, storageCalls } from "./client.ts";
 
 const BASE = Deno.env.get("POSTGREST_URL") || "http://127.0.0.1:3999";
 const fns = new URL("../../functions/", import.meta.url);
@@ -243,6 +243,141 @@ Deno.test("onboarding: invite, forms and uploads, send back, accept", async () =
   await ok(adminApi, HR, { action: "onboarding_type_save", key: "tickets", name: "Licences and tickets", guidance: "One PDF please.", required: false, active: true });
   await ok(adminApi, HR, { action: "onboarding_cancel", requestId: sent.requestId, reason: "Test complete" });
   if (!storageCalls.some(c => c.startsWith("upload hr-documents/"))) throw new Error("uploads did not go to the HR bucket");
+});
+
+Deno.test("contract signing: HR attaches the contract, the applicant signs, HR accepts, a signed copy is filed", async () => {
+  const sha256 = async (b: Uint8Array) => [...new Uint8Array(await crypto.subtle.digest("SHA-256", new Uint8Array(b)))].map(x => x.toString(16).padStart(2, "0")).join("");
+  const bytesOf = (text: string) => new TextEncoder().encode(text);
+  const pdfV1 = bytesOf("%PDF-1.7\n" + "Employment contract v1 ".repeat(40));
+  const pdfV2 = bytesOf("%PDF-1.7\n" + "Employment contract v2, corrected start date ".repeat(40));
+  const png = Uint8Array.from({ length: 400 }, (_, i) => [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a][i] ?? (i * 7) % 251);
+  const pngUrl = `data:image/png;base64,${btoa(String.fromCharCode(...png))}`;
+  const BUCKET = "hr-documents";
+  // What the browser does: ask for a signed upload link, then PUT the bytes to it.
+  const upload = async (user: string, itemId: string, name: string, bytes: Uint8Array) => {
+    const prepared = await ok(adminApi, user, { action: "onboarding_sign_prepare", itemId, fileName: name, size: bytes.length });
+    putStorage(BUCKET, prepared.path, bytes);
+    return prepared.path as string;
+  };
+
+  const emp = await ok(adminApi, A, { action: "employee_save", employeeNumber: "A-9010", fullName: "Contract  Signer", email: "contract.signer@panalo.test", employmentType: "applicant", status: "applicant" });
+  const types = await ok(adminApi, HR, { action: "onboarding_types" });
+  const esign = types.types.find((t: any) => t.key === "contract_esign");
+  if (!esign || esign.kind !== "sign" || !esign.active) throw new Error("the sign-online contract item should be offered");
+  if (types.types.find((t: any) => t.key === "contract")?.active) throw new Error("the old upload-a-signed-copy item should be retired");
+
+  const sent = await ok(adminApi, HR, { action: "onboarding_create", employeeId: emp.id, types: ["contract_esign"], signIn: "invite" });
+  const applicant = await profile("contract.signer@panalo.test");
+  const itemOf = async () => (await ok(trainingApi, applicant, { action: "onboarding_view" })).items.find((i: any) => i.docType === "contract_esign");
+  let item = await itemOf();
+  if (item.kind !== "sign" || item.form || item.answers !== null || item.signDocs.length || item.signed) throw new Error(`fresh sign item wrong: ${JSON.stringify(item)}`);
+  if (item.signAs !== "Contract Signer") throw new Error(`the name to type should be the register name, tidied: ${item.signAs}`);
+  if (!/read and understood this contract/.test(item.agreementText)) throw new Error("agreement wording not sent to the portal");
+  const sign = (extra: Record<string, unknown>) => call(trainingApi, applicant, { action: "onboarding_sign", itemId: item.id, agreed: true, ...extra });
+
+  // Nothing to sign until HR attaches the contract.
+  expectStatus(await sign({ method: "typed", name: "Contract Signer" }), 409, "no contract attached yet");
+
+  // HR attaches it: PDFs only, checked and fingerprinted on the server.
+  expectStatus(await call(adminApi, L, { action: "onboarding_sign_prepare", itemId: item.id, fileName: "contract.pdf", size: 100 }), 403, "a learner cannot attach contracts");
+  expectStatus(await call(adminApi, HR, { action: "onboarding_sign_prepare", itemId: item.id, fileName: "contract.docx", size: 100 }), 400, "Word files are not accepted");
+  expectStatus(await call(adminApi, HR, { action: "onboarding_sign_prepare", itemId: item.id, fileName: "contract.pdf", size: 30 * 1024 * 1024 }), 400, "too large");
+  const notThere = await ok(adminApi, HR, { action: "onboarding_sign_prepare", itemId: item.id, fileName: "contract.pdf", size: 100 });
+  expectStatus(await call(adminApi, HR, { action: "onboarding_sign_attach", itemId: item.id, path: notThere.path, label: "Employment contract" }), 409, "upload never arrived");
+  const fake = await upload(HR, item.id, "fake.pdf", bytesOf("PK\u0003\u0004 this is a Word file renamed .pdf"));
+  expectStatus(await call(adminApi, HR, { action: "onboarding_sign_attach", itemId: item.id, path: fake, label: "Contract" }), 400, "not really a PDF");
+  expectStatus(await call(adminApi, HR, { action: "onboarding_sign_attach", itemId: item.id, path: `${sent.requestId}/elsewhere/x.pdf`, label: "Contract" }), 400, "path must belong to the item");
+  const path1 = await upload(HR, item.id, "Employment contract.pdf", pdfV1);
+  const attached = await ok(adminApi, HR, { action: "onboarding_sign_attach", itemId: item.id, path: path1, label: "Employment contract" });
+  if (attached.sha256 !== await sha256(pdfV1)) throw new Error("fingerprint should be the SHA-256 of the stored bytes");
+
+  let detail = (await ok(adminApi, HR, { action: "onboarding_detail", requestId: sent.requestId })).items.find((i: any) => i.id === item.id);
+  if (detail.kind !== "sign" || detail.signDocs.length !== 1 || !detail.canChangeContract || detail.status !== "pending") throw new Error(`HR view wrong: ${JSON.stringify(detail)}`);
+
+  // The applicant reads the contract: a short-lived link, only for their own, and audited.
+  item = await itemOf();
+  if (item.signDocs.length !== 1 || item.signDocs[0].label !== "Employment contract" || "sha256" in item.signDocs[0]) throw new Error("applicant should see the contract file (no internals)");
+  const link = await ok(trainingApi, applicant, { action: "onboarding_contract_url", docId: item.signDocs[0].id });
+  if (!link.url) throw new Error("no link to read the contract");
+  expectStatus(await call(trainingApi, L, { action: "onboarding_contract_url", docId: item.signDocs[0].id }), 404, "someone else's contract");
+  expectStatus(await call(trainingApi, applicant, { action: "onboarding_contract_url", docId: "nope" }), 400, "bad id");
+  if (!(await rest("training_audit_events?select=id&event_type=eq.onboarding_contract_viewed")).length) throw new Error("opening the contract should be audited");
+
+  // Signing rules, in the order a person might trip over them.
+  // A refused signature is a 400 that names the field to fix.
+  const refused = async (result: Promise<{ status: number; body: any }>, label: string, field: string) => {
+    const r = await result;
+    expectStatus(r, 400, label);
+    if (r.body.code !== `field:${field}`) throw new Error(`${label}: expected field:${field}, got ${JSON.stringify(r.body)}`);
+    return r;
+  };
+  await refused(call(trainingApi, applicant, { action: "onboarding_sign", itemId: item.id, method: "typed", name: "Contract Signer" }), "agreement not ticked", "agreed");
+  const wrongName = await refused(sign({ method: "typed", name: "Contract" }), "a first name is not a full name", "name");
+  if (!/exactly as shown: Contract Signer/.test(wrongName.body.message)) throw new Error(`should say what to type: ${wrongName.body.message}`);
+  await refused(sign({ method: "stamp" }), "unknown method", "method");
+  await refused(sign({ method: "drawn", signatureImage: "data:image/png;base64,AAAA" }), "not a real signature image", "signature");
+  await refused(sign({ method: "drawn", signatureImage: "data:image/svg+xml;base64," + btoa("<svg/>") }), "svg refused", "signature");
+  expectStatus(await call(trainingApi, L, { action: "onboarding_sign", itemId: item.id, agreed: true, method: "typed", name: "Contract Signer" }), 404, "someone else's item");
+  expectStatus(await call(trainingApi, applicant, { action: "onboarding_submit_form", itemId: item.id, answers: {} }), 400, "a sign item is not a form");
+  expectStatus(await call(trainingApi, applicant, { action: "onboarding_prepare_upload", itemId: item.id, fileName: "signed.pdf", size: 100 }), 400, "nor a scan-and-upload item");
+  if ((await itemOf()).status !== "pending") throw new Error("failed attempts must leave the contract unsigned");
+
+  // Typed signature: case and spacing are forgiven; the register spelling is what is recorded.
+  await ok(trainingApi, applicant, { action: "onboarding_sign", itemId: item.id, agreed: true, method: "typed", name: "  contract   SIGNER " });
+  item = await itemOf();
+  if (item.status !== "uploaded" || item.signed?.name !== "Contract Signer" || item.signed?.method !== "typed" || !item.signed?.at || item.answers !== null) throw new Error(`signed state wrong: ${JSON.stringify(item)}`);
+  expectStatus(await sign({ method: "typed", name: "Contract Signer" }), 409, "already signed");
+
+  // Once signed, HR cannot swap the contract underneath the signature.
+  expectStatus(await call(adminApi, HR, { action: "onboarding_sign_prepare", itemId: item.id, fileName: "other.pdf", size: 100 }), 409, "no new files once signed");
+  expectStatus(await call(adminApi, HR, { action: "onboarding_sign_remove", docId: item.signDocs[0].id }), 409, "cannot remove once signed");
+  detail = (await ok(adminApi, HR, { action: "onboarding_detail", requestId: sent.requestId })).items.find((i: any) => i.id === item.id);
+  if (detail.canChangeContract || detail.status !== "uploaded") throw new Error("contract should be locked after signing");
+  const rows = Object.fromEntries(detail.answers.map((r: any) => [r.label, r.value]));
+  if (rows["Signed by"] !== "Contract Signer" || !/Typed their full name \("contract SIGNER"\)/.test(rows["How they signed"]) || rows["Contract file: Employment contract"] !== `SHA-256 ${await sha256(pdfV1)}`) throw new Error(`HR cannot see what was signed: ${JSON.stringify(rows)}`);
+  expectStatus(await call(adminApi, HR, { action: "onboarding_sign_view", itemId: item.id }), 404, "a typed signature has no image");
+  const signedEvent = await rest("training_audit_events?select=details&event_type=eq.onboarding_contract_signed");
+  if (!signedEvent.length || !JSON.stringify(signedEvent).includes(await sha256(pdfV1))) throw new Error("signature not audited with the contract fingerprint");
+
+  // HR spots a mistake in the contract: send it back, swap the file, the applicant signs again, this time by hand.
+  expectStatus(await call(adminApi, HR, { action: "onboarding_review", itemId: item.id, accept: false, reason: "" }), 409, "send-back needs a reason");
+  await ok(adminApi, HR, { action: "onboarding_review", itemId: item.id, accept: false, reason: "Wrong start date in the contract" });
+  item = await itemOf();
+  if (item.status !== "pending" && item.status !== "rejected") throw new Error("sent back");
+  if (item.rejectReason !== "Wrong start date in the contract" || item.signed) throw new Error(`sent-back state wrong: ${JSON.stringify(item)}`);
+  await ok(adminApi, HR, { action: "onboarding_sign_remove", docId: item.signDocs[0].id });
+  const path2 = await upload(HR, item.id, "Employment contract v2.pdf", pdfV2);
+  await ok(adminApi, HR, { action: "onboarding_sign_attach", itemId: item.id, path: path2, label: "Employment contract" });
+  if (!hasStorage(BUCKET, path1)) throw new Error("a removed contract file must stay in storage (nothing in the HR bucket is deleted)");
+  await ok(trainingApi, applicant, { action: "onboarding_sign", itemId: item.id, agreed: true, method: "drawn", signatureImage: pngUrl });
+  item = await itemOf();
+  if (item.status !== "uploaded" || item.signed?.method !== "drawn" || item.signed?.name !== "Contract Signer") throw new Error(`handwritten state wrong: ${JSON.stringify(item)}`);
+  const sigPath = storageCalls.filter(c => c.startsWith(`store ${BUCKET}/${sent.requestId}/${item.id}/signature-`)).pop();
+  if (!sigPath) throw new Error("handwriting image not stored in the HR bucket");
+  detail = (await ok(adminApi, HR, { action: "onboarding_detail", requestId: sent.requestId })).items.find((i: any) => i.id === item.id);
+  if (!detail.hasHandwriting || !(await ok(adminApi, HR, { action: "onboarding_sign_view", itemId: item.id })).url) throw new Error("HR should be able to open the handwriting");
+  const v2Row = detail.answers.find((r: any) => r.key === "document0");
+  if (v2Row.value !== `SHA-256 ${await sha256(pdfV2)}`) throw new Error("re-signing must record the new contract's fingerprint");
+
+  // Integrity: if the stored contract no longer matches what was signed, nothing is filed against it.
+  putStorage(BUCKET, path2, bytesOf("%PDF-1.7 tampered"));
+  const blocked = await ok(adminApi, HR, { action: "onboarding_review", itemId: item.id, accept: true });
+  if (blocked.filingDeferred !== true || blocked.filed !== 0) throw new Error(`a changed contract must not be filed: ${JSON.stringify(blocked)}`);
+  if (!blocked.requestComplete) throw new Error("acceptance itself still stands");
+  // Opening the HR folder retries the filing, still refuses the changed file, and still shows the folder.
+  const stillBlocked = await ok(adminApi, HR, { action: "personnel_view", employeeId: emp.id });
+  if (stillBlocked.filedNow !== 0 || stillBlocked.categories.find((c: any) => c.key === "employment").documents.length) throw new Error("a changed contract must not be filed on retry either");
+  putStorage(BUCKET, path2, pdfV2);
+  const file = await ok(adminApi, HR, { action: "personnel_view", employeeId: emp.id });
+  if (file.filedNow !== 1) throw new Error(`the signed copy should be filed once the file matches again: ${file.filedNow}`);
+  const employment = file.categories.find((c: any) => c.key === "employment").documents;
+  if (employment.length !== 1 || employment[0].title !== "Employment contract (signed)") throw new Error(`HR folder wrong: ${JSON.stringify(employment)}`);
+  if (!storageCalls.some(c => c.startsWith(`store ${BUCKET}/personnel/${emp.id}/employment/`) && c.includes("-signed-"))) throw new Error("signed PDF not stored in the employment folder");
+  if (!pdfText.some(t => t.includes("Wrote their name on screen")) || !pdfText.some(t => t.includes("Contract Signer"))) throw new Error("signature record missing from the filed PDF");
+  if (!(await ok(adminApi, HR, { action: "personnel_open", documentId: employment[0].id })).url) throw new Error("no link to the signed copy");
+  if ((await ok(adminApi, HR, { action: "personnel_view", employeeId: emp.id })).filedNow !== 0) throw new Error("nothing should be filed twice");
+  const done = await ok(trainingApi, applicant, { action: "onboarding_view" });
+  if (done.request?.status !== "complete") throw new Error("request should be complete");
 });
 
 Deno.test("learner invite with a temporary password", async () => {

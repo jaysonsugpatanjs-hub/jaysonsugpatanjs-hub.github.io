@@ -35,6 +35,16 @@ The training application uses a public, non-sensitive GitHub Pages shell and a p
 - A folder cannot be left without an owner. Stopping inheritance copies the current access first so nobody is locked out by surprise.
 - "All employees" means active employees on the register, not every login.
 
+## Contract signing
+
+- Contract files and handwriting images live in the private `hr-documents` bucket. Browsers receive only short-lived signed links: two minutes for HR, five minutes for the applicant, who can open only a contract on their own request. Every opening is audited.
+- `onboarding_sign_documents` has row-level security on, no browser policies, and is readable by the server role only. Attaching, removing and signing run only through `onboarding_sign_doc_add`, `onboarding_sign_doc_remove` and `onboarding_record_signature`, which are executable by the server role only.
+- Attaching or removing a contract needs the HR onboarding permission. It is refused once the item is signed, accepted or the request is closed, so a signature can never sit on a file that has since been swapped.
+- The signer is always the signed-in applicant. A typed name must match the register name; a handwritten signature records the register name. The agreement wording is fixed on the server, never taken from the browser.
+- A signature image must be a real PNG of sensible size; anything else is refused. Contracts must really be PDFs, checked on the stored bytes, not the file name.
+- The upload routes for ordinary documents refuse sign items, so no upload link into the HR bucket is issued for a contract item.
+- Filing the signed copy re-hashes each stored contract file and refuses on any mismatch.
+
 ## Required deployment checks
 
 - A direct slide, PowerPoint, certificate or API URL without a session is denied.
@@ -47,5 +57,6 @@ The training application uses a public, non-sensitive GitHub Pages shell and a p
 - Draft creation, private signed upload, missing-asset rejection, publication and generic module viewing are verified before enabling administrator self-service.
 - `npm run test:db` passes: inheritance, locked folders, last-owner protection, approval gates, publish blocked until approved, and no audit row for a failed action.
 - A signed-in applicant cannot open any IMS folder; a supervisor sees approved revisions but not drafts.
+- `npm run test:db` and `npm run test:api` cover contract signing: attach, read, type and written signatures, send-back and re-sign, locking after signing, a changed file refused at filing, and the browser roles having no direct access.
 
 See [SETUP.md](SETUP.md) for deployment and first-administrator steps.

@@ -129,9 +129,9 @@ begin
   perform pg_temp.expect_error(format('select public.onboarding_create(%L, %L, %L, null, %L)', pg_temp.a('hr'), v_emp, '{nope}', ''), 'Unknown document');
   perform pg_temp.expect_error(format('select public.onboarding_create(%L, %L, %L, null, %L)', pg_temp.a('hr'), v_emp, '{white_card}', ''), 'Unknown document');
   perform pg_temp.expect_error(format('select public.onboarding_create(%L, %L, %L, current_date - 1, %L)', pg_temp.a('hr'), v_emp, '{tfn_declaration}', ''), 'past');
-  v_req := public.onboarding_create(pg_temp.a('hr'), v_emp, '{tfn_declaration,contract,tickets}', current_date + 7, 'Welcome aboard');
+  v_req := public.onboarding_create(pg_temp.a('hr'), v_emp, '{tfn_declaration,certificates,tickets}', current_date + 7, 'Welcome aboard');
   perform pg_temp.expect_error(format('select public.onboarding_create(%L, %L, %L, null, %L)', pg_temp.a('hr'), v_emp, '{photo_id}', ''), 'onboarding_one_open_per_person');
-  select id into v_item from public.onboarding_items where request_id = v_req and doc_type = 'contract';
+  select id into v_item from public.onboarding_items where request_id = v_req and doc_type = 'certificates';
   select id into v_form from public.onboarding_items where request_id = v_req and doc_type = 'tfn_declaration';
 
   -- Forms take typed answers, never files; uploads never take answers.

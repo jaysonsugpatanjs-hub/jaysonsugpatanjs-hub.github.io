@@ -2,6 +2,7 @@
 // Passwords go only to Supabase Auth; temporary ones are returned once to the
 // administrator who issued them and never stored or logged here.
 import { generateTemporaryPassword } from "../_shared/accounts.ts";
+import { CONTRACT_MAX_BYTES, describeSignature, looksLikePdf, sha256Hex, signatureImagePath } from "../_shared/contract-signing.ts";
 import { describeAnswers } from "../_shared/onboarding-forms.ts";
 import { httpError, rpc } from "../_shared/http.ts";
 import { fileAcceptedOnboarding } from "./personnel.ts";
@@ -210,6 +211,16 @@ async function onboardingDetail(admin: Client, actor: Actor, body: any) {
   const reviewerIds = [...new Set((data.onboarding_items || []).map((i: any) => i.reviewed_by).filter(Boolean))];
   const reviewers = reviewerIds.length ? await admin.from("training_profiles").select("id,full_name,email").in("id", reviewerIds) : { data: [], error: null };
   const names = new Map((reviewers.data || []).map((p: any) => [p.id, p.full_name || p.email]));
+  // Contract files exist only for sign items; skip the lookup for everyone else.
+  const signIds = (data.onboarding_items || []).filter((i: any) => (typeMap.get(i.doc_type) as any)?.kind === "sign").map((i: any) => i.id);
+  const signDocs = new Map<string, any[]>();
+  if (signIds.length) {
+    const docs = await admin.from("onboarding_sign_documents").select("id,item_id,label,file_name,size_bytes,sha256,added_at").in("item_id", signIds).order("added_at");
+    if (docs.error) throw httpError(500, "The contract files could not be loaded.");
+    for (const d of docs.data) {
+      signDocs.set(d.item_id, [...(signDocs.get(d.item_id) || []), { id: d.id, label: d.label, fileName: d.file_name, size: d.size_bytes, sha256: d.sha256, addedAt: d.added_at }]);
+    }
+  }
   const withAnswers = (data.onboarding_items || []).filter((i: any) => i.answers);
   if (withAnswers.length) {
     await rpc(admin, "ims_audit", {
@@ -227,7 +238,11 @@ async function onboardingDetail(admin: Client, actor: Actor, body: any) {
       .map((i: any) => ({
         id: i.id, docType: i.doc_type, name: (typeMap.get(i.doc_type) as any)?.name || i.doc_type,
         sensitive: Boolean((typeMap.get(i.doc_type) as any)?.sensitive), required: i.required, status: i.status,
-        kind: (typeMap.get(i.doc_type) as any)?.kind || "upload", answers: describeAnswers(i.doc_type, i.answers), submittedAt: i.submitted_at,
+        kind: (typeMap.get(i.doc_type) as any)?.kind || "upload",
+        answers: (typeMap.get(i.doc_type) as any)?.kind === "sign" ? describeSignature(i.answers) : describeAnswers(i.doc_type, i.answers), submittedAt: i.submitted_at,
+        signDocs: signDocs.get(i.id) || [],
+        canChangeContract: data.status === "open" && ["pending", "rejected"].includes(i.status),
+        hasHandwriting: Boolean(signatureImagePath(i.answers)),
         files: (i.onboarding_files || [])
           .map((f: any) => ({ id: f.id, label: f.label, fileName: f.file_name, expiresOn: f.expires_on, uploadedAt: f.uploaded_at }))
           .sort((a: any, b: any) => String(a.uploadedAt).localeCompare(String(b.uploadedAt))),
@@ -299,6 +314,86 @@ async function onboardingFile(admin: Client, actor: Actor, body: any) {
   return { url: signed.data.signedUrl, expiresIn: 120 };
 }
 
+/* ---------------- Online contract signing ---------------- */
+
+async function signItem(admin: Client, itemId: string) {
+  const { data, error } = await admin.from("onboarding_items")
+    .select("id,request_id,status,doc_type,onboarding_requests(status),hr_document_types(kind)").eq("id", itemId).maybeSingle();
+  if (error) throw httpError(500, "The document could not be loaded.");
+  if (!data) throw httpError(404, "Document not found.");
+  if (data.hr_document_types?.kind !== "sign") throw httpError(400, "This item is not signed online.");
+  return data;
+}
+
+function mayChangeContract(item: any) {
+  if (item.onboarding_requests?.status !== "open") throw httpError(409, "This onboarding request is closed.");
+  if (!["pending", "rejected"].includes(item.status)) throw httpError(409, "The contract has been signed. Send it back first if it needs to change.");
+}
+
+async function onboardingSignPrepare(admin: Client, _actor: Actor, body: any) {
+  const item = await signItem(admin, uuid(body.itemId, "Document"));
+  mayChangeContract(item);
+  const size = Number(body.size);
+  if (!Number.isFinite(size) || size < 1 || size > CONTRACT_MAX_BYTES) throw httpError(400, "The contract must be a PDF under 20 MB.");
+  const raw = String(body.fileName || "").trim();
+  if (!/\.pdf$/i.test(raw)) throw httpError(400, "Upload the contract as a PDF. Save Word files as PDF first.");
+  const stem = raw.slice(0, -4).replace(/[^A-Za-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 100) || "contract";
+  const path = `${item.request_id}/${item.id}/contract-${stem}-${Date.now().toString(36)}.pdf`;
+  const signed = await admin.storage.from(HR_BUCKET).createSignedUploadUrl(path, { upsert: false });
+  if (signed.error || !signed.data?.signedUrl) throw httpError(500, "A secure upload link could not be created.");
+  return { path, signedUrl: signed.data.signedUrl, contentType: "application/pdf" };
+}
+
+async function onboardingSignAttach(admin: Client, actor: Actor, body: any) {
+  const item = await signItem(admin, uuid(body.itemId, "Document"));
+  mayChangeContract(item);
+  const path = String(body.path || "");
+  if (!path.startsWith(`${item.request_id}/${item.id}/`)) throw httpError(400, "Invalid upload path.");
+  const downloaded = await admin.storage.from(HR_BUCKET).download(path);
+  if (downloaded.error || !downloaded.data) throw httpError(409, "The upload didn't arrive. Please try again.");
+  const bytes = new Uint8Array(await downloaded.data.arrayBuffer());
+  if (!bytes.length || bytes.length > CONTRACT_MAX_BYTES) throw httpError(400, "The contract must be a PDF under 20 MB.");
+  if (!looksLikePdf(bytes)) throw httpError(400, "That file isn't a PDF. Save the contract as a PDF and try again.");
+  // The fingerprint is taken from the stored bytes, so it identifies exactly what the applicant will be shown.
+  const sha256 = await sha256Hex(bytes);
+  const label = String(body.label || "").trim().replace(/\s+/g, " ").slice(0, 80) || "Employment contract";
+  const docId = await rpc<string>(admin, "onboarding_sign_doc_add", {
+    p_actor: actor.id, p_item: item.id, p_path: path, p_file_name: String(body.fileName || "").slice(0, 200),
+    p_label: label, p_sha256: sha256, p_size: bytes.length
+  });
+  return { docId, sha256 };
+}
+
+async function onboardingSignRemove(admin: Client, actor: Actor, body: any) {
+  // The stored file stays in the HR bucket: only the link to the item is removed.
+  await rpc(admin, "onboarding_sign_doc_remove", { p_actor: actor.id, p_doc: uuid(body.docId, "Document") });
+  return { removed: true };
+}
+
+async function onboardingSignView(admin: Client, actor: Actor, body: any) {
+  let row: any;
+  if (body.docId) {
+    const { data, error } = await admin.from("onboarding_sign_documents")
+      .select("id,path,label,item_id,onboarding_items(doc_type,request_id,onboarding_requests(profile_id))").eq("id", uuid(body.docId, "Document")).maybeSingle();
+    if (error) throw httpError(500, "The contract could not be found.");
+    if (data) row = { path: data.path, label: data.label, itemId: data.item_id, docType: data.onboarding_items?.doc_type, requestId: data.onboarding_items?.request_id, subject: data.onboarding_items?.onboarding_requests?.profile_id };
+  } else {
+    const itemId = uuid(body.itemId, "Document");
+    const { data, error } = await admin.from("onboarding_items").select("id,answers,doc_type,request_id,onboarding_requests(profile_id)").eq("id", itemId).maybeSingle();
+    if (error) throw httpError(500, "The signature could not be found.");
+    const path = signatureImagePath(data?.answers ?? null);
+    if (data && path) row = { path, label: "Handwritten signature", itemId, docType: data.doc_type, requestId: data.request_id, subject: data.onboarding_requests?.profile_id };
+  }
+  if (!row) throw httpError(404, "Nothing to show here yet.");
+  const signed = await admin.storage.from(HR_BUCKET).createSignedUrl(row.path, 120);
+  if (signed.error || !signed.data?.signedUrl) throw httpError(500, "A viewing link could not be created.");
+  await rpc(admin, "ims_audit", {
+    p_actor: actor.id, p_event: "onboarding_document_viewed",
+    p_details: { itemId: row.itemId, documentId: body.docId ?? null, label: row.label, docType: row.docType, requestId: row.requestId }, p_subject: row.subject ?? null
+  });
+  return { url: signed.data.signedUrl, expiresIn: 120 };
+}
+
 export const accountActions: Record<string, { perm: string | string[]; run: Handler }> = {
   account_create: { perm: ["access.manage", "hr.manage"], run: accountCreate },
   account_reset_password: { perm: "access.manage", run: accountResetPassword },
@@ -314,5 +409,9 @@ export const accountActions: Record<string, { perm: string | string[]; run: Hand
   onboarding_create: { perm: "hr.manage", run: onboardingCreate },
   onboarding_review: { perm: "hr.manage", run: onboardingReview },
   onboarding_cancel: { perm: "hr.manage", run: onboardingCancel },
-  onboarding_file: { perm: "hr.manage", run: onboardingFile }
+  onboarding_file: { perm: "hr.manage", run: onboardingFile },
+  onboarding_sign_prepare: { perm: "hr.manage", run: onboardingSignPrepare },
+  onboarding_sign_attach: { perm: "hr.manage", run: onboardingSignAttach },
+  onboarding_sign_remove: { perm: "hr.manage", run: onboardingSignRemove },
+  onboarding_sign_view: { perm: "hr.manage", run: onboardingSignView }
 };

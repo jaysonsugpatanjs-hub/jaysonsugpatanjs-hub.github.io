@@ -4,6 +4,7 @@ import { allLearningSlidesComplete, gradeAssessment, isSlideUnlocked } from "../
 import { corsHeaders, errorJson, httpError, json, rpc } from "../_shared/http.ts";
 import { passwordProblem } from "../_shared/accounts.ts";
 import { FORMS, FormError, validateAnswers } from "../_shared/onboarding-forms.ts";
+import { AGREEMENT_TEXT, SignError, validateSignature } from "../_shared/contract-signing.ts";
 
 type Client = any;
 
@@ -421,33 +422,53 @@ async function myOnboardingItem(admin: Client, userId: string, itemId: unknown) 
   const id = String(itemId || "");
   if (!/^[0-9a-f-]{36}$/i.test(id)) throw httpError(400, "That document is not valid.");
   const { data, error } = await admin.from("onboarding_items")
-    .select("id,request_id,status,doc_type,onboarding_requests(profile_id,status),hr_document_types(kind)").eq("id", id).maybeSingle();
+    .select("id,request_id,status,doc_type,onboarding_requests(profile_id,status,employee_id),hr_document_types(kind)").eq("id", id).maybeSingle();
   if (error) throw httpError(500, "The document request could not be loaded.");
   if (!data || data.onboarding_requests?.profile_id !== userId) throw httpError(404, "Document request not found.");
   if (data.onboarding_requests.status !== "open") throw httpError(409, "This onboarding request is closed.");
   if (data.status === "accepted") throw httpError(409, "This document has already been accepted.");
-  return { ...data, kind: data.hr_document_types?.kind || "upload" };
+  return { ...data, kind: data.hr_document_types?.kind || "upload", employee_id: data.onboarding_requests.employee_id };
 }
 
 async function handleOnboardingView(admin: Client, userId: string) {
   const { data, error } = await admin.from("onboarding_requests")
-    .select("id,status,due_on,message,created_at,onboarding_items(id,doc_type,required,status,file_name,uploaded_at,reject_reason,answers,submitted_at,onboarding_files(id,label,file_name,expires_on,uploaded_at))")
+    .select("id,status,due_on,message,created_at,employee_id,onboarding_items(id,doc_type,required,status,file_name,uploaded_at,reject_reason,answers,submitted_at,onboarding_files(id,label,file_name,expires_on,uploaded_at))")
     .eq("profile_id", userId).in("status", ["open", "complete"]).order("created_at", { ascending: false }).limit(1).maybeSingle();
   if (error) throw httpError(500, "Your onboarding documents could not be loaded.");
   if (!data) return { request: null };
   const types = await admin.from("hr_document_types").select("key,name,guidance,sensitive,sort,kind");
   if (types.error) throw httpError(500, "Document types could not be loaded.");
   const typeMap = new Map(types.data.map((t: any) => [t.key, t]));
+  // Contract files and the signer's register name are only looked up when there is something to sign.
+  const signIds = (data.onboarding_items || []).filter((i: any) => (typeMap.get(i.doc_type) as any)?.kind === "sign").map((i: any) => i.id);
+  const signDocs = new Map<string, any[]>();
+  let signAs = "";
+  if (signIds.length) {
+    const [docs, emp] = await Promise.all([
+      admin.from("onboarding_sign_documents").select("id,item_id,label,file_name,added_at").in("item_id", signIds).order("added_at"),
+      admin.from("employees").select("full_name").eq("id", data.employee_id).maybeSingle()
+    ]);
+    if (docs.error || emp.error) throw httpError(500, "Your contract could not be loaded.");
+    signAs = String(emp.data?.full_name || "").replace(/\s+/g, " ").trim();
+    for (const d of docs.data) signDocs.set(d.item_id, [...(signDocs.get(d.item_id) || []), { id: d.id, label: d.label, fileName: d.file_name }]);
+  }
   return {
     request: { id: data.id, status: data.status, dueOn: data.due_on, message: data.message, createdAt: data.created_at },
     items: (data.onboarding_items || []).map((i: any) => {
       const t: any = typeMap.get(i.doc_type) || {};
       return {
         id: i.id, docType: i.doc_type, name: t.name || i.doc_type, guidance: t.guidance || "", sensitive: Boolean(t.sensitive), sort: t.sort ?? 999,
-        kind: FORMS[i.doc_type] && t.kind === "form" ? "form" : "upload",
+        kind: t.kind === "sign" ? "sign" : FORMS[i.doc_type] && t.kind === "form" ? "form" : "upload",
         form: t.kind === "form" ? FORMS[i.doc_type] ?? null : null,
-        // Your own answers come back only while you can still change them.
-        answers: i.status === "accepted" ? null : i.answers ?? null,
+        // Your own answers come back only while you can still change them. A signature is not an answer to edit.
+        answers: t.kind === "sign" || i.status === "accepted" ? null : i.answers ?? null,
+        ...(t.kind === "sign" ? {
+          signDocs: signDocs.get(i.id) || [],
+          signAs,
+          agreementText: AGREEMENT_TEXT,
+          signed: ["uploaded", "accepted"].includes(i.status) && i.answers?.signedName
+            ? { name: i.answers.signedName, method: i.answers.method, at: i.submitted_at } : null
+        } : {}),
         submittedAt: i.submitted_at,
         files: (i.onboarding_files || [])
           .map((f: any) => ({ id: f.id, label: f.label, fileName: f.file_name, expiresOn: f.expires_on, uploadedAt: f.uploaded_at }))
@@ -472,9 +493,65 @@ async function handleOnboardingSubmitForm(admin: Client, userId: string, body: a
   return { submitted: true };
 }
 
+// A short-lived link to read the contract HR attached. Each opening is audited.
+async function handleContractUrl(admin: Client, userId: string, body: any) {
+  const id = String(body.docId || "");
+  if (!/^[0-9a-f-]{36}$/i.test(id)) throw httpError(400, "That contract is not valid.");
+  const { data, error } = await admin.from("onboarding_sign_documents")
+    .select("id,path,label,item_id,onboarding_items(request_id,onboarding_requests(profile_id,status))").eq("id", id).maybeSingle();
+  if (error) throw httpError(500, "Your contract could not be loaded.");
+  const request = data?.onboarding_items?.onboarding_requests;
+  if (!data || request?.profile_id !== userId || !["open", "complete"].includes(request?.status)) throw httpError(404, "Contract not found.");
+  const signed = await admin.storage.from(HR_BUCKET).createSignedUrl(data.path, 300);
+  if (signed.error || !signed.data?.signedUrl) throw httpError(500, "A link to your contract could not be created.");
+  await rpc(admin, "ims_audit", {
+    p_actor: userId, p_event: "onboarding_contract_viewed",
+    p_details: { requestId: data.onboarding_items.request_id, itemId: data.item_id, documentId: data.id, label: data.label }, p_subject: userId
+  });
+  return { url: signed.data.signedUrl, expiresIn: 300 };
+}
+
+// Signs the contract: typed full name, or a handwritten image. The wording
+// agreed to is fixed on the server; the database records it with the signature.
+async function handleOnboardingSign(admin: Client, userId: string, body: any) {
+  const item = await myOnboardingItem(admin, userId, body.itemId);
+  if (item.kind !== "sign") throw httpError(400, "This item isn't signed online.");
+  if (item.status === "uploaded") throw httpError(409, "You have already signed this. HR is reviewing it.");
+  const employee = await admin.from("employees").select("full_name").eq("id", item.employee_id).maybeSingle();
+  if (employee.error || !employee.data) throw httpError(500, "Your details could not be loaded.");
+  let signature;
+  try {
+    signature = validateSignature(body, employee.data.full_name);
+  } catch (error) {
+    if (error instanceof SignError) throw httpError(400, error.message, `field:${error.field}`);
+    throw error;
+  }
+  let imagePath: string | null = null;
+  if (signature.method === "drawn") {
+    imagePath = `${item.request_id}/${item.id}/signature-${Date.now().toString(36)}.png`;
+    const stored = await admin.storage.from(HR_BUCKET).upload(imagePath, signature.image, { contentType: "image/png", upsert: false });
+    if (stored.error) throw httpError(500, "Your signature could not be saved. Please try again.");
+  }
+  try {
+    await rpc(admin, "onboarding_record_signature", {
+      p_actor: userId, p_item: item.id, p_method: signature.method, p_name: signature.typedName ?? null,
+      p_statement: AGREEMENT_TEXT, p_signature_path: imagePath
+    });
+  } catch (error) {
+    // The signature wasn't recorded, so the image we just stored isn't needed.
+    if (imagePath) await admin.storage.from(HR_BUCKET).remove([imagePath]).catch(() => null);
+    throw error;
+  }
+  return { signed: true };
+}
+
+const uploadRefusal = (kind: string) => kind === "sign"
+  ? "Sign this contract on the portal. There's nothing to upload."
+  : "Fill in this item on the portal instead of uploading a file.";
+
 async function handleOnboardingPrepare(admin: Client, userId: string, body: any) {
   const item = await myOnboardingItem(admin, userId, body.itemId);
-  if (item.kind === "form") throw httpError(400, "Fill in this item on the portal instead of uploading a file.");
+  if (item.kind !== "upload") throw httpError(400, uploadRefusal(item.kind));
   const size = Number(body.size);
   if (!Number.isFinite(size) || size < 1 || size > HR_MAX_BYTES) throw httpError(400, "Files must be under 20 MB.");
   const raw = String(body.fileName || "").trim();
@@ -489,6 +566,7 @@ async function handleOnboardingPrepare(admin: Client, userId: string, body: any)
 
 async function handleOnboardingAttach(admin: Client, userId: string, body: any) {
   const item = await myOnboardingItem(admin, userId, body.itemId);
+  if (item.kind !== "upload") throw httpError(400, uploadRefusal(item.kind));
   const path = String(body.path || "");
   const folder = `${item.request_id}/${item.id}`;
   if (!path.startsWith(`${folder}/`)) throw httpError(400, "Invalid upload path.");
@@ -537,6 +615,8 @@ export default {
         case "change_password": result = await handleChangePassword(context.supabaseAdmin, userId, body); break;
         case "onboarding_view": result = await handleOnboardingView(context.supabaseAdmin, userId); break;
         case "onboarding_submit_form": result = await handleOnboardingSubmitForm(context.supabaseAdmin, userId, body); break;
+        case "onboarding_contract_url": result = await handleContractUrl(context.supabaseAdmin, userId, body); break;
+        case "onboarding_sign": result = await handleOnboardingSign(context.supabaseAdmin, userId, body); break;
         case "onboarding_remove_file": result = await handleOnboardingRemoveFile(context.supabaseAdmin, userId, body); break;
         case "onboarding_prepare_upload": result = await handleOnboardingPrepare(context.supabaseAdmin, userId, body); break;
         case "onboarding_attach": result = await handleOnboardingAttach(context.supabaseAdmin, userId, body); break;
