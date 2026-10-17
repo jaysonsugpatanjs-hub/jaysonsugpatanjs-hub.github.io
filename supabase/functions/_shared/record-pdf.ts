@@ -17,7 +17,7 @@ export type RecordInput = {
   footer?: string;
 };
 
-const latin = (v: string) => String(v ?? "").replace(/[^\x20-\x7E -ÿ]/g, "-");
+export const latin = (v: string) => String(v ?? "").replace(/[^\x20-\x7E -ÿ]/g, "-");
 const when = (iso: string | null) => iso
   ? new Intl.DateTimeFormat("en-AU", { dateStyle: "medium", timeStyle: "short", timeZone: "Australia/Sydney" }).format(new Date(iso))
   : "—";

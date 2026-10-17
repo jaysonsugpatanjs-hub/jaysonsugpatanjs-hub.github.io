@@ -2,7 +2,7 @@
 // Accepted onboarding items are filed automatically: uploads in place, typed
 // answers as a generated PDF record. HR can add, view and archive documents.
 // Nothing is deleted. Every view, filing and archive is audited.
-import { describeSignature, sha256Hex, signatureImagePath } from "../_shared/contract-signing.ts";
+import { DEFAULT_PLACEMENT, SignError, describeCompany, describeSignature, sha256Hex, signatureImagePath, type CompanySignature, type Placement, type StoredCompanySignature } from "../_shared/contract-signing.ts";
 import { describeAnswers } from "../_shared/onboarding-forms.ts";
 import { createRecordPdf } from "../_shared/record-pdf.ts";
 import { createSignedContractPdf } from "../_shared/signed-contract-pdf.ts";
@@ -36,33 +36,88 @@ async function downloadHrFile(admin: Client, path: string, what: string): Promis
 }
 
 /**
- * Files a signed contract as one PDF: the contract pages, then the signature
- * record. Each contract file is checked against the fingerprint taken when HR
- * attached it, so a signature is never filed against a file that has changed.
+ * Builds the signed contract as one PDF: the contract pages with the signature
+ * and date placed where HR chose, then the signature record. Each contract file
+ * is checked against the fingerprint taken when HR attached it, so a signature
+ * is never filed against a file that has changed. `preview` builds the same
+ * document before HR has finalized it (nothing is stored).
  */
-async function fileSignedContract(admin: Client, actor: Actor, employeeId: string, emp: any, item: any, type: any, category: string) {
+type Counter = { signature: CompanySignature; enteredBy: string | null };
+
+async function buildSignedContract(admin: Client, employeeId: string, item: any, type: any, placement: Placement, preview = false, counter?: Counter) {
   const docs = await admin.from("onboarding_sign_documents").select("path,file_name,label,sha256").eq("item_id", item.id).order("added_at");
   if (docs.error) throw httpError(500, "The contract files could not be read.");
   const contracts: Uint8Array[] = [];
   for (const doc of docs.data) {
     const bytes = await downloadHrFile(admin, doc.path, "A contract file");
-    if (await sha256Hex(bytes) !== doc.sha256) throw httpError(500, "A contract file no longer matches the fingerprint taken when it was signed.");
+    if (await sha256Hex(bytes) !== doc.sha256) throw httpError(409, "A contract file no longer matches the fingerprint taken when it was signed, so it can't be finalized. Send the contract back and attach it again.");
     contracts.push(bytes);
   }
+  const emp = await admin.from("employees").select("full_name,employee_number").eq("id", employeeId).maybeSingle();
   const imagePath = signatureImagePath(item.answers);
-  const reviewer = item.reviewed_by
+  const image = imagePath ? await downloadHrFile(admin, imagePath, "The handwritten signature") : undefined;
+  const reviewer = !preview && item.reviewed_by
     ? (await admin.from("training_profiles").select("full_name,email").eq("id", item.reviewed_by).maybeSingle()).data
     : null;
-  const { bytes } = await createSignedContractPdf({
-    contracts,
-    record: {
-      title: type.name || item.doc_type,
-      personName: emp.data?.full_name || "", employeeNumber: emp.data?.employee_number || "",
-      submittedAt: item.submitted_at, acceptedAt: item.reviewed_at, acceptedBy: reviewer?.full_name || reviewer?.email || null,
-      rows: describeSignature(item.answers, { pdf: true }).map(r => ({ label: r.label, value: r.value })),
-      signaturePng: imagePath ? await downloadHrFile(admin, imagePath, "The handwritten signature") : undefined
-    }
+  try {
+    return await createSignedContractPdf({
+      contracts, preview,
+      record: {
+        title: type.name || item.doc_type,
+        personName: emp.data?.full_name || "", employeeNumber: emp.data?.employee_number || "",
+        submittedAt: item.submitted_at, acceptedAt: preview ? null : item.reviewed_at, acceptedBy: reviewer?.full_name || reviewer?.email || null,
+        rows: [
+          ...describeSignature(item.answers, { pdf: true }),
+          ...(counter ? describeCompany(counter.signature, counter.enteredBy) : [])
+        ].map(r => ({ label: r.label, value: r.value })),
+        signaturePng: image
+      },
+      stamp: {
+        placement, signedName: item.answers?.signedName || emp.data?.full_name || "", method: item.answers?.method || "typed",
+        signedAt: item.submitted_at, image,
+        company: counter ? {
+          name: counter.signature.name, method: counter.signature.method, image: counter.signature.image,
+          signature: counter.signature.signature, date: counter.signature.date,
+          signedAt: preview ? new Date().toISOString() : item.reviewed_at
+        } : undefined
+      }
+    });
+  } catch (error) {
+    if (error instanceof SignError) throw httpError(400, error.message);
+    throw error;
+  }
+}
+
+/** What the signed contract will look like, for HR to check before finalizing. Nothing is stored. */
+export async function previewSignedContract(admin: Client, actor: Actor, itemId: string, placement: Placement, company: CompanySignature | null = null, audit = true) {
+  const { data: item, error } = await admin.from("onboarding_items")
+    .select("id,doc_type,status,answers,submitted_at,reviewed_at,reviewed_by,onboarding_requests(employee_id),hr_document_types(name,kind)").eq("id", itemId).maybeSingle();
+  if (error) throw httpError(500, "The contract could not be loaded.");
+  if (!item || item.hr_document_types?.kind !== "sign") throw httpError(404, "Contract not found.");
+  if (item.status !== "uploaded") throw httpError(409, "There is no signature waiting to be finalized.");
+  const built = await buildSignedContract(admin, item.onboarding_requests.employee_id, item, item.hr_document_types, placement, true, company ? { signature: company, enteredBy: actor.full_name || actor.email } : undefined);
+  if (audit) await rpc(admin, "ims_audit", {
+    p_actor: actor.id, p_event: "onboarding_contract_previewed",
+    p_details: { itemId, docType: item.doc_type, page: placement.page, counterSigned: Boolean(company) }, p_subject: null
   });
+  return built;
+}
+
+/** What HR chose when finalizing, read back from the item (older acceptances have none). */
+async function finalizedChoices(admin: Client, item: any): Promise<{ placement: Placement; counter?: Counter }> {
+  const f = item.finalize;
+  if (!f?.placement) return { placement: DEFAULT_PLACEMENT };
+  const stored = f.company as StoredCompanySignature | undefined;
+  if (!stored) return { placement: f.placement };
+  const image = stored.method === "drawn" && stored.imagePath ? await downloadHrFile(admin, stored.imagePath, "The counter-signature") : undefined;
+  const who = f.by ? (await admin.from("training_profiles").select("full_name,email").eq("id", f.by).maybeSingle()).data : null;
+  return { placement: f.placement, counter: { signature: { ...stored, image }, enteredBy: who?.full_name || who?.email || null } };
+}
+
+/** Files the finalized contract in the person's HR folder. */
+async function fileSignedContract(admin: Client, actor: Actor, employeeId: string, item: any, type: any, category: string) {
+  const { placement, counter } = await finalizedChoices(admin, item);
+  const { bytes } = await buildSignedContract(admin, employeeId, item, type, placement, false, counter);
   const path = `personnel/${employeeId}/${category}/${slug(type.name || item.doc_type)}-signed-${Date.now().toString(36)}.pdf`;
   const up = await admin.storage.from(BUCKET).upload(path, bytes, { contentType: "application/pdf", upsert: false });
   if (up.error) throw httpError(500, "The signed contract could not be saved.");
@@ -79,7 +134,7 @@ async function fileSignedContract(admin: Client, actor: Actor, employeeId: strin
  */
 export async function fileAcceptedOnboarding(admin: Client, actor: Actor, employeeId: string) {
   const { data, error } = await admin.from("onboarding_items")
-    .select("id,doc_type,status,answers,submitted_at,reviewed_at,reviewed_by,onboarding_requests!inner(employee_id),hr_document_types(name,kind,personnel_category),onboarding_files(id,path,file_name,label,expires_on)")
+    .select("id,doc_type,status,answers,finalize,submitted_at,reviewed_at,reviewed_by,onboarding_requests!inner(employee_id),hr_document_types(name,kind,personnel_category),onboarding_files(id,path,file_name,label,expires_on)")
     .eq("status", "accepted").eq("onboarding_requests.employee_id", employeeId);
   if (error) throw httpError(500, "Accepted onboarding items could not be read.");
   if (!data.length) return 0;
@@ -102,7 +157,7 @@ export async function fileAcceptedOnboarding(admin: Client, actor: Actor, employ
       added++;
     }
     if (type.kind === "sign" && item.answers && !filedForms.has(item.id)) {
-      await fileSignedContract(admin, actor, employeeId, emp, item, type, category);
+      await fileSignedContract(admin, actor, employeeId, item, type, category);
       added++;
     }
     if (type.kind === "form" && item.answers && !filedForms.has(item.id)) {

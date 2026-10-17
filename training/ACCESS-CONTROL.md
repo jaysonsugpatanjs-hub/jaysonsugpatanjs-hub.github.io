@@ -43,7 +43,10 @@ The training application uses a public, non-sensitive GitHub Pages shell and a p
 - The signer is always the signed-in applicant. A typed name must match the register name; a handwritten signature records the register name. The agreement wording is fixed on the server, never taken from the browser.
 - A signature image must be a real PNG of sensible size; anything else is refused. Contracts must really be PDFs, checked on the stored bytes, not the file name.
 - The upload routes for ordinary documents refuse sign items, so no upload link into the HR bucket is issued for a contract item.
-- Filing the signed copy re-hashes each stored contract file and refuses on any mismatch.
+- Accepting a signed contract needs HR to say where the signature goes (page and position); a plain accept is refused. Finalizing re-hashes each stored contract file and builds the stamped document before anything is accepted, so a changed file or a bad placement leaves the signature waiting.
+- Who signed for Panalo (name, position, how) is recorded as typed by HR, together with the HR sign-in that entered it, in the audit log and on the signature record. The system does not verify that the named person is the Managing Director; the entering HR user is accountable. A handwritten counter-signature image is stored in the private bucket, like the applicant's.
+- HR's choices (page, positions, counter-signature) are stored with the acceptance in one transaction, so a filing that has to be retried rebuilds the document exactly as it was finalized. Browsers cannot read them.
+- Previews are built on demand, returned to HR and never stored; each preview and each view of a contract file is audited.
 
 ## Required deployment checks
 
@@ -57,6 +60,6 @@ The training application uses a public, non-sensitive GitHub Pages shell and a p
 - Draft creation, private signed upload, missing-asset rejection, publication and generic module viewing are verified before enabling administrator self-service.
 - `npm run test:db` passes: inheritance, locked folders, last-owner protection, approval gates, publish blocked until approved, and no audit row for a failed action.
 - A signed-in applicant cannot open any IMS folder; a supervisor sees approved revisions but not drafts.
-- `npm run test:db` and `npm run test:api` cover contract signing: attach, read, type and written signatures, send-back and re-sign, locking after signing, a changed file refused at filing, and the browser roles having no direct access.
+- `npm run test:db` and `npm run test:api` cover contract signing: attach, read, type and written signatures, send-back and re-sign, locking after signing, placement and preview, finalizing, a changed file refused before anything is accepted, and the browser roles having no direct access.
 
 See [SETUP.md](SETUP.md) for deployment and first-administrator steps.

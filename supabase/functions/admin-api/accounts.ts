@@ -2,10 +2,10 @@
 // Passwords go only to Supabase Auth; temporary ones are returned once to the
 // administrator who issued them and never stored or logged here.
 import { generateTemporaryPassword } from "../_shared/accounts.ts";
-import { CONTRACT_MAX_BYTES, describeSignature, looksLikePdf, sha256Hex, signatureImagePath } from "../_shared/contract-signing.ts";
+import { CONTRACT_MAX_BYTES, SignError, describeSignature, looksLikePdf, parseCompanySignature, parsePlacement, sha256Hex, signatureImagePath, toBase64, type CompanySignature, type Placement, type StoredCompanySignature } from "../_shared/contract-signing.ts";
 import { describeAnswers } from "../_shared/onboarding-forms.ts";
 import { httpError, rpc } from "../_shared/http.ts";
-import { fileAcceptedOnboarding } from "./personnel.ts";
+import { fileAcceptedOnboarding, previewSignedContract } from "./personnel.ts";
 
 type Client = any;
 export type Actor = { id: string; email: string; full_name: string; role: string; permissions: string[] };
@@ -242,6 +242,7 @@ async function onboardingDetail(admin: Client, actor: Actor, body: any) {
         answers: (typeMap.get(i.doc_type) as any)?.kind === "sign" ? describeSignature(i.answers) : describeAnswers(i.doc_type, i.answers), submittedAt: i.submitted_at,
         signDocs: signDocs.get(i.id) || [],
         canChangeContract: data.status === "open" && ["pending", "rejected"].includes(i.status),
+        canFinalize: data.status === "open" && i.status === "uploaded" && (typeMap.get(i.doc_type) as any)?.kind === "sign",
         hasHandwriting: Boolean(signatureImagePath(i.answers)),
         files: (i.onboarding_files || [])
           .map((f: any) => ({ id: f.id, label: f.label, fileName: f.file_name, expiresOn: f.expires_on, uploadedAt: f.uploaded_at }))
@@ -266,12 +267,65 @@ async function onboardingCreate(admin: Client, actor: Actor, body: any) {
   return { requestId, invited: login.invited, tempPassword: login.tempPassword, hadLogin: !login.invited && !login.created && !login.tempPassword };
 }
 
+/** The placement HR chose for a contract, or a 400 saying what is missing. */
+function placementFrom(raw: unknown): Placement {
+  try { return parsePlacement(raw); }
+  catch (error) { if (error instanceof SignError) throw httpError(400, error.message); throw error; }
+}
+
+/** Panalo's counter-signature, if HR is adding one; a half-filled one is a 400. */
+function companyFrom(raw: unknown): CompanySignature | null {
+  try { return parseCompanySignature(raw); }
+  catch (error) { if (error instanceof SignError) throw httpError(400, error.message); throw error; }
+}
+
+/**
+ * Finalizes a signed contract: the stamped document is built (and every
+ * contract file re-checked) first, then the signature is accepted and HR's
+ * choices stored in one transaction, so a bad placement or a changed file
+ * leaves the signature waiting.
+ */
+async function finalizeContract(admin: Client, actor: Actor, itemId: string, requestId: string, body: any) {
+  const placement = placementFrom(body.placement);
+  const company = companyFrom(body.company);
+  await previewSignedContract(admin, actor, itemId, placement, company, false);
+  let stored: StoredCompanySignature | null = null;
+  let imagePath: string | null = null;
+  if (company) {
+    const { image: _image, ...rest } = company;
+    stored = rest;
+    if (company.image) {
+      imagePath = `${requestId}/${itemId}/company-signature-${crypto.randomUUID()}.png`;
+      const up = await admin.storage.from(HR_BUCKET).upload(imagePath, company.image, { contentType: "image/png", upsert: false });
+      if (up.error) throw httpError(500, "The counter-signature could not be saved.");
+      stored = { ...rest, imagePath };
+    }
+  }
+  try {
+    return await rpc<any>(admin, "onboarding_finalize_contract", { p_actor: actor.id, p_item: itemId, p_placement: placement, p_company: stored });
+  } catch (error) {
+    // Nothing was accepted, so the image would be an orphan.
+    if (imagePath) await admin.storage.from(HR_BUCKET).remove([imagePath]).catch(() => null);
+    throw error;
+  }
+}
+
 async function onboardingReview(admin: Client, actor: Actor, body: any) {
   const itemId = uuid(body.itemId, "Document");
-  const result: any = await rpc(admin, "onboarding_review", {
-    p_actor: actor.id, p_item: itemId, p_accept: body.accept === true, p_reason: String(body.reason || "").slice(0, 500)
-  });
-  if (body.accept !== true) return result;
+  const accepting = body.accept === true;
+  let result: any;
+  const meta = accepting ? await admin.from("onboarding_items").select("request_id,hr_document_types(kind)").eq("id", itemId).maybeSingle() : null;
+  if (meta?.error) throw httpError(500, "The document could not be loaded.");
+  // A signed contract is finalized, not just accepted: HR says where the
+  // signature goes and may counter-sign for Panalo.
+  if (meta?.data?.hr_document_types?.kind === "sign") {
+    result = await finalizeContract(admin, actor, itemId, meta.data.request_id, body);
+  } else {
+    result = await rpc(admin, "onboarding_review", {
+      p_actor: actor.id, p_item: itemId, p_accept: accepting, p_reason: String(body.reason || "").slice(0, 500)
+    });
+  }
+  if (!accepting) return result;
   // File it in the person's HR folder straight away. If that fails the
   // acceptance still stands; opening their HR file retries the filing.
   try {
@@ -394,6 +448,33 @@ async function onboardingSignView(admin: Client, actor: Actor, body: any) {
   return { url: signed.data.signedUrl, expiresIn: 120 };
 }
 
+const PREVIEW_MAX_BYTES = 12 * 1024 * 1024;
+
+/** The signed contract as it will be filed, for HR to check before finalizing. Nothing is stored. */
+async function onboardingSignPreview(admin: Client, actor: Actor, body: any) {
+  const { bytes } = await previewSignedContract(admin, actor, uuid(body.itemId, "Document"), placementFrom(body.placement), companyFrom(body.company));
+  if (bytes.length > PREVIEW_MAX_BYTES) throw httpError(413, "This contract is too large to preview here. Check the placement against the pages above, then finalize.");
+  return { pdf: toBase64(bytes), size: bytes.length };
+}
+
+/** A contract file's bytes, so HR can see its pages and click where the signature goes. */
+async function onboardingSignBytes(admin: Client, actor: Actor, body: any) {
+  const docId = uuid(body.docId, "Document");
+  const { data, error } = await admin.from("onboarding_sign_documents")
+    .select("path,label,size_bytes,item_id,onboarding_items(doc_type,request_id,onboarding_requests(profile_id))").eq("id", docId).maybeSingle();
+  if (error) throw httpError(500, "The contract could not be found.");
+  if (!data) throw httpError(404, "Contract not found.");
+  if (data.size_bytes > PREVIEW_MAX_BYTES) throw httpError(413, "This contract is too large to show here. Open it with View instead.");
+  const file = await admin.storage.from(HR_BUCKET).download(data.path);
+  if (file.error || !file.data) throw httpError(500, "The contract could not be read from storage.");
+  await rpc(admin, "ims_audit", {
+    p_actor: actor.id, p_event: "onboarding_document_viewed",
+    p_details: { itemId: data.item_id, documentId: docId, label: data.label, docType: data.onboarding_items?.doc_type, requestId: data.onboarding_items?.request_id },
+    p_subject: data.onboarding_items?.onboarding_requests?.profile_id ?? null
+  });
+  return { pdf: toBase64(new Uint8Array(await file.data.arrayBuffer())), label: data.label };
+}
+
 export const accountActions: Record<string, { perm: string | string[]; run: Handler }> = {
   account_create: { perm: ["access.manage", "hr.manage"], run: accountCreate },
   account_reset_password: { perm: "access.manage", run: accountResetPassword },
@@ -413,5 +494,7 @@ export const accountActions: Record<string, { perm: string | string[]; run: Hand
   onboarding_sign_prepare: { perm: "hr.manage", run: onboardingSignPrepare },
   onboarding_sign_attach: { perm: "hr.manage", run: onboardingSignAttach },
   onboarding_sign_remove: { perm: "hr.manage", run: onboardingSignRemove },
-  onboarding_sign_view: { perm: "hr.manage", run: onboardingSignView }
+  onboarding_sign_view: { perm: "hr.manage", run: onboardingSignView },
+  onboarding_sign_bytes: { perm: "hr.manage", run: onboardingSignBytes },
+  onboarding_sign_preview: { perm: "hr.manage", run: onboardingSignPreview }
 };

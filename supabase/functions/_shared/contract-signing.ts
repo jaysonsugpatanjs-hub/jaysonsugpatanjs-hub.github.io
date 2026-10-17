@@ -120,3 +120,109 @@ export function signatureImagePath(answers: Record<string, unknown> | null): str
   const a = (answers ?? {}) as { method?: string; signaturePath?: string };
   return a.method === "drawn" && typeof a.signaturePath === "string" ? a.signaturePath : null;
 }
+
+/* ---------------- Where the signature goes on the contract ---------------- */
+
+/** A point on a page, as fractions of its width and height measured from the top-left corner. */
+export type PagePoint = { x: number; y: number };
+/**
+ * HR clicks on the contract page: `signature` is the left end of the signature
+ * line, `date` (optional) the left end of the date line. `page` counts the
+ * pages of all attached contract files in order, or "last".
+ */
+export type Placement = { page: number | "last"; signature: PagePoint; date: PagePoint | null };
+
+/** Used only when a signature is filed without HR having chosen (older acceptances). */
+export const DEFAULT_PLACEMENT: Placement = { page: "last", signature: { x: 0.55, y: 0.9 }, date: null };
+
+const point = (raw: unknown, field: string, label: string): PagePoint => {
+  const p = raw && typeof raw === "object" ? raw as Record<string, unknown> : {};
+  const x = Number(p.x), y = Number(p.y);
+  if (typeof p.x !== "number" || typeof p.y !== "number" || !Number.isFinite(x) || !Number.isFinite(y) || x < 0 || x > 1 || y < 0 || y > 1) {
+    throw new SignError(field, `Click on the page to place the ${label}.`);
+  }
+  return { x: Math.round(x * 10000) / 10000, y: Math.round(y * 10000) / 10000 };
+};
+
+/** Checks the placement HR sent. Throws a SignError saying what is missing. */
+export function parsePlacement(raw: unknown): Placement {
+  const input = raw && typeof raw === "object" && !Array.isArray(raw) ? raw as Record<string, unknown> : null;
+  if (!input) throw new SignError("placement", "Choose where the signature goes on the contract, then finalize.");
+  const page = input.page === "last" ? "last" : Number(input.page);
+  if (page !== "last" && (!Number.isInteger(page) || page < 1 || page > 2000)) throw new SignError("page", "Choose a valid page.");
+  return {
+    page,
+    signature: point(input.signature, "signature", "signature"),
+    date: input.date == null ? null : point(input.date, "date", "date")
+  };
+}
+
+/** Which page (0-based) of `pageCount` the placement means, or a SignError. */
+export function resolvePage(placement: Placement, pageCount: number): number {
+  if (pageCount < 1) throw new SignError("page", "The contract has no pages to sign.");
+  if (placement.page === "last") return pageCount - 1;
+  if (placement.page > pageCount) throw new SignError("page", `The contract has ${pageCount} page${pageCount === 1 ? "" : "s"}. Choose a page from 1 to ${pageCount}.`);
+  return placement.page - 1;
+}
+
+/** PDF coordinates (origin bottom-left) of a clicked point. */
+export function pdfPoint(pageWidth: number, pageHeight: number, p: PagePoint) {
+  return { x: p.x * pageWidth, y: (1 - p.y) * pageHeight };
+}
+
+/** Bytes to base64, in chunks so large files don't overflow the call stack. */
+export function toBase64(bytes: Uint8Array): string {
+  let out = "";
+  for (let i = 0; i < bytes.length; i += 0x8000) out += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  return btoa(out);
+}
+
+/* ---------------- Counter-signing for Panalo ---------------- */
+
+/**
+ * Panalo's counter-signature, added by the HR representative or the Managing
+ * Director when they finalize. It goes on the same page as the applicant's.
+ */
+export type CompanySignature = {
+  name: string;
+  position: string;
+  method: SignMethod;
+  /** Handwriting (PNG bytes), when method is "drawn". */
+  image?: Uint8Array;
+  signature: PagePoint;
+  date: PagePoint | null;
+};
+
+/** What is kept on the item and in the audit log (the image lives in storage). */
+export type StoredCompanySignature = Omit<CompanySignature, "image"> & { imagePath?: string };
+
+/** Checks what HR sent. No counter-signature (null/undefined) is fine; a half-filled one is refused. */
+export function parseCompanySignature(raw: unknown): CompanySignature | null {
+  if (raw == null) return null;
+  const input = raw && typeof raw === "object" && !Array.isArray(raw) ? raw as Record<string, unknown> : {};
+  const name = normalizeName(input.name);
+  if (name.length < 2) throw new SignError("companyName", "Enter the name of the person signing for Panalo.");
+  if (name.length > 80) throw new SignError("companyName", "That name is too long.");
+  const position = normalizeName(input.position);
+  if (position.length > 60) throw new SignError("companyPosition", "That position is too long.");
+  const method = String(input.method ?? "");
+  if (!(SIGN_METHODS as readonly string[]).includes(method)) throw new SignError("companyMethod", "Choose how to sign for Panalo.");
+  const out: CompanySignature = {
+    name, position, method: method as SignMethod,
+    signature: point(input.signature, "companySignature", "Panalo signature"),
+    date: input.date == null ? null : point(input.date, "companyDate", "Panalo date")
+  };
+  if (method === "drawn") out.image = decodeSignatureImage(input.signatureImage);
+  return out;
+}
+
+/** The counter-signature as labelled rows for the signature record. */
+export function describeCompany(company: Pick<StoredCompanySignature, "name" | "position" | "method"> | null | undefined, enteredBy: string | null) {
+  if (!company?.name) return [];
+  const rows = [
+    { label: "Signed for Panalo by", value: `${company.name}${company.position ? ` (${company.position})` : ""}` },
+    { label: "How they signed", value: company.method === "drawn" ? "Wrote their name on screen" : "Typed their name" }
+  ];
+  if (enteredBy) rows.push({ label: "Entered by (HR sign-in)", value: enteredBy });
+  return rows;
+}

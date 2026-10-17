@@ -98,3 +98,79 @@ test("the stored handwriting image is only offered for handwritten signatures", 
   assert.equal(signatureImagePath({ method: "drawn" }), null);
   assert.equal(signatureImagePath(null), null);
 });
+
+import { DEFAULT_PLACEMENT, parsePlacement, pdfPoint, resolvePage, toBase64 } from "../../supabase/functions/_shared/contract-signing.ts";
+
+test("placement: HR's click is a page and fractions of it, nothing else is trusted", () => {
+  const ok = parsePlacement({ page: 2, signature: { x: 0.5, y: 0.9 }, date: { x: 0.6, y: 0.93 } });
+  assert.deepEqual(ok, { page: 2, signature: { x: 0.5, y: 0.9 }, date: { x: 0.6, y: 0.93 } });
+  assert.equal(parsePlacement({ page: "last", signature: { x: 0, y: 1 } }).date, null);
+  assert.deepEqual(parsePlacement({ page: 1, signature: { x: 0.123456789, y: 0.5 } }).signature, { x: 0.1235, y: 0.5 });
+
+  failsOn(() => parsePlacement(undefined), "placement");
+  failsOn(() => parsePlacement([]), "placement");
+  failsOn(() => parsePlacement({ page: 0, signature: { x: 0.5, y: 0.5 } }), "page");
+  failsOn(() => parsePlacement({ page: 1.5, signature: { x: 0.5, y: 0.5 } }), "page");
+  failsOn(() => parsePlacement({ page: "first", signature: { x: 0.5, y: 0.5 } }), "page");
+  failsOn(() => parsePlacement({ page: 1 }), "signature");
+  failsOn(() => parsePlacement({ page: 1, signature: { x: 1.2, y: 0.5 } }), "signature");
+  failsOn(() => parsePlacement({ page: 1, signature: { x: "0.5", y: 0.5 } }), "signature");
+  failsOn(() => parsePlacement({ page: 1, signature: { x: Number.NaN, y: 0.5 } }), "signature");
+  failsOn(() => parsePlacement({ page: 1, signature: { x: 0.5, y: 0.5 }, date: { x: 0.5, y: -1 } }), "date");
+  assert.doesNotThrow(() => parsePlacement(DEFAULT_PLACEMENT));
+});
+
+test("placement: the page must exist, and a click maps to PDF coordinates (origin bottom-left)", () => {
+  assert.equal(resolvePage({ page: "last", signature: { x: 0, y: 0 }, date: null }, 3), 2);
+  assert.equal(resolvePage({ page: 1, signature: { x: 0, y: 0 }, date: null }, 3), 0);
+  assert.throws(() => resolvePage({ page: 4, signature: { x: 0, y: 0 }, date: null }, 3), /has 3 pages. Choose a page from 1 to 3/);
+  assert.throws(() => resolvePage({ page: 2, signature: { x: 0, y: 0 }, date: null }, 1), /has 1 page\. Choose a page from 1 to 1/);
+  assert.throws(() => resolvePage({ page: "last", signature: { x: 0, y: 0 }, date: null }, 0), SignError);
+
+  const p = pdfPoint(600, 800, { x: 0.25, y: 0.75 });
+  assert.equal(p.x, 150);
+  assert.equal(p.y, 200); // 75% of the way down the page is 25% up from the bottom
+});
+
+test("base64 survives large files", () => {
+  const big = Uint8Array.from({ length: 300_000 }, (_, i) => i % 256);
+  assert.deepEqual(new Uint8Array(Buffer.from(toBase64(big), "base64")), big);
+  assert.equal(toBase64(new Uint8Array(0)), "");
+});
+
+import { describeCompany, parseCompanySignature } from "../../supabase/functions/_shared/contract-signing.ts";
+
+test("Panalo's counter-signature: optional, but never half-filled", () => {
+  assert.equal(parseCompanySignature(undefined), null);
+  assert.equal(parseCompanySignature(null), null);
+
+  const typed = parseCompanySignature({ name: "  Rene   Fiestada ", position: " Managing   Director ", method: "typed", signature: { x: 0.6, y: 0.9 }, date: { x: 0.6, y: 0.93 } });
+  assert.deepEqual(typed, { name: "Rene Fiestada", position: "Managing Director", method: "typed", signature: { x: 0.6, y: 0.9 }, date: { x: 0.6, y: 0.93 } });
+  assert.equal(parseCompanySignature({ name: "HR Rep", method: "typed", signature: { x: 0.5, y: 0.5 } })?.date, null, "the date mark is optional");
+
+  const drawn = parseCompanySignature({ name: "Rene Fiestada", method: "drawn", signature: { x: 0.6, y: 0.9 }, signatureImage: dataUrl(fakePng()) });
+  assert.equal(drawn?.image?.length, 400);
+
+  failsOn(() => parseCompanySignature({ method: "typed", signature: { x: 0.5, y: 0.5 } }), "companyName");
+  failsOn(() => parseCompanySignature({ name: "R", method: "typed", signature: { x: 0.5, y: 0.5 } }), "companyName");
+  failsOn(() => parseCompanySignature({ name: "x".repeat(81), method: "typed", signature: { x: 0.5, y: 0.5 } }), "companyName");
+  failsOn(() => parseCompanySignature({ name: "Rene Fiestada", position: "y".repeat(61), method: "typed", signature: { x: 0.5, y: 0.5 } }), "companyPosition");
+  failsOn(() => parseCompanySignature({ name: "Rene Fiestada", method: "stamp", signature: { x: 0.5, y: 0.5 } }), "companyMethod");
+  failsOn(() => parseCompanySignature({ name: "Rene Fiestada", method: "typed" }), "companySignature");
+  failsOn(() => parseCompanySignature({ name: "Rene Fiestada", method: "typed", signature: { x: 2, y: 0.5 } }), "companySignature");
+  failsOn(() => parseCompanySignature({ name: "Rene Fiestada", method: "typed", signature: { x: 0.5, y: 0.5 }, date: { x: 0.5, y: 9 } }), "companyDate");
+  failsOn(() => parseCompanySignature({ name: "Rene Fiestada", method: "drawn", signature: { x: 0.5, y: 0.5 } }), "signature");
+  failsOn(() => parseCompanySignature([]), "companyName");
+});
+
+test("the record says who signed for Panalo and who entered it", () => {
+  const rows = describeCompany({ name: "Rene Fiestada", position: "Managing Director", method: "typed" }, "Hannah HR");
+  assert.deepEqual(rows.map(r => [r.label, r.value]), [
+    ["Signed for Panalo by", "Rene Fiestada (Managing Director)"],
+    ["How they signed", "Typed their name"],
+    ["Entered by (HR sign-in)", "Hannah HR"]
+  ]);
+  assert.equal(describeCompany({ name: "HR Rep", position: "", method: "drawn" }, null)[0].value, "HR Rep");
+  assert.equal(describeCompany({ name: "HR Rep", position: "", method: "drawn" }, null)[1].value, "Wrote their name on screen");
+  assert.deepEqual(describeCompany(null, "x"), []);
+});
