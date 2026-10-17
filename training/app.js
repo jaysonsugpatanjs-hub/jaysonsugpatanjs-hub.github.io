@@ -137,7 +137,7 @@ function formHtml(item, open) {
   const form = item.form;
   return `<form class="onb-form${open ? "" : " hidden"}" data-form-item="${safe(item.id)}" novalidate>
     ${form.intro ? `<p class="muted small">${safe(form.intro)}</p>` : ""}
-    ${form.link ? `<p class="small"><a href="${safe(form.link.href)}" target="_blank" rel="noopener">${safe(form.link.label)} ↗</a></p>` : ""}
+    ${form.link ? `<p class="small doc-link-row"><strong>Click here to read it first:</strong> <a class="doc-link" href="${safe(form.link.href)}" target="_blank" rel="noopener">${safe(form.link.label)} ↗</a></p>` : ""}
     <div class="onb-fields">${form.fields.map(f => fieldHtml(item.id, f, item.answers)).join("")}</div>
     <div class="form-actions"><button class="primary" type="submit">${item.status === "pending" ? "Send to HR" : "Send changes"}</button>
       ${item.status === "uploaded" ? '<button type="button" class="text-button" data-cancel-edit>Cancel</button>' : ""}</div>
