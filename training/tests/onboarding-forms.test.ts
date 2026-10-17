@@ -46,3 +46,15 @@ test("uploads are not forms; HR sees labelled answers with sensitive flags", () 
   const rows = describeAnswers("bank_details", { account_name: "D", bsb: "062000", account_number: "12345678" });
   assert.deepEqual(rows.map(r => [r.label, r.sensitive]), [["Account name", false], ["BSB", false], ["Account number", true]]);
 });
+
+test("the Fair Work statements link to the official Fair Work Ombudsman pages", async () => {
+  const { FORMS } = await import("../../supabase/functions/_shared/onboarding-forms.ts");
+  assert.deepEqual(FORMS.fwis_ack.link, {
+    label: "Fair Work Information Statement - Fair Work Ombudsman",
+    href: "https://www.fairwork.gov.au/employment-conditions/information-statements/fair-work-information-statement"
+  });
+  assert.equal(FORMS.casual_statement.link?.href, "https://www.fairwork.gov.au/employment-conditions/information-statements/casual-employment-information-statement");
+  for (const [key, form] of Object.entries(FORMS)) {
+    if (form.link) assert.match(form.link.href, /^https:\/\/www\.fairwork\.gov\.au\//, `${key} links only to fairwork.gov.au`);
+  }
+});

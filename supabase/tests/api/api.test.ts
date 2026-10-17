@@ -265,6 +265,9 @@ Deno.test("contract signing: HR attaches the contract, the applicant signs, HR a
   const esign = types.types.find((t: any) => t.key === "contract_esign");
   if (!esign || esign.kind !== "sign" || !esign.active) throw new Error("the sign-online contract item should be offered");
   if (types.types.find((t: any) => t.key === "contract")?.active) throw new Error("the old upload-a-signed-copy item should be retired");
+  const fwis = types.types.find((t: any) => t.key === "fwis_ack");
+  if (fwis?.link?.href !== "https://www.fairwork.gov.au/employment-conditions/information-statements/fair-work-information-statement" || !/Fair Work Ombudsman/.test(fwis.link.label)) throw new Error(`HR should be given the Fair Work link: ${JSON.stringify(fwis)}`);
+  if (types.types.find((t: any) => t.key === "tax_declaration")?.link) throw new Error("only items with a statement to read have a link");
 
   const sent = await ok(adminApi, HR, { action: "onboarding_create", employeeId: emp.id, types: ["contract_esign"], signIn: "invite" });
   const applicant = await profile("contract.signer@panalo.test");

@@ -3,7 +3,7 @@
 // administrator who issued them and never stored or logged here.
 import { generateTemporaryPassword } from "../_shared/accounts.ts";
 import { CONTRACT_MAX_BYTES, SignError, describeSignature, looksLikePdf, parseCompanySignature, parsePlacement, sha256Hex, signatureImagePath, toBase64, type CompanySignature, type Placement, type StoredCompanySignature } from "../_shared/contract-signing.ts";
-import { describeAnswers } from "../_shared/onboarding-forms.ts";
+import { FORMS, describeAnswers } from "../_shared/onboarding-forms.ts";
 import { httpError, rpc } from "../_shared/http.ts";
 import { fileAcceptedOnboarding, previewSignedContract } from "./personnel.ts";
 
@@ -164,7 +164,7 @@ async function accessCatalogue(admin: Client) {
 async function onboardingTypes(admin: Client) {
   const { data, error } = await admin.from("hr_document_types").select("key,name,guidance,required,applies_to,sensitive,sort,active,kind").order("sort");
   if (error) throw httpError(500, "Document types could not be loaded.");
-  return { types: data.map((t: any) => ({ key: t.key, name: t.name, guidance: t.guidance, required: t.required, appliesTo: t.applies_to, sensitive: t.sensitive, active: t.active, kind: t.kind })) };
+  return { types: data.map((t: any) => ({ key: t.key, name: t.name, guidance: t.guidance, required: t.required, appliesTo: t.applies_to, sensitive: t.sensitive, active: t.active, kind: t.kind, link: FORMS[t.key]?.link ?? null })) };
 }
 
 async function onboardingTypeSave(admin: Client, actor: Actor, body: any) {
