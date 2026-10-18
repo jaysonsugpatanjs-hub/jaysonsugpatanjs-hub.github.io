@@ -80,9 +80,6 @@ td small { color: var(--muted); }
 .summary-grid strong { color: var(--gold); }
 
 /* Admin tabs */
-.admin-tabs { background: var(--surface); border: 1px solid var(--border); }
-.admin-tab { color: #c8c8cc; }
-.admin-tab.active { background: var(--gold); color: #0d0d0e; box-shadow: none; }
 .module-intro { border-left-color: var(--gold); }
 
 /* Learner module */

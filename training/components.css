@@ -68,10 +68,6 @@ th small { display: block; margin-top: 3px; text-transform: none; letter-spacing
 .inline-form .field-row { align-items: end; }
 .people-layout table, .ims-split table, .ims-browser table { min-width: 600px; }
 .matrix-table { min-width: 720px; }
-@media (max-width: 900px) {
-  .admin-tabs { width: 100%; overflow-x: auto; scrollbar-width: thin; }
-  .admin-tab { flex: 0 0 auto; white-space: nowrap; }
-}
 
 /* Sign-in and passwords */
 .stacked-form { display: flex; flex-direction: column; gap: 8px; }
@@ -244,3 +240,30 @@ code.secret { font-size: 20px; letter-spacing: .06em; color: var(--gold); backgr
 .doc-link-row { display: block; margin-top: 6px; }
 .doc-link { font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
 .doc-link:hover, .doc-link:focus-visible { text-decoration-thickness: 2px; }
+
+/* Admin side navigation: one area opens at a time, chosen from the left. */
+.admin-shell { display: grid; grid-template-columns: 232px minmax(0, 1fr); gap: 24px; align-items: start; margin-top: 4px; }
+.admin-content { min-width: 0; }
+.admin-nav { position: sticky; top: 16px; display: flex; flex-direction: column; gap: 18px; padding: 14px 10px; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; }
+.admin-nav-group { display: flex; flex-direction: column; gap: 2px; }
+.admin-nav-label { margin: 0 0 4px; padding: 0 12px; font-size: 10px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.admin-nav .admin-tab { display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px 12px; border: 0; border-left: 3px solid transparent; border-radius: 9px; background: transparent; color: #c8c8cc; font: inherit; font-size: 14px; font-weight: 700; text-align: left; cursor: pointer; }
+.admin-nav .admin-tab-icon { flex: none; opacity: .8; }
+.admin-nav .admin-tab:hover { background: var(--raised); color: #fff; }
+.admin-nav .admin-tab.active { background: var(--gold-soft); border-left-color: var(--gold); color: var(--gold); }
+.admin-nav .admin-tab.active .admin-tab-icon { opacity: 1; }
+.admin-nav .admin-tab:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+/* Two-column pages need the room the sidebar takes, so stack them sooner. */
+@media (max-width: 1360px) {
+  .admin-content .admin-layout, .admin-content .module-layout { grid-template-columns: minmax(0, 1fr); }
+  .admin-content .admin-form { position: static; }
+}
+/* On phones and small tablets the sidebar becomes a scrolling strip above the page. */
+@media (max-width: 900px) {
+  .admin-shell { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .admin-nav { position: static; flex-direction: row; gap: 4px; padding: 6px; overflow-x: auto; scrollbar-width: thin; }
+  .admin-nav-group { flex-direction: row; gap: 4px; }
+  .admin-nav-label { display: none; }
+  .admin-nav .admin-tab { width: auto; white-space: nowrap; padding: 10px 14px; border-left: 0; border-bottom: 3px solid transparent; border-radius: 9px 9px 0 0; }
+  .admin-nav .admin-tab.active { border-bottom-color: var(--gold); }
+}

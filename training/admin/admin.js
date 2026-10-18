@@ -507,6 +507,10 @@ async function init() {
       const needed = (tab.dataset.perm || "").split(" ");
       tab.classList.toggle("hidden", !(needed.includes("*") || needed.some(can)));
     });
+    // Hide a sidebar heading when none of the areas under it are allowed.
+    document.querySelectorAll(".admin-nav-group").forEach(group => {
+      group.classList.toggle("hidden", !group.querySelector(".admin-tab:not(.hidden)"));
+    });
     const training = can("training.manage");
     document.getElementById("summary").classList.toggle("hidden", !training);
     if (training) {
