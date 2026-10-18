@@ -258,11 +258,11 @@ code.secret { font-size: 20px; letter-spacing: .06em; color: var(--gold); backgr
   .admin-content .admin-layout, .admin-content .module-layout { grid-template-columns: minmax(0, 1fr); }
   .admin-content .admin-form { position: static; }
 }
-/* Sub-menu under a sidebar button (People). */
-.admin-subnav { display: flex; flex-direction: column; gap: 2px; margin: 2px 0 8px 22px; padding-left: 10px; border-left: 1px solid var(--border); }
-.admin-subtab { width: 100%; padding: 8px 10px; border: 0; border-radius: 8px; background: transparent; color: #b4b4b9; font: inherit; font-size: 13px; font-weight: 700; text-align: left; cursor: pointer; }
+/* Sub-menu under a sidebar button (People), styled like the Panalo Accounts sidebar items. */
+.admin-subnav { display: flex; flex-direction: column; gap: 2px; margin: 2px 0 6px; padding-left: 14px; }
+.admin-subtab { display: block; width: 100%; padding: 9px 12px; border: 0; border-left: 3px solid transparent; border-radius: 9px; background: transparent; color: #c8c8cc; font: inherit; font-size: 14px; font-weight: 600; text-align: left; cursor: pointer; }
 .admin-subtab:hover { background: var(--raised); color: #fff; }
-.admin-subtab.active { color: var(--gold); background: var(--surface-2); }
+.admin-subtab.active { background: var(--gold-soft); border-left-color: var(--gold); color: var(--gold); font-weight: 700; }
 .admin-subtab:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 
 /* People: one panel at a time, chosen from the sidebar. */
