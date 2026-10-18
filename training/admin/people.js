@@ -1,7 +1,7 @@
 // People register, positions and requirements, and the competency matrix.
 // Rendered with escaped template strings, like the rest of the admin page.
 import { api, config, friendlyError } from "../auth.js";
-import { showTemporaryPassword } from "./onboarding.js?v=20261019b";
+import { showTemporaryPassword } from "./onboarding.js?v=20261019c";
 import { endOfSydneyDayIso } from "./module-manager-core.js";
 
 const STATUS_LABEL = {

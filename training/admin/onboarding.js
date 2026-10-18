@@ -77,8 +77,14 @@ function signHtml(i) {
         <button type="button" class="primary" data-finalize-go="${id}" disabled>Finalize &amp; file</button>
       </div>
       <p class="form-message" data-finalize-msg role="status" aria-live="polite"></p></div>` : "";
+  // Filled-in copies the person downloaded the contract, filled in and sent back.
+  const copies = i.copies?.length ? `<div class="copy-box"><p class="eyebrow">FILLED-IN COPIES FROM THE APPLICANT</p>
+      <ul class="file-list admin-files">${i.copies.map(c => `<li><div><strong>${safe(c.fileName)}</strong>
+        <small>${kb(c.size)}${c.uploadedAt ? ` · sent ${fmt(c.uploadedAt)}` : ""}</small></div>
+        <button type="button" class="secondary-action small" data-copy-download="${id}" data-copy-name="${safe(c.name)}">Download</button></li>`).join("")}</ul>
+      <small class="muted">Check it, then attach the final PDF as the contract above. They sign that version.</small></div>` : "";
   const hand = i.hasHandwriting ? `<button type="button" class="text-button" data-sign-signature="${id}">View handwritten signature</button>` : "";
-  return docs + upload + hand + finalize;
+  return docs + copies + upload + hand + finalize;
 }
 
 function answersHtml(item) {
@@ -412,6 +418,16 @@ export function bindOnboarding(root) {
         b.disabled = true;
         const r = await call("onboarding_file", { fileId: b.dataset.viewFile });
         window.open(r.url, "_blank", "noopener");
+        b.disabled = false;
+      } else if (b.dataset.copyName) {
+        b.disabled = true;
+        const r = await call("onboarding_copy_url", { itemId: b.dataset.copyDownload, name: b.dataset.copyName });
+        const link = document.createElement("a");
+        link.href = r.url;
+        link.rel = "noopener";
+        document.body.append(link);
+        link.click();
+        link.remove();
         b.disabled = false;
       } else if (b.dataset.signView || b.dataset.signSignature) {
         b.disabled = true;

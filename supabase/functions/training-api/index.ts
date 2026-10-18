@@ -5,6 +5,7 @@ import { corsHeaders, errorJson, httpError, json, rpc } from "../_shared/http.ts
 import { passwordProblem } from "../_shared/accounts.ts";
 import { FORMS, FormError, validateAnswers } from "../_shared/onboarding-forms.ts";
 import { AGREEMENT_TEXT, SignError, validateSignature } from "../_shared/contract-signing.ts";
+import { COPY_MAX_BYTES, COPY_MAX_FILES, COPY_TYPES, CopyError, copyDisplayName, copyFolder, isStoredCopyName, parseCopyName, storedCopyName } from "../_shared/contract-copies.ts";
 
 type Client = any;
 
@@ -442,8 +443,10 @@ async function handleOnboardingView(admin: Client, userId: string) {
   // Contract files and the signer's register name are only looked up when there is something to sign.
   const signIds = (data.onboarding_items || []).filter((i: any) => (typeMap.get(i.doc_type) as any)?.kind === "sign").map((i: any) => i.id);
   const signDocs = new Map<string, any[]>();
+  const copies = new Map<string, any[]>();
   let signAs = "";
   if (signIds.length) {
+    await Promise.all(signIds.map(async (id: string) => { copies.set(id, await listCopies(admin, { request_id: data.id, id })); }));
     const [docs, emp] = await Promise.all([
       admin.from("onboarding_sign_documents").select("id,item_id,label,file_name,added_at").in("item_id", signIds).order("added_at"),
       admin.from("employees").select("full_name").eq("id", data.employee_id).maybeSingle()
@@ -464,6 +467,7 @@ async function handleOnboardingView(admin: Client, userId: string) {
         answers: t.kind === "sign" || i.status === "accepted" ? null : i.answers ?? null,
         ...(t.kind === "sign" ? {
           signDocs: signDocs.get(i.id) || [],
+          copies: copies.get(i.id) || [],
           signAs,
           agreementText: AGREEMENT_TEXT,
           signed: ["uploaded", "accepted"].includes(i.status) && i.answers?.signedName
@@ -498,15 +502,18 @@ async function handleContractUrl(admin: Client, userId: string, body: any) {
   const id = String(body.docId || "");
   if (!/^[0-9a-f-]{36}$/i.test(id)) throw httpError(400, "That contract is not valid.");
   const { data, error } = await admin.from("onboarding_sign_documents")
-    .select("id,path,label,item_id,onboarding_items(request_id,onboarding_requests(profile_id,status))").eq("id", id).maybeSingle();
+    .select("id,path,label,file_name,item_id,onboarding_items(request_id,onboarding_requests(profile_id,status))").eq("id", id).maybeSingle();
   if (error) throw httpError(500, "Your contract could not be loaded.");
   const request = data?.onboarding_items?.onboarding_requests;
   if (!data || request?.profile_id !== userId || !["open", "complete"].includes(request?.status)) throw httpError(404, "Contract not found.");
-  const signed = await admin.storage.from(HR_BUCKET).createSignedUrl(data.path, 300);
+  // "download" makes the browser save the file instead of showing it, so it can be filled in.
+  const download = body.download === true;
+  const saveAs = String(data.file_name || `${data.label}.pdf`).replace(/[^A-Za-z0-9._ -]+/g, "-").slice(0, 150) || "contract.pdf";
+  const signed = await admin.storage.from(HR_BUCKET).createSignedUrl(data.path, 300, download ? { download: saveAs } : undefined);
   if (signed.error || !signed.data?.signedUrl) throw httpError(500, "A link to your contract could not be created.");
   await rpc(admin, "ims_audit", {
     p_actor: userId, p_event: "onboarding_contract_viewed",
-    p_details: { requestId: data.onboarding_items.request_id, itemId: data.item_id, documentId: data.id, label: data.label }, p_subject: userId
+    p_details: { requestId: data.onboarding_items.request_id, itemId: data.item_id, documentId: data.id, label: data.label, download }, p_subject: userId
   });
   return { url: signed.data.signedUrl, expiresIn: 300 };
 }
@@ -584,6 +591,74 @@ async function handleOnboardingAttach(admin: Client, userId: string, body: any) 
   return { uploaded: true, fileId };
 }
 
+// ---- Filled-in copies of a contract (see _shared/contract-copies.ts) ----
+
+type CopyItem = { request_id: string; id: string };
+
+/** The files in a contract's "filled" folder. A storage hiccup reads as "none" rather than failing the whole page. */
+async function listCopies(admin: Client, item: CopyItem) {
+  try {
+    const listed = await admin.storage.from(HR_BUCKET).list(copyFolder(item.request_id, item.id), { limit: 100 });
+    if (listed.error) return [];
+    return ((listed.data || []) as any[])
+      .filter(f => isStoredCopyName(f.name))
+      .map(f => ({ name: f.name as string, fileName: copyDisplayName(f.name), size: Number(f?.metadata?.size ?? 0), uploadedAt: f.created_at || f.updated_at || null }))
+      .sort((a, b) => String(a.uploadedAt).localeCompare(String(b.uploadedAt)));
+  } catch {
+    return [];
+  }
+}
+
+// Copies can be added or removed until the contract is signed (or after HR sends it back).
+async function myContractItem(admin: Client, userId: string, itemId: unknown) {
+  const item = await myOnboardingItem(admin, userId, itemId);
+  if (item.kind !== "sign") throw httpError(400, "Filled-in copies are only for contracts.");
+  if (!["pending", "rejected"].includes(item.status)) throw httpError(409, "You have already signed this. HR is reviewing it.");
+  return item;
+}
+
+async function handleCopyPrepare(admin: Client, userId: string, body: any) {
+  const item = await myContractItem(admin, userId, body.itemId);
+  const size = Number(body.size);
+  if (!Number.isFinite(size) || size < 1 || size > COPY_MAX_BYTES) throw httpError(400, "Files must be under 20 MB.");
+  let parsed;
+  try {
+    parsed = parseCopyName(body.fileName);
+  } catch (error) {
+    if (error instanceof CopyError) throw httpError(400, error.message);
+    throw error;
+  }
+  if ((await listCopies(admin, item)).length >= COPY_MAX_FILES) throw httpError(409, `You can upload up to ${COPY_MAX_FILES} files. Remove one first.`);
+  const name = storedCopyName(parsed.stem, parsed.ext, Date.now().toString(36));
+  const signed = await admin.storage.from(HR_BUCKET).createSignedUploadUrl(`${copyFolder(item.request_id, item.id)}/${name}`, { upsert: false });
+  if (signed.error || !signed.data?.signedUrl) throw httpError(500, "A secure upload link could not be created.");
+  return { name, signedUrl: signed.data.signedUrl, contentType: COPY_TYPES[parsed.ext] };
+}
+
+async function handleCopyAttach(admin: Client, userId: string, body: any) {
+  const item = await myContractItem(admin, userId, body.itemId);
+  if (!isStoredCopyName(body.name)) throw httpError(400, "That upload is not valid.");
+  const found = (await listCopies(admin, item)).find(c => c.name === body.name && c.size > 0);
+  if (!found) throw httpError(409, "The upload didn't arrive. Please try again.");
+  await rpc(admin, "ims_audit", {
+    p_actor: userId, p_event: "onboarding_contract_copy_uploaded",
+    p_details: { requestId: item.request_id, itemId: item.id, fileName: found.fileName, size: found.size }, p_subject: userId
+  });
+  return { uploaded: true };
+}
+
+async function handleCopyRemove(admin: Client, userId: string, body: any) {
+  const item = await myContractItem(admin, userId, body.itemId);
+  if (!isStoredCopyName(body.name)) throw httpError(400, "That file is not valid.");
+  const removed = await admin.storage.from(HR_BUCKET).remove([`${copyFolder(item.request_id, item.id)}/${body.name}`]);
+  if (removed.error) throw httpError(500, "The file could not be removed. Please try again.");
+  await rpc(admin, "ims_audit", {
+    p_actor: userId, p_event: "onboarding_contract_copy_removed",
+    p_details: { requestId: item.request_id, itemId: item.id, fileName: copyDisplayName(body.name) }, p_subject: userId
+  });
+  return { removed: true };
+}
+
 async function handleOnboardingRemoveFile(admin: Client, userId: string, body: any) {
   const id = String(body.fileId || "");
   if (!/^[0-9a-f-]{36}$/i.test(id)) throw httpError(400, "That file is not valid.");
@@ -620,6 +695,9 @@ export default {
         case "onboarding_remove_file": result = await handleOnboardingRemoveFile(context.supabaseAdmin, userId, body); break;
         case "onboarding_prepare_upload": result = await handleOnboardingPrepare(context.supabaseAdmin, userId, body); break;
         case "onboarding_attach": result = await handleOnboardingAttach(context.supabaseAdmin, userId, body); break;
+        case "onboarding_copy_prepare": result = await handleCopyPrepare(context.supabaseAdmin, userId, body); break;
+        case "onboarding_copy_attach": result = await handleCopyAttach(context.supabaseAdmin, userId, body); break;
+        case "onboarding_copy_remove": result = await handleCopyRemove(context.supabaseAdmin, userId, body); break;
         case "module": result = await handleModule(context.supabaseAdmin, userId, body); break;
         case "slide": result = await handleSlide(context.supabaseAdmin, userId, body); break;
         case "check": result = await handleCheck(context.supabaseAdmin, userId, body); break;

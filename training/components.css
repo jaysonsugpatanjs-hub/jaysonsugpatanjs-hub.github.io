@@ -286,3 +286,8 @@ code.secret { font-size: 20px; letter-spacing: .06em; color: var(--gold); backgr
   .admin-subnav.hidden { display: none; }
   .admin-subtab { width: auto; }
 }
+
+/* Filled-in contract copies: the person's upload box on the portal and HR's list in admin. */
+.copy-box { margin: 14px 0; padding: 14px 16px; border: 1px dashed var(--border); border-radius: 12px; background: var(--surface-2); }
+.copy-box .eyebrow { margin: 0 0 6px; }
+.copy-box .file-list { margin: 10px 0; }

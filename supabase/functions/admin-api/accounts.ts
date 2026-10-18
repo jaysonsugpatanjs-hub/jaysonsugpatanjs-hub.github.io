@@ -5,6 +5,7 @@ import { generateTemporaryPassword } from "../_shared/accounts.ts";
 import { CONTRACT_MAX_BYTES, SignError, describeSignature, looksLikePdf, parseCompanySignature, parsePlacement, sha256Hex, signatureImagePath, toBase64, type CompanySignature, type Placement, type StoredCompanySignature } from "../_shared/contract-signing.ts";
 import { FORMS, describeAnswers } from "../_shared/onboarding-forms.ts";
 import { httpError, rpc } from "../_shared/http.ts";
+import { copyDisplayName, copyFolder, isStoredCopyName } from "../_shared/contract-copies.ts";
 import { fileAcceptedOnboarding, previewSignedContract } from "./personnel.ts";
 
 type Client = any;
@@ -214,6 +215,9 @@ async function onboardingDetail(admin: Client, actor: Actor, body: any) {
   // Contract files exist only for sign items; skip the lookup for everyone else.
   const signIds = (data.onboarding_items || []).filter((i: any) => (typeMap.get(i.doc_type) as any)?.kind === "sign").map((i: any) => i.id);
   const signDocs = new Map<string, any[]>();
+  // Filled-in copies the person sent back (see _shared/contract-copies.ts).
+  const copies = new Map<string, any[]>();
+  await Promise.all(signIds.map(async (id: string) => { copies.set(id, await listFilledCopies(admin, data.id, id)); }));
   if (signIds.length) {
     const docs = await admin.from("onboarding_sign_documents").select("id,item_id,label,file_name,size_bytes,sha256,added_at").in("item_id", signIds).order("added_at");
     if (docs.error) throw httpError(500, "The contract files could not be loaded.");
@@ -241,6 +245,7 @@ async function onboardingDetail(admin: Client, actor: Actor, body: any) {
         kind: (typeMap.get(i.doc_type) as any)?.kind || "upload",
         answers: (typeMap.get(i.doc_type) as any)?.kind === "sign" ? describeSignature(i.answers) : describeAnswers(i.doc_type, i.answers), submittedAt: i.submitted_at,
         signDocs: signDocs.get(i.id) || [],
+        copies: copies.get(i.id) || [],
         canChangeContract: data.status === "open" && ["pending", "rejected"].includes(i.status),
         canFinalize: data.status === "open" && i.status === "uploaded" && (typeMap.get(i.doc_type) as any)?.kind === "sign",
         hasHandwriting: Boolean(signatureImagePath(i.answers)),
@@ -441,6 +446,39 @@ async function onboardingSignRemove(admin: Client, actor: Actor, body: any) {
   return { removed: true };
 }
 
+/** The files a person sent back for a contract. A storage hiccup reads as "none" rather than failing the page. */
+async function listFilledCopies(admin: Client, requestId: string, itemId: string) {
+  try {
+    const listed = await admin.storage.from(HR_BUCKET).list(copyFolder(requestId, itemId), { limit: 100 });
+    if (listed.error) return [];
+    return ((listed.data || []) as any[])
+      .filter(f => isStoredCopyName(f.name))
+      .map(f => ({ name: f.name as string, fileName: copyDisplayName(f.name), size: Number(f?.metadata?.size ?? 0), uploadedAt: f.created_at || f.updated_at || null }))
+      .sort((a, b) => String(a.uploadedAt).localeCompare(String(b.uploadedAt)));
+  } catch {
+    return [];
+  }
+}
+
+/** A short-lived download link for a copy the person sent back. Each use is audited. */
+async function onboardingCopyUrl(admin: Client, actor: Actor, body: any) {
+  const itemId = uuid(body.itemId, "Document");
+  if (!isStoredCopyName(body.name)) throw httpError(400, "That file is not valid.");
+  const { data, error } = await admin.from("onboarding_items")
+    .select("id,doc_type,request_id,hr_document_types(kind),onboarding_requests(profile_id)").eq("id", itemId).maybeSingle();
+  if (error) throw httpError(500, "The document could not be found.");
+  if (!data || data.hr_document_types?.kind !== "sign") throw httpError(404, "Document not found.");
+  const path = `${copyFolder(data.request_id, data.id)}/${body.name}`;
+  const fileName = copyDisplayName(body.name);
+  const signed = await admin.storage.from(HR_BUCKET).createSignedUrl(path, 120, { download: fileName });
+  if (signed.error || !signed.data?.signedUrl) throw httpError(404, "That file is no longer there.");
+  await rpc(admin, "ims_audit", {
+    p_actor: actor.id, p_event: "onboarding_document_viewed",
+    p_details: { itemId: data.id, label: fileName, docType: data.doc_type, requestId: data.request_id, filledCopy: true }, p_subject: data.onboarding_requests?.profile_id ?? null
+  });
+  return { url: signed.data.signedUrl, expiresIn: 120 };
+}
+
 async function onboardingSignView(admin: Client, actor: Actor, body: any) {
   let row: any;
   if (body.docId) {
@@ -512,6 +550,7 @@ export const accountActions: Record<string, { perm: string | string[]; run: Hand
   onboarding_sign_attach: { perm: "hr.manage", run: onboardingSignAttach },
   onboarding_sign_remove: { perm: "hr.manage", run: onboardingSignRemove },
   onboarding_sign_view: { perm: "hr.manage", run: onboardingSignView },
+  onboarding_copy_url: { perm: "hr.manage", run: onboardingCopyUrl },
   onboarding_sign_bytes: { perm: "hr.manage", run: onboardingSignBytes },
   onboarding_sign_preview: { perm: "hr.manage", run: onboardingSignPreview }
 };

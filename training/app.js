@@ -192,8 +192,20 @@ function signItemHtml(item) {
   const chips = `${item.required ? "" : '<span class="chip">Optional</span>'}<span class="chip">Sign online</span>`;
   const reject = item.status === "rejected" && item.rejectReason ? `<p class="reject-note">HR says: ${safe(item.rejectReason)}</p>` : "";
   const list = docs.length ? `<ul class="file-list contract-docs">${docs.map(d => `<li>
-      <div><strong>${safe(d.label)}</strong><small>PDF · opens in a new tab</small></div>
-      <button type="button" class="secondary-action small" data-read-contract="${safe(d.id)}">Read</button></li>`).join("")}</ul>` : "";
+      <div><strong>${safe(d.label)}</strong><small>PDF · Read opens it in a new tab</small></div>
+      <span class="row-actions"><button type="button" class="secondary-action small" data-read-contract="${safe(d.id)}">Read</button>
+        <button type="button" class="secondary-action small" data-download-contract="${safe(d.id)}">Download</button></span></li>`).join("")}</ul>` : "";
+  // Before signing, the person can download the contract, fill it in and send the file back.
+  const copies = item.copies || [];
+  const copyBox = docs.length && !item.signed ? `<div class="copy-box" data-copy-for="${safe(item.id)}">
+      <p class="eyebrow">FILL IT IN FIRST</p>
+      <p class="muted small">Download the contract, fill it in, then upload your filled-in copy (PDF or Word, up to 20 MB each). HR will review it. You still sign online below, as usual.</p>
+      ${copies.length ? `<ul class="file-list">${copies.map(c => `<li><div><strong>${safe(c.fileName)}</strong><small>${safe(fileSize(c.size))}${c.uploadedAt ? ` · ${safe(formatDate(c.uploadedAt))}` : ""}</small></div>
+        <button type="button" class="text-button danger" data-remove-copy="${safe(c.name)}" data-copy-item="${safe(item.id)}" aria-label="Remove ${safe(c.fileName)}">Remove</button></li>`).join("")}</ul>` : ""}
+      <label class="upload-button"><input type="file" multiple accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" data-copy-input="${safe(item.id)}">
+        <span>${copies.length ? "Upload another file" : "Upload filled-in copy"}</span></label>
+      <p class="form-message" data-copy-msg role="status" aria-live="polite"></p>
+    </div>` : "";
   let body = "";
   if (item.signed) {
     body = `<p class="sign-done">Signed by <strong>${safe(item.signed.name)}</strong> on ${safe(formatDate(item.signed.at))} (${item.signed.method === "drawn" ? "written on screen" : "typed"}).${item.status === "uploaded" ? " HR will review it." : ""}</p>`;
@@ -207,9 +219,11 @@ function signItemHtml(item) {
           <div class="onboarding-title"><strong>${safe(item.name)}</strong>${chips}</div>
           <p class="muted small">${safe(item.guidance)}</p>${reject}</div>
         <div class="onboarding-actions"><span class="chip ${tone}">${label}</span></div></div>
-      ${list}${body}
+      ${list}${copyBox}${body}
     </article>`;
 }
+
+const fileSize = n => (n >= 1048576 ? `${(n / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round((Number(n) || 0) / 1024))} KB`);
 
 // Opens the contract in a new tab. The tab is opened first, in response to the
 // tap, because phones block tabs opened after waiting for the network.
@@ -229,6 +243,67 @@ async function readContract(button) {
     tab?.close();
     $("onboarding-message").textContent = friendlyError(error);
   } finally {
+    button.disabled = false;
+  }
+}
+
+// Saves the contract to the person's device so they can fill it in.
+async function downloadContract(button) {
+  button.disabled = true;
+  try {
+    const { url } = await api(config.trainingFunction, { action: "onboarding_contract_url", docId: button.dataset.downloadContract, download: true });
+    const link = document.createElement("a");
+    link.href = url;
+    link.rel = "noopener";
+    document.body.append(link);
+    link.click();
+    link.remove();
+    $("onboarding-message").textContent = "Your download has started. Fill it in, then upload your copy below the contract.";
+  } catch (error) {
+    $("onboarding-message").textContent = friendlyError(error);
+  } finally {
+    button.disabled = false;
+  }
+}
+
+// Uploads the filled-in copy (PDF or Word) next to the contract. Signing is separate.
+async function uploadContractCopy(input) {
+  const files = [...(input.files || [])];
+  if (!files.length) return;
+  const box = input.closest("[data-copy-for]");
+  const message = box.querySelector("[data-copy-msg]");
+  const itemId = input.dataset.copyInput;
+  const big = files.find(f => f.size > 20 * 1024 * 1024);
+  if (big) {
+    message.textContent = `${big.name} is over 20 MB. Try a smaller file or save it as a PDF.`;
+    input.value = "";
+    return;
+  }
+  input.disabled = true;
+  try {
+    for (const [n, file] of files.entries()) {
+      message.textContent = files.length > 1 ? `Uploading ${n + 1} of ${files.length}…` : `Uploading ${file.name}…`;
+      const prepared = await api(config.trainingFunction, { action: "onboarding_copy_prepare", itemId, fileName: file.name, size: file.size });
+      const res = await fetch(prepared.signedUrl, { method: "PUT", headers: { "Content-Type": prepared.contentType }, body: file });
+      if (!res.ok) throw new Error(`The upload of ${file.name} failed (${res.status}). Please try again.`);
+      await api(config.trainingFunction, { action: "onboarding_copy_attach", itemId, name: prepared.name });
+    }
+    await loadOnboarding();
+    $("onboarding-message").textContent = "Your filled-in copy was uploaded. HR will review it. You can sign below when you're ready.";
+  } catch (error) {
+    message.textContent = friendlyError(error);
+    input.disabled = false;
+    input.value = "";
+  }
+}
+
+async function removeContractCopy(button) {
+  button.disabled = true;
+  try {
+    await api(config.trainingFunction, { action: "onboarding_copy_remove", itemId: button.dataset.copyItem, name: button.dataset.removeCopy });
+    await loadOnboarding();
+  } catch (error) {
+    $("onboarding-message").textContent = friendlyError(error);
     button.disabled = false;
   }
 }
@@ -676,7 +751,8 @@ ui.passwordForm.addEventListener("submit", async event => {
 });
 
 $("onboarding-items").addEventListener("change", event => {
-  if (event.target.matches("input[type=file][data-item]")) uploadOnboardingFile(event.target);
+  if (event.target.matches("input[type=file][data-copy-input]")) uploadContractCopy(event.target);
+  else if (event.target.matches("input[type=file][data-item]")) uploadOnboardingFile(event.target);
   else if (event.target.matches('.sign-form input[name="method"]')) switchSignMethod(event.target.closest(".sign-form"));
   else if (event.target.closest(".onb-form")) {
     refreshConditions(event.target.closest(".onb-form"));
@@ -724,6 +800,10 @@ $("onboarding-items").addEventListener("click", event => {
   if (remove) removeOnboardingFile(remove);
   const read = event.target.closest("[data-read-contract]");
   if (read) readContract(read);
+  const download = event.target.closest("[data-download-contract]");
+  if (download) downloadContract(download);
+  const removeCopy = event.target.closest("[data-remove-copy]");
+  if (removeCopy) removeContractCopy(removeCopy);
   const clear = event.target.closest("[data-pad-clear]");
   if (clear) clearPad(clear.closest(".sign-form").querySelector("canvas.sign-pad"));
 });
