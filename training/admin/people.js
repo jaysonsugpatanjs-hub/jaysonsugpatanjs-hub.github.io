@@ -82,7 +82,6 @@ function renderEditor(root) {
   const { ref, people } = state;
   const e = people.employees.find(x => x.id === state.selected) || { id: "", employeeNumber: "", fullName: "", email: "", employmentType: "employee", status: "active", positionId: "", siteId: "", supervisorId: "", startDate: "", endDate: "", licences: [], groups: [], profileId: null };
   const form = root.querySelector("[data-employee-form]");
-  root.querySelector("[data-person-label]").textContent = e.fullName || "";
   form.innerHTML = `
     <p class="eyebrow">${e.id ? "EDIT PERSON" : "NEW PERSON"}</p><h2>${safe(e.fullName || "Add to the register")}</h2>
     <input type="hidden" name="id" value="${safe(e.id)}">
@@ -314,28 +313,13 @@ function renderPositions(root) {
     </details>`;
 }
 
-// Accordion: one section is open at a time. Opening one closes the others; pressing an
-// open header closes it. `scroll` brings the opened section into view.
-function openPanel(root, name, scroll = false) {
-  root.querySelectorAll("[data-acc]").forEach(item => {
-    const open = item.dataset.acc === name;
-    item.classList.toggle("open", open);
-    item.querySelector(".acc-head").setAttribute("aria-expanded", String(open));
-  });
-  if (scroll && name) root.querySelector(`[data-acc="${name}"]`)?.scrollIntoView({ block: "start", behavior: "smooth" });
-}
-
 export function bindPeople(root) {
   root.addEventListener("click", async event => {
     const target = event.target.closest("button");
     if (!target) return;
-    if (target.classList.contains("acc-head")) {
-      const item = target.closest("[data-acc]");
-      openPanel(root, item.classList.contains("open") ? "" : item.dataset.acc);
-      return;
-    }
-    if (target.dataset.pick) { state.selected = target.dataset.pick; renderPeople(root); openPanel(root, "person", true); }
-    if ("addPerson" in target.dataset) { state.selected = null; renderPeople(root); openPanel(root, "person", true); }
+    const showPanel = name => root.dispatchEvent(new CustomEvent("people:panel", { detail: name }));
+    if (target.dataset.pick) { state.selected = target.dataset.pick; renderPeople(root); showPanel("person"); window.scrollTo({ top: 0, behavior: "smooth" }); }
+    if ("addPerson" in target.dataset) { state.selected = null; renderPeople(root); showPanel("person"); window.scrollTo({ top: 0, behavior: "smooth" }); }
     if ("newPerson" in target.dataset) { state.selected = null; renderEditor(root); }
     const person = () => state.people.employees.find(x => x.id === state.selected);
     const signinMsg = text => { const m = root.querySelector("[data-signin-msg]"); if (m) m.textContent = text; };
