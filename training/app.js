@@ -38,7 +38,11 @@ function show(name) {
   ui.dashboard.classList.toggle("hidden", name !== "dashboard");
   ui.signOut.classList.toggle("hidden", !["dashboard", "password"].includes(name));
   ui.imsLink.classList.toggle("hidden", name !== "dashboard");
-  if (name !== "dashboard") ui.adminLink.classList.add("hidden");
+  if (name !== "dashboard") {
+    ui.adminLink.classList.add("hidden");
+    drafts.clear();
+    onboardingDirty = false;
+  }
 }
 
 function safe(value) {
@@ -102,6 +106,11 @@ const ITEM_STATUS = {
   rejected: ["Needs fixing", "bad"]
 };
 const formItems = new Map();
+// Answers typed but not yet sent. Kept in memory only (never localStorage), because they can
+// hold tax file numbers and bank details. It survives re-renders, so uploading a file or signing
+// the contract does not wipe what the person has typed in the other forms.
+const drafts = new Map();
+let onboardingDirty = false;
 // Items where each file gets its own name and optional expiry.
 const CERT_NAMES = `<datalist id="cert-names">${["White Card", "Forklift licence (LF)", "Elevating work platform (WP)", "Dogging (DG)", "Basic rigging (RB)", "Basic scaffolding (SB)", "Working at heights", "Confined space entry", "First aid (HLTAID011)", "Welding certificate", "Trade certificate", "Driver licence (heavy vehicle)"].map(n => `<option value="${n}">`).join("")}</datalist>`;
 const NAMED_UPLOADS = new Set(["certificates", "tickets", "public_liability", "workers_comp"]);
@@ -133,14 +142,13 @@ function fieldHtml(itemId, field, answers) {
   return `<div class="field onb-field${hidden}"${when}><label for="${id}">${label}</label>${control}${help}${error}</div>`;
 }
 
-function formHtml(item, open) {
+function formHtml(item, open, answers) {
   const form = item.form;
   return `<form class="onb-form${open ? "" : " hidden"}" data-form-item="${safe(item.id)}" novalidate>
     ${form.intro ? `<p class="muted small">${safe(form.intro)}</p>` : ""}
     ${form.link ? `<p class="small doc-link-row"><strong>Click here to read it first:</strong> <a class="doc-link" href="${safe(form.link.href)}" target="_blank" rel="noopener">${safe(form.link.label)} ↗</a></p>` : ""}
-    <div class="onb-fields">${form.fields.map(f => fieldHtml(item.id, f, item.answers)).join("")}</div>
-    <div class="form-actions"><button class="primary" type="submit">${item.status === "pending" ? "Send to HR" : "Send changes"}</button>
-      ${item.status === "uploaded" ? '<button type="button" class="text-button" data-cancel-edit>Cancel</button>' : ""}</div>
+    <div class="onb-fields">${form.fields.map(f => fieldHtml(item.id, f, answers)).join("")}</div>
+    ${item.status === "uploaded" ? '<div class="form-actions"><button type="button" class="text-button" data-cancel-edit>Cancel changes</button></div>' : ""}
     <p class="form-message" data-form-msg role="status" aria-live="polite"></p>
   </form>`;
 }
@@ -291,14 +299,19 @@ function itemHtml(item) {
   if (item.kind === "form" && item.form) {
     formItems.set(item.id, item);
     const editable = item.status !== "accepted";
-    const openForm = item.status === "pending" || item.status === "rejected";
+    const draft = drafts.get(item.id);
+    const openForm = item.status === "pending" || item.status === "rejected" || (editable && Boolean(draft));
+    // Open forms get a "ready to send" chip instead of the stale status, filled in by updateSubmitBar().
+    const statusChip = openForm && item.status !== "rejected"
+      ? `<span class="chip" data-ready-chip>${item.status === "uploaded" ? "Editing" : "Not sent yet"}</span>`
+      : `<span class="chip ${tone}">${label}</span>`;
     return `<article class="onboarding-item onb-form-item" data-item-card="${safe(item.id)}">
       <div class="onb-head"><div class="onboarding-text">
           <div class="onboarding-title"><strong>${safe(item.name)}</strong>${chips}</div>
           <p class="muted small">${safe(item.guidance)}</p>${reject}</div>
-        <div class="onboarding-actions"><span class="chip ${tone}">${label}</span>
-          ${item.status === "uploaded" ? `<button type="button" class="secondary-action small" data-edit="${safe(item.id)}">Edit answers</button>` : ""}</div></div>
-      ${editable ? formHtml(item, openForm) : ""}
+        <div class="onboarding-actions">${statusChip}
+          ${item.status === "uploaded" && !openForm ? `<button type="button" class="secondary-action small" data-edit="${safe(item.id)}">Edit answers</button>` : ""}</div></div>
+      ${editable ? formHtml(item, openForm, draft ?? item.answers) : ""}
     </article>`;
   }
   formItems.set(item.id, item);
@@ -326,7 +339,8 @@ function itemHtml(item) {
     </article>`;
 }
 
-async function loadOnboarding() {
+async function loadOnboarding({ snapshot = true } = {}) {
+  if (snapshot) snapshotDrafts();
   const data = await api(config.trainingFunction, { action: "onboarding_view" });
   if (!data.request || data.request.status !== "open") {
     ui.onboarding.classList.add("hidden");
@@ -346,6 +360,7 @@ async function loadOnboarding() {
   $("onboarding-items").innerHTML = ordered.map(itemHtml).join("") + CERT_NAMES;
   $("onboarding-items").querySelectorAll("canvas.sign-pad").forEach(preparePad);
   ui.onboarding.classList.remove("hidden");
+  updateSubmitBar();
 }
 
 function collectAnswers(form, item) {
@@ -366,33 +381,151 @@ function refreshConditions(form) {
   });
 }
 
-async function submitOnboardingForm(form) {
-  const item = formItems.get(form.dataset.formItem);
-  if (!item) return;
-  const msg = form.querySelector("[data-form-msg]");
-  const button = form.querySelector('button[type="submit"]');
-  form.querySelectorAll("[data-error-for]").forEach(e => { e.textContent = ""; });
-  form.querySelectorAll(".invalid").forEach(e => e.classList.remove("invalid"));
-  button.disabled = true;
-  msg.textContent = "Sending…";
-  try {
-    await api(config.trainingFunction, { action: "onboarding_submit_form", itemId: item.id, answers: collectAnswers(form, item) });
-    await loadOnboarding();
-    $("onboarding-message").textContent = `${item.name} sent to HR.`;
-  } catch (error) {
-    msg.textContent = friendlyError(error);
-    const key = String(error.code || "").startsWith("field:") ? error.code.slice(6) : "";
-    const slot = key && form.querySelector(`[data-error-for="${CSS.escape(key)}"]`);
-    if (slot) {
-      slot.textContent = error.message;
-      msg.textContent = "Check the highlighted answer.";
-      const control = form.elements[key];
-      const el = control instanceof RadioNodeList ? control[0] : control;
-      el?.closest(".onb-field")?.classList.add("invalid");
-      el?.focus();
+// Remember what is typed in every open form, so a re-render (after a file upload, a signature,
+// or a partly failed send) does not lose it. `skip` is a form being cancelled.
+function snapshotDrafts(skip) {
+  document.querySelectorAll("#onboarding-items .onb-form:not(.hidden)").forEach(form => {
+    const id = form.dataset.formItem;
+    const item = formItems.get(id);
+    if (item && id !== skip) drafts.set(id, collectAnswers(form, item));
+  });
+  if (skip) drafts.delete(skip);
+}
+
+function fieldContainer(form, key) {
+  return form.querySelector(`[name="${CSS.escape(key)}"]`)?.closest(".onb-field") || null;
+}
+
+// Keys of visible, required questions that have no answer yet. The server still does the real
+// checking; this is so the person sees what is missing before anything is sent.
+function missingFields(form, item) {
+  const missing = [];
+  for (const field of item.form.fields) {
+    const box = fieldContainer(form, field.key);
+    if (!box || box.classList.contains("hidden")) continue;
+    if (field.type === "confirm") {
+      if (!form.elements[field.key].checked) missing.push(field.key);
+    } else if (field.type === "yesno") {
+      if (!form.querySelector(`input[name="${CSS.escape(field.key)}"]:checked`)) missing.push(field.key);
+    } else if (!field.optional && !String(form.elements[field.key].value).trim()) {
+      missing.push(field.key);
     }
-    button.disabled = false;
   }
+  return missing;
+}
+
+function sameAnswers(a, b) {
+  const keys = new Set([...Object.keys(a || {}), ...Object.keys(b || {})]);
+  return [...keys].every(k => String(a?.[k] ?? "") === String(b?.[k] ?? ""));
+}
+
+function openForms() {
+  return [...document.querySelectorAll("#onboarding-items .onb-form:not(.hidden)")]
+    .map(form => ({ form, item: formItems.get(form.dataset.formItem) }))
+    .filter(entry => entry.item)
+    // A form being edited only counts once something has actually changed.
+    .filter(({ form, item }) => item.status !== "uploaded" || !sameAnswers(collectAnswers(form, item), item.answers));
+}
+
+function showFormError(form, error) {
+  const msg = form.querySelector("[data-form-msg]");
+  msg.textContent = friendlyError(error);
+  const key = String(error.code || "").startsWith("field:") ? error.code.slice(6) : "";
+  const slot = key && form.querySelector(`[data-error-for="${CSS.escape(key)}"]`);
+  if (slot) {
+    slot.textContent = error.message;
+    msg.textContent = "Check the highlighted answer.";
+    fieldContainer(form, key)?.classList.add("invalid");
+  }
+}
+
+function updateSubmitBar() {
+  const bar = $("onboarding-submit");
+  const entries = openForms();
+  bar.classList.toggle("hidden", entries.length === 0);
+  if (!entries.length) return;
+  const ready = new Set(entries.filter(({ form, item }) => !missingFields(form, item).length).map(({ item }) => item.id));
+  entries.forEach(({ form, item }) => {
+    const chip = form.closest("[data-item-card]")?.querySelector("[data-ready-chip]");
+    if (chip) {
+      chip.textContent = ready.has(item.id) ? "Ready to send" : item.status === "uploaded" ? "Editing" : "Not sent yet";
+      chip.classList.toggle("good", ready.has(item.id));
+    }
+  });
+  const allEdits = entries.every(({ item }) => item.status === "uploaded");
+  $("onboarding-submit-button").textContent = allEdits ? "Send changes to HR" : "Send all to HR";
+  $("onboarding-submit-status").textContent = ready.size === entries.length
+    ? `All ${entries.length} ${entries.length === 1 ? "item is" : "items are"} ready. Press the button to send ${entries.length === 1 ? "it" : "them"} to HR together.`
+    : `${ready.size} of ${entries.length} ready. Answer the rest, then send everything to HR with one button.`;
+}
+
+// One button sends every open form to HR together. Nothing is sent until all of them are
+// complete. If the server then rejects one, the others are already saved and the person is
+// taken to the one that needs fixing, with everything they typed still in place.
+async function submitAllOnboarding() {
+  const button = $("onboarding-submit-button");
+  const status = $("onboarding-submit-status");
+  const entries = openForms();
+  document.querySelectorAll("#onboarding-items .field-error").forEach(e => { e.textContent = ""; });
+  document.querySelectorAll("#onboarding-items .invalid").forEach(e => e.classList.remove("invalid"));
+  document.querySelectorAll("#onboarding-items [data-form-msg]").forEach(e => { e.textContent = ""; });
+  if (!entries.length) {
+    $("onboarding-message").textContent = "There is nothing new to send.";
+    return;
+  }
+  let firstBad = null;
+  let incomplete = 0;
+  for (const { form, item } of entries) {
+    const missing = missingFields(form, item);
+    if (!missing.length) continue;
+    incomplete += 1;
+    for (const key of missing) {
+      fieldContainer(form, key)?.classList.add("invalid");
+      const slot = form.querySelector(`[data-error-for="${CSS.escape(key)}"]`);
+      if (slot) slot.textContent = "Answer this to continue.";
+    }
+    firstBad ??= { form, key: missing[0] };
+  }
+  if (firstBad) {
+    $("onboarding-message").textContent = `${incomplete} ${incomplete === 1 ? "item still needs" : "items still need"} answers. Nothing has been sent yet.`;
+    const target = fieldContainer(firstBad.form, firstBad.key);
+    target?.scrollIntoView({ block: "center", behavior: "smooth" });
+    target?.querySelector("input,select")?.focus({ preventScroll: true });
+    return;
+  }
+  button.disabled = true;
+  const sent = [];
+  const failed = [];
+  for (const [n, { form, item }] of entries.entries()) {
+    status.textContent = `Sending ${n + 1} of ${entries.length}…`;
+    const answers = collectAnswers(form, item);
+    try {
+      await api(config.trainingFunction, { action: "onboarding_submit_form", itemId: item.id, answers });
+      sent.push(item.id);
+    } catch (error) {
+      failed.push({ id: item.id, answers, error });
+    }
+  }
+  sent.forEach(id => drafts.delete(id));
+  failed.forEach(({ id, answers }) => drafts.set(id, answers));
+  if (!failed.length) onboardingDirty = false;
+  try {
+    await loadOnboarding({ snapshot: false });
+  } catch (error) {
+    $("onboarding-message").textContent = friendlyError(error);
+  }
+  if (!failed.length) {
+    $("onboarding-message").textContent = `${sent.length} ${sent.length === 1 ? "item" : "items"} sent to HR.`;
+    button.disabled = false;
+    return;
+  }
+  failed.forEach(({ id, error }) => {
+    const form = document.querySelector(`[data-form-item="${CSS.escape(id)}"]`);
+    if (form) showFormError(form, error);
+  });
+  $("onboarding-message").textContent = `${sent.length ? `${sent.length} sent to HR. ` : ""}${failed.length} could not be sent. Fix the highlighted answers and press the button again.`;
+  document.querySelector("#onboarding-items .invalid")?.scrollIntoView({ block: "center", behavior: "smooth" });
+  button.disabled = false;
 }
 
 async function uploadOnboardingFile(input) {
@@ -545,7 +678,20 @@ ui.passwordForm.addEventListener("submit", async event => {
 $("onboarding-items").addEventListener("change", event => {
   if (event.target.matches("input[type=file][data-item]")) uploadOnboardingFile(event.target);
   else if (event.target.matches('.sign-form input[name="method"]')) switchSignMethod(event.target.closest(".sign-form"));
-  else if (event.target.closest(".onb-form")) refreshConditions(event.target.closest(".onb-form"));
+  else if (event.target.closest(".onb-form")) {
+    refreshConditions(event.target.closest(".onb-form"));
+    updateSubmitBar();
+  }
+});
+$("onboarding-items").addEventListener("input", event => {
+  if (!event.target.closest(".onb-form")) return;
+  onboardingDirty = true;
+  const box = event.target.closest(".onb-field");
+  if (box?.classList.contains("invalid")) {
+    box.classList.remove("invalid");
+    box.querySelector(".field-error")?.replaceChildren();
+  }
+  updateSubmitBar();
 });
 $("onboarding-items").addEventListener("submit", event => {
   if (event.target.matches(".sign-form")) {
@@ -553,9 +699,12 @@ $("onboarding-items").addEventListener("submit", event => {
     submitSignature(event.target);
     return;
   }
-  if (!event.target.matches(".onb-form")) return;
-  event.preventDefault();
-  submitOnboardingForm(event.target);
+  // Answers go to HR from the one button at the bottom, so pressing Enter in a field does nothing.
+  if (event.target.matches(".onb-form")) event.preventDefault();
+});
+$("onboarding-submit-button").addEventListener("click", submitAllOnboarding);
+window.addEventListener("beforeunload", event => {
+  if (onboardingDirty && openForms().length) event.preventDefault();
 });
 $("onboarding-items").addEventListener("click", event => {
   const edit = event.target.closest("[data-edit]");
@@ -564,8 +713,13 @@ $("onboarding-items").addEventListener("click", event => {
     form?.classList.remove("hidden");
     edit.classList.add("hidden");
     form?.querySelector("input,select")?.focus();
+    updateSubmitBar();
   }
-  if (event.target.closest("[data-cancel-edit]")) loadOnboarding();
+  const cancel = event.target.closest("[data-cancel-edit]");
+  if (cancel) {
+    snapshotDrafts(cancel.closest(".onb-form").dataset.formItem);
+    loadOnboarding({ snapshot: false });
+  }
   const remove = event.target.closest("[data-remove-file]");
   if (remove) removeOnboardingFile(remove);
   const read = event.target.closest("[data-read-contract]");
