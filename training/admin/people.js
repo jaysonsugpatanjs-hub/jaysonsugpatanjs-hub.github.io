@@ -72,6 +72,7 @@ function renderPeople(root) {
       <td>${lic.length ? `<span class="chip ${lic.some(l => l.status === "expired") ? "bad" : "warn"}">${lic.length} licence${lic.length > 1 ? "s" : ""} due</span>` : '<span class="muted">—</span>'}</td>
     </tr>`;
   }).join("");
+  root.querySelector("[data-add-person]").classList.toggle("hidden", !can("people.manage"));
   message(root.querySelector("[data-people-msg]"), rows.length ? (people.truncated ? "Showing the first 2,000 people." : "") : "No one matches this search.");
   renderEditor(root);
   renderPositions(root);
@@ -316,7 +317,9 @@ export function bindPeople(root) {
   root.addEventListener("click", async event => {
     const target = event.target.closest("button");
     if (!target) return;
-    if (target.dataset.pick) { state.selected = target.dataset.pick; renderPeople(root); root.querySelector("[data-employee-form]").scrollIntoView({ block: "start", behavior: "smooth" }); }
+    const showPanel = name => root.dispatchEvent(new CustomEvent("people:panel", { detail: name }));
+    if (target.dataset.pick) { state.selected = target.dataset.pick; renderPeople(root); showPanel("person"); window.scrollTo({ top: 0, behavior: "smooth" }); }
+    if ("addPerson" in target.dataset) { state.selected = null; renderPeople(root); showPanel("person"); window.scrollTo({ top: 0, behavior: "smooth" }); }
     if ("newPerson" in target.dataset) { state.selected = null; renderEditor(root); }
     const person = () => state.people.employees.find(x => x.id === state.selected);
     const signinMsg = text => { const m = root.querySelector("[data-signin-msg]"); if (m) m.textContent = text; };
