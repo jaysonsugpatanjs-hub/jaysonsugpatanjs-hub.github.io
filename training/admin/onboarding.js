@@ -5,7 +5,7 @@ import { createPlacer } from "./contract-placer.js";
 import { attachPad } from "../signature-pad.js";
 
 const call = (action, body = {}) => api(config.adminFunction, { action, ...body });
-const state = { types: [], people: [], requests: [], items: [], openId: null, canIssuePasswords: false };
+const state = { types: [], people: [], requests: [], items: [], openId: null, canIssuePasswords: false, asContractor: false };
 // Page viewers HR has opened to place a signature, by item id. Cleared whenever the request is redrawn.
 const placers = new Map();
 
@@ -122,13 +122,23 @@ export async function loadOnboarding(root, { canIssuePasswords }) {
   if (state.openId) await openRequest(root, state.openId);
 }
 
-function typesFor(person) {
-  return state.types.filter(t => t.active && t.appliesTo.includes(person?.employmentType || "applicant"));
+// The kind of person the checklist is for. An applicant who will work as a contractor can be
+// treated as one here, so they get the contractor documents (ABN and business details,
+// insurance, contractor agreement) instead of the employee ones.
+function checklistKind(person) {
+  return state.asContractor ? "contractor" : person?.employmentType || "applicant";
 }
 
-function renderForm(root) {
+function typesFor(person) {
+  const kind = checklistKind(person);
+  return state.types.filter(t => t.active && t.appliesTo.includes(kind));
+}
+
+function renderForm(root, { keep = false } = {}) {
   const form = root.querySelector("[data-onb-form]");
   const selected = form.employeeId?.value || "";
+  // Ticking "contractor" redraws the list; what was already typed stays.
+  const typed = keep ? { due: form.dueOn?.value || "", message: form.message?.value || "", signIn: form.signIn?.value || "" } : { due: "", message: "", signIn: "" };
   const person = state.people.find(p => p.id === selected);
   const open = new Set(state.requests.filter(r => r.status === "open").map(r => r.employeeId));
   form.innerHTML = `
@@ -137,19 +147,21 @@ function renderForm(root) {
       <select id="onb-person" name="employeeId" required><option value="">Choose from the register</option>
       ${state.people.map(p => `<option value="${safe(p.id)}" ${p.id === selected ? "selected" : ""} ${open.has(p.id) ? "disabled" : ""}>${safe(p.fullName)} · ${safe(p.employmentType)}${p.email ? "" : " · no email"}${open.has(p.id) ? " · request open" : ""}</option>`).join("")}
       </select><small>Add new applicants under People first, with their email address.</small></div>
-    ${person ? `<fieldset class="doc-picks"><legend>Documents for ${safe(person.employmentType)}s</legend>
+    ${person && person.employmentType !== "contractor" ? `<div class="field"><label class="check-field"><input type="checkbox" name="asContractor" ${state.asContractor ? "checked" : ""}>
+      <span><strong>This person is a contractor</strong> Ask for their contractor details instead: ID, ABN and business details, insurance and the contractor agreement.</span></label></div>` : ""}
+    ${person ? `<fieldset class="doc-picks"><legend>Documents for ${safe(checklistKind(person))}s</legend>
       ${typesFor(person).map(t => `<label class="check-field"><input type="checkbox" name="types" value="${safe(t.key)}" ${t.required ? "checked" : ""}>
         <span><strong>${safe(t.name)}</strong> <span class='chip'>${t.kind === "form" ? "Fill in" : t.kind === "sign" ? "Sign online" : "Photo/PDF"}</span>${t.required ? "" : " <span class='chip'>Optional</span>"}${t.sensitive ? " <span class='chip info'>Sensitive</span>" : ""}<small>${safe(t.guidance)}${t.link ? ` <span class="doc-link-row"><strong>Click here to read it:</strong> <a class="doc-link" href="${safe(t.link.href)}" target="_blank" rel="noopener">${safe(t.link.label)} ↗</a></span>` : ""}</small></span></label>`).join("")}
       </fieldset>
       <div class="field-row">
-        <div class="field"><label for="onb-due">Due by</label><input id="onb-due" name="dueOn" type="date"></div>
+        <div class="field"><label for="onb-due">Due by</label><input id="onb-due" name="dueOn" type="date" value="${safe(typed.due)}"></div>
         <div class="field"><label for="onb-signin">How they'll sign in</label><select id="onb-signin" name="signIn">
           <option value="invite">Email them a link to set a password</option>
-          ${state.canIssuePasswords ? '<option value="password">Create a temporary password (shown once)</option>' : ""}
+          ${state.canIssuePasswords ? '<option value="password" ${typed.signIn === "password" ? "selected" : ""}>Create a temporary password (shown once)</option>' : ""}
         </select></div>
       </div>
       <small class="muted">${person.profileId ? "They already have a sign-in; they'll see the checklist next time they sign in." : "They don't have a sign-in yet; one is created now."}</small>
-      <div class="field"><label for="onb-msg">Message to them (optional)</label><textarea id="onb-msg" name="message" rows="2" maxlength="1000" placeholder="Welcome to Panalo. Please complete these before your first day."></textarea></div>
+      <div class="field"><label for="onb-msg">Message to them (optional)</label><textarea id="onb-msg" name="message" rows="2" maxlength="1000" placeholder="Welcome to Panalo. Please complete these before your first day.">${safe(typed.message)}</textarea></div>
       <button class="primary" type="submit">Send request</button>` : ""}
     <p class="form-message" data-onb-form-msg role="status" aria-live="polite"></p>`;
 }
@@ -356,7 +368,8 @@ async function uploadContract(root, input) {
 
 export function bindOnboarding(root) {
   root.addEventListener("change", event => {
-    if (event.target.name === "employeeId") renderForm(root);
+    if (event.target.name === "employeeId") { state.asContractor = false; renderForm(root); }
+    else if (event.target.name === "asContractor") { state.asContractor = event.target.checked; renderForm(root, { keep: true }); }
     else if (event.target.matches("input[type=file][data-sign-upload]")) uploadContract(root, event.target);
     else if (event.target.matches("[data-company-on], [data-company-method]")) syncCompany(event.target.closest("[data-finalize]"));
   });
@@ -377,6 +390,7 @@ export function bindOnboarding(root) {
       const person = state.people.find(p => p.id === form.employeeId.value);
       const result = await call("onboarding_create", { employeeId: form.employeeId.value, types, dueOn: form.dueOn.value || null, message: form.message.value, signIn: form.signIn.value });
       state.openId = result.requestId;
+      state.asContractor = false;
       await loadOnboarding(root, { canIssuePasswords: state.canIssuePasswords });
       root.querySelector("[data-onb-form-msg]").textContent = result.invited
         ? `Invitation emailed to ${person.email}. They'll set a password, then see the checklist.`

@@ -1,7 +1,7 @@
 import { api, completeAuthRedirect, config, friendlyError, getSession, isConfigured, signOut } from "../auth.js";
 import { defaultContentVersion, endOfSydneyDayIso, moduleAuthoringTemplate, sortSlideFiles } from "./module-manager-core.js";
-import { bindMatrix, bindPeople, loadMatrix, loadPeople, setPermissions } from "./people.js?v=20261019a";
-import { bindOnboarding, loadOnboarding, showTemporaryPassword } from "./onboarding.js";
+import { bindMatrix, bindPeople, loadMatrix, loadPeople, setPermissions } from "./people.js?v=20261019b";
+import { bindOnboarding, loadOnboarding, showTemporaryPassword } from "./onboarding.js?v=20261019b";
 import { mountIms } from "../ims/ims.js";
 import { bindPersonnel, loadPersonnel } from "./personnel.js";
 
