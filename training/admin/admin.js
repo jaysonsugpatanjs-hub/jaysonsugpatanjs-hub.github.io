@@ -422,8 +422,6 @@ function switchAdminView(event) {
   const selected = event.currentTarget.dataset.adminView;
   loadView(selected);
   document.querySelectorAll(".admin-view").forEach(view => view.classList.toggle("hidden", view.id !== selected));
-  // An area's own sub-menu shows under its sidebar button only while that area is open.
-  document.querySelectorAll(".admin-subnav").forEach(nav => nav.classList.toggle("hidden", nav.dataset.subnavFor !== selected));
   document.querySelectorAll(".admin-tab").forEach(tab => {
     const active = tab.dataset.adminView === selected;
     tab.classList.toggle("active", active);
@@ -481,18 +479,6 @@ document.getElementById("refresh-modules").addEventListener("click", () => loadM
 document.getElementById("download-module-template").addEventListener("click", downloadAuthoringTemplate);
 document.querySelectorAll(".admin-tab").forEach(tab => tab.addEventListener("click", switchAdminView));
 
-// People has three panels (register, add/edit person, positions). One shows at a time.
-function setPeoplePanel(name) {
-  document.getElementById("people-management").dataset.panel = name;
-  document.querySelectorAll("[data-people-panel-btn]").forEach(button => {
-    const active = button.dataset.peoplePanelBtn === name;
-    button.classList.toggle("active", active);
-    button.setAttribute("aria-pressed", String(active));
-  });
-}
-document.querySelectorAll("[data-people-panel-btn]").forEach(button => button.addEventListener("click", () => setPeoplePanel(button.dataset.peoplePanelBtn)));
-// people.js asks for the person panel when a row is picked or "Add person" is pressed.
-document.getElementById("people-management").addEventListener("people:panel", event => setPeoplePanel(event.detail));
 document.getElementById("sign-out").addEventListener("click", async () => { await signOut(); window.location.href = "../"; });
 
 async function init() {

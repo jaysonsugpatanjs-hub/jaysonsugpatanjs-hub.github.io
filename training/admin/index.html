@@ -31,11 +31,6 @@
         </div>
         <div class="admin-nav-group"><p class="admin-nav-label">People &amp; HR</p>
         <button class="admin-tab" type="button" data-admin-view="people-management" data-perm="people.view people.manage access.manage hr.manage" aria-pressed="false"><svg class="admin-tab-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>People</span></button>
-        <div class="admin-subnav hidden" data-subnav-for="people-management" role="group" aria-label="People sections">
-          <button class="admin-subtab active" type="button" data-people-panel-btn="register" aria-pressed="true">Employee register</button>
-          <button class="admin-subtab" type="button" data-people-panel-btn="person" aria-pressed="false">Add / edit person</button>
-          <button class="admin-subtab" type="button" data-people-panel-btn="positions" aria-pressed="false">Positions &amp; required training</button>
-        </div>
         <button class="admin-tab" type="button" data-admin-view="onboarding-management" data-perm="hr.manage" aria-pressed="false"><svg class="admin-tab-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg><span>Onboarding</span></button>
         <button class="admin-tab" type="button" data-admin-view="hr-files" data-perm="hr.manage" aria-pressed="false"><svg class="admin-tab-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg><span>HR files</span></button>
         </div>
@@ -110,18 +105,25 @@
       </div>
     </section>
 
-    <section id="people-management" class="admin-view hidden" data-panel="register">
-      <div class="people-layout">
-        <section class="portal-card register-card" data-people-panel="register">
-          <div class="register-head"><div><p class="eyebrow">EMPLOYEE REGISTER</p><h2>People</h2></div>
-            <div class="register-tools"><input data-people-search type="search" placeholder="Search name, number, position or site" aria-label="Search people"><button class="primary hidden" type="button" data-add-person>+ Add person</button></div></div>
-          <div class="table-wrap"><table><thead><tr><th>Person</th><th>Position · site</th><th>Type · status</th><th>Training login</th><th>Licences</th></tr></thead><tbody data-people-body></tbody></table></div>
-          <p class="form-message" data-people-msg></p>
+    <section id="people-management" class="admin-view hidden">
+      <div class="people-layout accordion">
+        <section class="acc-item open" data-acc="register">
+          <button class="acc-head" type="button" aria-expanded="true" aria-controls="acc-register"><span>Employee register</span></button>
+          <div class="acc-body" id="acc-register">
+            <div class="register-head"><div><p class="eyebrow">EMPLOYEE REGISTER</p><h2>People</h2></div>
+              <div class="register-tools"><input data-people-search type="search" placeholder="Search name, number, position or site" aria-label="Search people"><button class="primary hidden" type="button" data-add-person>+ Add person</button></div></div>
+            <div class="table-wrap"><table><thead><tr><th>Person</th><th>Position · site</th><th>Type · status</th><th>Training login</th><th>Licences</th></tr></thead><tbody data-people-body></tbody></table></div>
+            <p class="form-message" data-people-msg></p>
+          </div>
         </section>
-        <div class="people-side">
-          <section class="portal-card" data-people-panel="person"><form data-employee-form class="admin-form"></form><div data-employee-extra></div></section>
-          <section class="portal-card" data-people-panel="positions" data-positions></section>
-        </div>
+        <section class="acc-item" data-acc="person">
+          <button class="acc-head" type="button" aria-expanded="false" aria-controls="acc-person"><span>Add / edit person</span><small data-person-label></small></button>
+          <div class="acc-body" id="acc-person"><form data-employee-form class="admin-form"></form><div data-employee-extra></div></div>
+        </section>
+        <section class="acc-item" data-acc="positions">
+          <button class="acc-head" type="button" aria-expanded="false" aria-controls="acc-positions"><span>Positions &amp; required training</span></button>
+          <div class="acc-body" id="acc-positions" data-positions></div>
+        </section>
       </div>
     </section>
 

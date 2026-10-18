@@ -258,20 +258,22 @@ code.secret { font-size: 20px; letter-spacing: .06em; color: var(--gold); backgr
   .admin-content .admin-layout, .admin-content .module-layout { grid-template-columns: minmax(0, 1fr); }
   .admin-content .admin-form { position: static; }
 }
-/* Sub-menu under a sidebar button (People). */
-.admin-subnav { display: flex; flex-direction: column; gap: 2px; margin: 2px 0 8px 22px; padding-left: 10px; border-left: 1px solid var(--border); }
-.admin-subtab { width: 100%; padding: 8px 10px; border: 0; border-radius: 8px; background: transparent; color: #b4b4b9; font: inherit; font-size: 13px; font-weight: 700; text-align: left; cursor: pointer; }
-.admin-subtab:hover { background: var(--raised); color: #fff; }
-.admin-subtab.active { color: var(--gold); background: var(--surface-2); }
-.admin-subtab:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
-
-/* People: one panel at a time, chosen from the sidebar. */
-#people-management .people-layout { grid-template-columns: minmax(0, 1fr); }
-#people-management .people-side { display: grid; gap: 20px; max-width: 880px; }
-#people-management[data-panel="register"] .people-side,
-#people-management:not([data-panel="register"]) [data-people-panel="register"],
-#people-management[data-panel="person"] [data-people-panel="positions"],
-#people-management[data-panel="positions"] [data-people-panel="person"] { display: none; }
+/* People: collapsible sections. The content opens directly under the header you press. */
+#people-management .people-layout { display: block; }
+.accordion { display: flex; flex-direction: column; gap: 12px; }
+.acc-item { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
+.acc-head { display: flex; align-items: center; gap: 12px; width: 100%; padding: 16px 20px; border: 0; background: transparent; color: #fff; font: inherit; font-size: 16px; font-weight: 800; text-align: left; cursor: pointer; }
+.acc-head > span { flex: 1; }
+.acc-head small { color: var(--muted); font-size: 13px; font-weight: 600; }
+.acc-head::after { content: ""; flex: none; width: 9px; height: 9px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg); margin: -4px 4px 0 0; transition: transform .15s; }
+.acc-head:hover { background: var(--raised); }
+.acc-head:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
+.acc-item.open > .acc-head { color: var(--gold); border-bottom: 1px solid var(--border); }
+.acc-item.open > .acc-head::after { transform: rotate(-135deg); margin-top: 4px; }
+.acc-body { display: none; padding: 20px; }
+.acc-item.open > .acc-body { display: block; }
+.acc-body .admin-form { margin: 0; }
+.acc-body h3 { margin: 22px 0 8px; font-size: 15px; }
 .register-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
 
 /* On phones and small tablets the sidebar becomes a wrapped row of buttons above the page. */
@@ -282,7 +284,4 @@ code.secret { font-size: 20px; letter-spacing: .06em; color: var(--gold); backgr
   .admin-nav-label { display: none; }
   .admin-nav .admin-tab { width: auto; white-space: nowrap; padding: 9px 12px; border-left: 0; border-bottom: 3px solid transparent; border-radius: 9px 9px 0 0; }
   .admin-nav .admin-tab.active { border-bottom-color: var(--gold); }
-  .admin-subnav { order: 10; flex: 0 0 100%; flex-direction: row; flex-wrap: wrap; margin: 4px 0 0; padding: 8px 0 0; border-left: 0; border-top: 1px solid var(--border); }
-  .admin-subnav.hidden { display: none; }
-  .admin-subtab { width: auto; }
 }
