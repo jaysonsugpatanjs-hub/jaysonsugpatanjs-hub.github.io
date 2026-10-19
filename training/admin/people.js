@@ -134,7 +134,7 @@ function renderEditor(root) {
 
 // Role workshops on this site (public pages). `match` picks the ones to tick for a position.
 const WORKSHOPS = [
-  { name: "New starter onboarding (employees and contractors)", path: "../panalo-onboarding-workshop/", match: /^/ },
+  { name: "New starter onboarding guide (employees and contractors)", path: "../panalo-onboarding-workshop/", match: /^/ },
   { name: "Operations Manager & Director (Managing Director, Operations and Projects Manager)", path: "../panalo-ops-director-workshop/", match: /managing|director|operations|project/i },
   { name: "IMS and QHSE Manager", path: "../panalo-ims-qhse-workshop/", match: /ims|qhse|quality manager|whs manager/i },
   { name: "Responsible Welding Coordinator", path: "../panalo-welding-coordinator-workshop/", match: /welding coordinator|responsible welding/i },
