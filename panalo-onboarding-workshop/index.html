@@ -1,0 +1,406 @@
+<!doctype html><html lang="en-AU"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Panalo New Starter Onboarding Workshop</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: sticky charcoal header, left task nav (top strip on phones), one working column of "row cards": facts on the left, drop-down answer on the right. */
+:root{
+  --bg:#F1F0ED; --surface:#FFFFFF; --ink:#25221E; --muted:#68625A; --line:#D9D5CC;
+  --accent:#8E6A1E; --accent-fill:#B58D3B; --hdr-bg:#2F2E2C; --hdr-fg:#F4F1EA; --hdr-muted:#B9B2A5;
+  --input-bg:#FFF3CF; --input-ink:#1B3FA6; --input-line:#D8BE73;
+  --good:#1D6A2D; --good-bg:#DCEEDC; --bad:#A3261D; --bad-bg:#F6DCD8; --chip:#ECE8DF;
+  --font-display:'Barlow Semi Condensed','Arial Narrow',Arial,sans-serif;
+  --font-body:'IBM Plex Sans',Arial,sans-serif;
+  --font-mono:'IBM Plex Mono',Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#1A1917; --surface:#252320; --ink:#EDE9E0; --muted:#A59E92; --line:#3B3833;
+  --accent:#D8B056; --accent-fill:#B58D3B; --hdr-bg:#100F0E; --hdr-fg:#F4F1EA; --hdr-muted:#9B9488;
+  --input-bg:#3A3220; --input-ink:#A9C0FF; --input-line:#6B5A2C;
+  --good:#86D395; --good-bg:#1E3A26; --bad:#FF9E95; --bad-bg:#4A2220; --chip:#312E29; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1A1917; --surface:#252320; --ink:#EDE9E0; --muted:#A59E92; --line:#3B3833;
+  --accent:#D8B056; --accent-fill:#B58D3B; --hdr-bg:#100F0E; --hdr-fg:#F4F1EA; --hdr-muted:#9B9488;
+  --input-bg:#3A3220; --input-ink:#A9C0FF; --input-line:#6B5A2C;
+  --good:#86D395; --good-bg:#1E3A26; --bad:#FF9E95; --bad-bg:#4A2220; --chip:#312E29; color-scheme:dark}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:15px;line-height:1.5}
+*{box-sizing:border-box}
+a{color:var(--accent)}
+h1,h2,h3{font-family:var(--font-display);font-weight:700;line-height:1.15;text-wrap:balance;margin:0}
+:focus-visible{outline:2px solid var(--accent-fill);outline-offset:2px}
+
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--hdr-bg);color:var(--hdr-fg);border-bottom:3px solid var(--accent-fill)}
+.top-in{max-width:1180px;margin:0 auto;padding:10px 16px;display:flex;gap:16px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.brand{display:flex;flex-direction:column;min-width:0}
+.brand b{font-family:var(--font-display);font-size:1.15rem;letter-spacing:.02em}
+.brand span{font-size:.78rem;color:var(--hdr-muted)}
+.meter{display:flex;align-items:center;gap:10px;font-size:.8rem;color:var(--hdr-muted)}
+.meter .bar{width:140px;height:8px;background:#ffffff26;border-radius:4px;overflow:hidden}
+.meter .bar i{display:block;height:100%;background:var(--accent-fill);width:0;transition:width .3s}
+.meter strong{color:var(--hdr-fg);font-variant-numeric:tabular-nums}
+
+.shell{max-width:1180px;margin:0 auto;padding-inline:16px;padding-block:20px 64px;display:grid;grid-template-columns:230px minmax(0,1fr);gap:28px}
+nav.side{position:sticky;top:calc(env(safe-area-inset-top,0px) + 76px);align-self:start;display:flex;flex-direction:column;gap:2px}
+nav.side a{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:8px 10px;border-radius:6px;text-decoration:none;color:var(--ink);font-weight:500;font-size:.9rem}
+nav.side a:hover{background:var(--chip)}
+nav.side a[aria-current="page"]{background:var(--hdr-bg);color:var(--hdr-fg)}
+nav.side .sec{font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:12px 10px 4px}
+nav.side .badge{font-family:var(--font-mono);font-size:.72rem;opacity:.85;white-space:nowrap}
+nav.side .badge.done{color:var(--good)}
+nav.side a[aria-current="page"] .badge.done{color:#8FE0A0}
+main{min-width:0}
+
+.pagehead{display:flex;gap:16px;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;margin-bottom:18px}
+.eyebrow{font-size:.74rem;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);font-weight:600;margin:0 0 4px}
+h1{font-size:2rem}
+h2{font-size:1.2rem;margin-bottom:10px}
+.lead{color:var(--muted);max-width:68ch;margin:6px 0 0}
+.score{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 14px;text-align:center;min-width:110px}
+.score b{display:block;font-family:var(--font-display);font-size:1.6rem;font-variant-numeric:tabular-nums}
+.score span{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px 18px;margin-bottom:18px}
+.brief{display:grid;grid-template-columns:110px minmax(0,1fr);gap:10px 16px;margin:0}
+.brief dt{font-weight:600;color:var(--accent);font-size:.82rem;text-transform:uppercase;letter-spacing:.06em;padding-top:2px}
+.brief dd{margin:0;min-width:0}
+.brief ul{margin:0;padding-left:1.1em}
+.mono{font-family:var(--font-mono);font-size:.86em}
+a.dl{color:var(--accent);text-decoration:none;border-bottom:1px solid var(--accent-fill)}
+a.dl:hover{background:var(--chip)}
+
+.rows{display:flex;flex-direction:column;gap:10px;margin-bottom:22px}
+.row{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px 14px;display:grid;grid-template-columns:minmax(0,1fr) minmax(210px,290px);gap:12px 20px;align-items:start}
+.row.ok{border-color:var(--good)}
+.row.no{border-color:var(--bad)}
+.row-head{font-weight:600}
+.row-head small{display:block;font-weight:400;color:var(--muted);font-size:.84rem}
+.facts{display:flex;flex-wrap:wrap;gap:6px 18px;margin:8px 0 0}
+.facts div{min-width:0}
+.facts dt{font-size:.68rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+.facts dd{margin:0;font-variant-numeric:tabular-nums}
+.row-answer label{display:block;font-size:.68rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:3px}
+select,input[type=number],input[type=text],textarea{width:100%;font:inherit;padding:8px 10px;border-radius:6px;border:1px solid var(--input-line);background:var(--input-bg);color:var(--input-ink);font-weight:500}
+textarea{min-height:76px;resize:vertical}
+select{appearance:auto}
+.status{margin:6px 0 0;font-size:.84rem;min-height:1.2em}
+.status.ok{color:var(--good)}
+.status.no{color:var(--bad)}
+.status b{display:inline-block;padding:1px 7px;border-radius:4px;margin-right:6px;font-size:.8rem}
+.status.ok b{background:var(--good-bg)}
+.status.no b{background:var(--bad-bg)}
+.status span{color:var(--muted)}
+
+.ledger{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+.ledger td{padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+.ledger td:nth-child(2){text-align:right;font-weight:600;white-space:nowrap}
+.ledger td:nth-child(3){color:var(--muted);font-size:.86rem}
+.hint{color:var(--muted);font-size:.86rem;margin:8px 0 12px}
+.settings{display:flex;gap:18px;flex-wrap:wrap;align-items:end}
+.settings div{min-width:140px;flex:1 1 160px;max-width:260px}
+.settings .fixed{padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:var(--chip);font-weight:600}
+
+.btn{font:inherit;font-weight:600;padding:8px 14px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer;text-decoration:none;display:inline-block}
+.btn:hover{border-color:var(--accent-fill)}
+.btn.primary{background:var(--hdr-bg);color:var(--hdr-fg);border-color:var(--hdr-bg)}
+.btn.warn{border-color:var(--bad);color:var(--bad)}
+.foot{display:flex;gap:10px;flex-wrap:wrap;justify-content:space-between;margin-top:6px}
+
+.cols5{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}
+.q5{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px 14px}
+.q5 b{display:block;font-family:var(--font-display);font-size:1.05rem;margin-bottom:4px}
+.q5 p{margin:0;color:var(--muted);font-size:.9rem}
+.legend{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.sw{display:flex;gap:10px;align-items:center;font-size:.9rem}
+.sw i{flex:none;width:46px;height:26px;border-radius:5px;border:1px solid var(--line);display:grid;place-items:center;font-style:normal;font-size:.75rem;font-weight:600}
+.tbl-wrap{overflow-x:auto}
+table.prog{width:100%;border-collapse:collapse;min-width:520px;font-variant-numeric:tabular-nums}
+table.prog th{font-size:.7rem;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);text-align:left;padding:6px 8px;border-bottom:2px solid var(--line)}
+table.prog td{padding:8px;border-bottom:1px solid var(--line)}
+.pill{display:inline-block;padding:1px 9px;border-radius:99px;font-size:.78rem;font-weight:600;background:var(--chip)}
+.pill.done{background:var(--good-bg);color:var(--good)}
+.signoff{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.signoff label{display:block;font-size:.72rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:3px}
+.signoff .wide{grid-column:1/-1}
+.example{display:grid;grid-template-columns:minmax(0,1fr) minmax(210px,290px);gap:12px 20px;align-items:center;border:1px dashed var(--line);border-radius:8px;padding:12px 14px}
+.example .fake{padding:8px 10px;border-radius:6px;border:1px solid var(--input-line);background:var(--input-bg);color:var(--input-ink);font-weight:500}
+
+.proc{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px 16px;margin-bottom:10px}
+.proc header{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;margin-bottom:8px}
+.proc header .mono{background:var(--hdr-bg);color:var(--hdr-fg);padding:1px 8px;border-radius:4px}
+.proc h3{font-size:1.1rem}
+.proc .role{color:var(--muted);font-size:.86rem;margin-left:auto}
+.proc .g{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px 20px}
+.proc h4{margin:0 0 3px;font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--accent)}
+.proc ul{margin:0;padding-left:1.1em}
+.proc p{margin:0}
+.proc .note{margin-top:8px;font-size:.84rem;color:var(--muted)}
+.search{max-width:420px;margin-bottom:14px}
+
+.rt{display:flex;flex-direction:column;gap:8px}
+.rt label{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;align-items:start;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 14px;cursor:pointer}
+.rt input{margin-top:4px;width:18px;height:18px;accent-color:var(--accent-fill)}
+.rt .when{font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--accent);font-weight:600}
+.rt .meta{color:var(--muted);font-size:.85rem}
+.rt label:has(input:checked){background:var(--good-bg);border-color:var(--good)}
+
+.keyitem{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr) minmax(0,1.4fr);gap:6px 16px;padding:8px 0;border-bottom:1px solid var(--line)}
+.keyitem b{font-weight:600}
+.keyitem small{color:var(--muted)}
+
+@media (max-width:899px){
+  .shell{grid-template-columns:minmax(0,1fr);gap:14px;padding-block:14px 48px}
+  nav.side{position:static;flex-direction:row;overflow-x:auto;gap:6px;padding-bottom:6px}
+  nav.side a{white-space:nowrap;background:var(--surface);border:1px solid var(--line)}
+  nav.side .sec{display:none}
+  h1{font-size:1.6rem}
+}
+@media (max-width:640px){
+  .row,.example{grid-template-columns:minmax(0,1fr)}
+  .brief{grid-template-columns:minmax(0,1fr);gap:2px}
+  .brief dd{margin-bottom:10px}
+  .keyitem{grid-template-columns:minmax(0,1fr)}
+  .meter .bar{width:90px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<style>html{color-scheme:light}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style></head><body><header class="top"><div class="top-in">
+  <div class="brand"><b>Panalo Pipes · New starter onboarding (employees and contractors)</b><span>Hands-on workshop · sample data only</span></div>
+  <div class="meter" aria-label="Overall progress"><span>Overall</span><div class="bar"><i id="mbar"></i></div><strong id="mtxt">0 / 0</strong></div>
+</div></header>
+<div class="shell">
+  <nav class="side" id="nav" aria-label="Workshop sections"></nav>
+  <main id="main" tabindex="-1"></main>
+</div>
+
+<script>
+const KEY = 'panalo-onboarding-workshop-v1';
+let S = {a:{}, target:80, so:{}};
+try { const r = JSON.parse(localStorage.getItem(KEY)||'null'); if (r) S = Object.assign(S, r); } catch(e){}
+function save(){ try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){} }
+const $ = s => document.querySelector(s);
+
+/* ---------- task data (all names, numbers and dates are made up) ---------- */
+const Q = (id, head, sub, facts, options, key, why, label) => ({id, head, sub, facts, type:'select', options, key, why, label});
+const TASKS = [
+{id:'t1', num:1, title:'Sign in and set your password', who:'Employees and contractors', mins:10,
+ brief:[['Scenario','HR has added you to the Panalo training portal and sent you an invite. Your first job is to get in safely. Everything else in onboarding happens after you sign in.'],
+  ['What to do','Open the invite link, choose a password, sign in, and find the Onboarding card. It lists everything HR needs from you.'],
+  ['Password rules','At least 12 characters, with at least 3 of: lower case, upper case, number, symbol. It must not be a common password and must not be built from your email name.'],
+  ['Remember','Use your own email and your own password. Never share your sign-in, even with a supervisor.']],
+ rows:[
+  Q('t1-a','Which password is accepted?','Sample email: sam.rivera@example.com',[['A','sam.rivera1'],['B','Password123'],['C','Pipes!Weld7Gauge'],['D','abcdefghijkl']],['A','B','C','D'],'C','C is 16 characters and mixes upper case, lower case, a number and a symbol. A is short and built from the email name, B is a very common password, D is 12 letters of one type only.','Your answer'),
+  Q('t1-b','You mistype your password three times.','The portal does not let you in.',[],['Ask a workmate to sign in for you','Use the password reset on the sign-in page','Create a second account with another email'],'Use the password reset on the sign-in page','Reset your own password. Never use someone else\'s sign-in, and a second account would split your records.','What do you do?'),
+  Q('t1-c','Where do you find your onboarding checklist?','After signing in.',[],['The Onboarding card on the home page','The Learner access tab in the admin area','An email attachment'],'The Onboarding card on the home page','Your checklist is the Onboarding card. The admin area is for HR only.','Where?')],
+ qs:[
+  Q('t1-q1','Who can see what you enter in onboarding?','',[],['Every employee','You and HR only','Your supervisor and workmates'],'You and HR only','Personal details, tax and bank information are visible only to you and authorised HR.','Your answer'),
+  Q('t1-q2','Can you complete the checklist on your phone?','',[],['Yes, but only one item per day','Yes, the portal works on a phone','No, a computer is required'],'Yes, the portal works on a phone','The portal works on phones. Take certificate photos with the phone camera and upload them.','Your answer')]},
+
+{id:'t2', num:2, title:'Your details, ID and emergency contact', who:'Employees and contractors', mins:15,
+ brief:[['Scenario','You are filling in the "about you" items on the checklist. These are the same for employees and contractors.'],
+  ['Items','Personal details · Right to work · Photo ID · Emergency contact.'],
+  ['Personal details','Date of birth, mobile, street address, suburb, state and a 4-digit postcode.'],
+  ['Right to work','Choose your status (for example citizen, permanent resident or visa holder). A visa holder also enters the visa subclass, expiry date and any conditions.'],
+  ['Photo ID','Choose the ID type and enter its number, issuing state or country and expiry. Bring the original on your first day so HR can sight it.'],
+  ['Sample data only','Practise on the sample people below. Never type real details into this workshop page.']],
+ rows:[
+  Q('t2-a','Which postcode will the portal accept?','Sample address: 12 Example St, Sampletown NSW',[['A','20'],['B','2000'],['C','NSW2000'],['D','200 0']],['A','B','C','D'],'B','Postcodes are exactly 4 digits.','Your answer'),
+  Q('t2-b','Priya holds a working visa.','Sample person',[['Status','Visa holder'],['Visa expiry','30/06/2027']],['Also enter the visa subclass, expiry and conditions','Nothing more is needed','Upload a photo of her passport only'],'Also enter the visa subclass, expiry and conditions','Visa holders add the subclass, expiry date and any work conditions so HR can check the right to work.','What else is needed?'),
+  Q('t2-c','Tom is filling in Photo ID.','Sample driver licence',[['Type','Driver licence'],['Issued by','Victoria']],['Enter the licence number, state and expiry, then bring the original on day one','Skip it, HR already has a copy','Enter only the licence expiry'],'Enter the licence number, state and expiry, then bring the original on day one','The details go in the form and HR sights the original on your first day.','What does Tom do?'),
+  Q('t2-d','Who should the emergency contact be?','',[],['Someone who can be reached while you are at work and knows you well','Your supervisor','Another new starter you met today'],'Someone who can be reached while you are at work and knows you well','Pick a family member or close friend who will answer in an emergency, and tell them you listed them.','Your answer')],
+ qs:[
+  Q('t2-q1','Your mobile number changes next month. What do you do?','',[],['Nothing, HR will find out','Tell HR so your details stay current','Ask a workmate to tell HR'],'Tell HR so your details stay current','Keep your own details current so HR and your emergency contact can reach you.','Your answer')]},
+
+{id:'t3', num:3, title:'Tax, super and bank (employees)', who:'Employees only', mins:15,
+ brief:[['Scenario','These items are for employees only. Contractors do not get a tax file number, super or bank checklist item here; they invoice using their ABN.'],
+  ['Tax file number declaration','Choose how you are giving your TFN (you can give it, say you have applied for one, or claim an exemption). A TFN is 8 or 9 digits and is checked. Then answer pay basis, residency, tax-free threshold and study loan, tick the declaration and type your name as your signature.'],
+  ['Super choice','Either name your existing fund (fund name, USI and member number) or choose the Panalo default fund.'],
+  ['Bank details','Account name, BSB (6 digits), account number (5 to 10 digits) and, optionally, the bank name.'],
+  ['Extra acknowledgements','Casual employees acknowledge the casual information statement. All employees acknowledge the Fair Work Information Statement.'],
+  ['Sample data only','Never type a real TFN or bank number into this page.']],
+ rows:[
+  Q('t3-a','Which BSB will be accepted?','Sample bank',[['A','12345'],['B','123-456'],['C','123456'],['D','1234567']],['A','B','C','D'],'C','A BSB is exactly 6 digits. Enter just the digits.','Your answer'),
+  Q('t3-b','Which account number will be accepted?','',[['A','1234'],['B','12345678'],['C','123456789012']],['A','B','C'],'B','Account numbers are 5 to 10 digits.','Your answer'),
+  Q('t3-c','Ana already has a super fund.','Sample employee',[['Fund','Example Super'],['Member no.','M-100200']],['Choose existing fund, then enter fund name, USI and member number','Choose the Panalo default fund anyway','Leave super blank'],'Choose existing fund, then enter fund name, USI and member number','An existing fund needs its name, USI and your member number so HR can set up contributions.','What does Ana choose?'),
+  Q('t3-d','Ben is a casual employee.','Sample employee',[['Type','Casual']],['He also acknowledges the casual information statement','He skips the acknowledgements','He signs a second contract'],'He also acknowledges the casual information statement','Casual employees acknowledge the casual information statement in addition to the Fair Work Information Statement.','What extra step?')],
+ qs:[
+  Q('t3-q1','The TFN declaration asks for a signature.','',[],['Type your own name','Type your supervisor\'s name','Leave it blank'],'Type your own name','You sign your own declaration by typing your name, and only you may complete it.','Your answer'),
+  Q('t3-q2','You do not have your TFN handy.','',[],['Guess one','Use a workmate\'s','Choose the option for a TFN you have applied for, or find it first'],'Choose the option for a TFN you have applied for, or find it first','Never guess. A wrong TFN is rejected by the checksum and delays pay.','Your answer')]},
+
+{id:'t4', num:4, title:'Contractor details', who:'Contractors only', mins:15,
+ brief:[['Scenario','HR has ticked "This person is a contractor" on your record, so your checklist is different. You do not see TFN, super, bank, Fair Work, casual or employment-contract items.'],
+  ['Your contractor items','Personal details · Right to work · Photo ID · Emergency contact · White Card · Tickets · ABN details · Public liability insurance · Workers compensation · Contractor agreement.'],
+  ['ABN details','ABN (11 digits, checked), business name and whether you are registered for GST (yes or no).'],
+  ['Insurance','Upload the current public liability certificate and your workers compensation certificate.'],
+  ['Contractor agreement','Upload the signed and dated agreement: one PDF, or photos of every signed page.'],
+  ['Wrong checklist?','If you are a contractor but see employee items (or the reverse), tell HR. They can change it for you.']],
+ rows:[
+  Q('t4-a','Which ABN will pass the first check?','Sample digits',[['A','12 345 678'],['B','12 345 678 901'],['C','12 345 678 901 23']],['A','B','C'],'B','An ABN has exactly 11 digits (spaces are fine) and the checksum must also be valid.','Your answer'),
+  Q('t4-b','Dana runs a small company.','Sample contractor',[['Business name','Dana Welding Pty Ltd'],['Turnover','Under the GST threshold']],['Enter the business name and tell the form whether she is registered for GST','Leave business name blank','Enter her personal TFN'],'Enter the business name and tell the form whether she is registered for GST','ABN details need the business name and a yes or no on GST registration.','What does she enter?'),
+  Q('t4-c','Which items does a contractor NOT see?','',[],['Tax file number, super and bank details','White Card and tickets','ABN details'],'Tax file number, super and bank details','Contractors are paid on invoice, so TFN, super and bank checklist items are for employees only.','Pick one'),
+  Q('t4-d','Lee\'s public liability certificate expired last month.','Sample contractor',[['Certificate expiry','30/09/2026'],['Today','19/10/2026']],['Upload the renewed, current certificate','Upload the expired one and fix it later','Skip it, it is optional'],'Upload the renewed, current certificate','HR cannot accept an expired certificate. Get the current one from your insurer.','What does Lee do?')],
+ qs:[
+  Q('t4-q1','How should the signed contractor agreement be uploaded?','',[],['As one PDF or clear photos of every signed page','A photo of the first page only','By text message to a supervisor'],'As one PDF or clear photos of every signed page','HR needs every page, signed and dated.','Your answer')]},
+
+{id:'t5', num:5, title:'Uploading tickets and certificates', who:'Employees and contractors', mins:15,
+ brief:[['Scenario','Some items need a file instead of a form: the White Card, trade and site tickets, and (for contractors) insurance certificates.'],
+  ['File rules','PDF, JPG, PNG, WebP or HEIC, up to 20 MB each. Make sure the photo is flat, in focus, and shows your name and the expiry date.'],
+  ['Tickets','Enter the ticket name and its expiry, then upload one file for it. Add each ticket separately.'],
+  ['Wrong file?','You can replace a file before you send. After HR accepts it, only HR can ask for a change.']],
+ rows:[
+  Q('t5-a','Which file will the portal accept?','Sample files',[['A','ticket.docx (2 MB)'],['B','white-card.pdf (1 MB)'],['C','scan.pdf (45 MB)']],['A','B','C'],'B','Certificates are PDF, JPG, PNG, WebP or HEIC and up to 20 MB. A Word file is not accepted for certificates and 45 MB is too big.','Your answer'),
+  Q('t5-b','Your White Card photo is blurry and cuts off the expiry.','',[],['Upload it anyway','Retake it flat and in focus so the name and card details are readable','Type the number in the notes'],'Retake it flat and in focus so the name and card details are readable','HR must be able to read the name and details, otherwise it will be sent back as Needs fixing.','What do you do?'),
+  Q('t5-c','You hold three tickets (Working at Heights, EWP, Forklift).','',[],['Add each ticket separately with its own name, expiry and file','Upload one photo containing all three','Only upload the newest'],'Add each ticket separately with its own name, expiry and file','One ticket per entry keeps expiry tracking accurate.','How do you add them?')],
+ qs:[
+  Q('t5-q1','Your phone saves photos as HEIC. Is that a problem?','',[],['Yes, convert it first','No, HEIC is accepted','Only if it is over 1 MB'],'No, HEIC is accepted','HEIC is on the accepted list.','Your answer'),
+  Q('t5-q2','Why does HR ask for the expiry date?','',[],['To remind you and HR before the ticket lapses','To decide your pay rate','It is not used'],'To remind you and HR before the ticket lapses','Expiry dates drive renewal reminders and keep you compliant to work on site.','Your answer')]},
+
+{id:'t6', num:6, title:'Your contract: download, fill in, upload, sign', who:'Employees', mins:20,
+ brief:[['Scenario','HR has added your employment contract. You can read it, download it, fill in any blank details, upload your filled-in copy, and then sign online.'],
+  ['Step 1 · Read and download','Open the contract item. Read it, or use Download to save a copy to your device.'],
+  ['Step 2 · Fill in (optional)','Open the copy in Word or a PDF reader, fill in the details, and save it.'],
+  ['Step 3 · Upload your copy','In the "Fill it in first" box, upload the filled-in file as PDF or Word. You can remove it and upload a new one.'],
+  ['Step 4 · Sign online','Type your full name exactly as it is on the register, or draw your signature. No printing or scanning is needed.'],
+  ['Important','Your upload does not replace signing. You must still sign online for the contract to count.']],
+ rows:[
+  Q('t6-a','What file types can you upload as your filled-in contract copy?','',[],['PDF and Word only','Any file type','Photos only'],'PDF and Word only','The copy can be a PDF or a Word document.','Your answer'),
+  Q('t6-b','You filled in and uploaded your copy. Are you finished?','',[],['Yes, upload is the signature','No, you still sign online','Yes, HR signs for you'],'No, you still sign online','The upload is only your filled-in copy. The contract is signed online by typing or drawing your name.','Your answer'),
+  Q('t6-c','Your register name is "Alex J. Morgan". What do you type to sign?','',[['A','Alex'],['B','A. Morgan'],['C','Alex J. Morgan']],['A','B','C'],'C','A typed signature must match your name on the register. Otherwise draw your signature instead.','Your answer'),
+  Q('t6-d','You uploaded the wrong copy.','',[],['Remove it and upload the correct one','Send a new contract request to HR','Sign anyway'],'Remove it and upload the correct one','You can remove your copy and upload another before you sign.','What do you do?')],
+ qs:[
+  Q('t6-q1','Who can see your uploaded copy?','',[],['You and HR','Everyone in the portal','Your supervisor'],'You and HR','Copies are stored privately and visible to you and authorised HR.','Your answer')]},
+
+{id:'t7', num:7, title:'Send everything to HR and what happens next', who:'Employees and contractors', mins:15,
+ brief:[['Scenario','You have filled in the checklist. Now you send it to HR with one button.'],
+  ['Send all to HR','Fill in each form, then press the single "Send all to HR" button at the bottom. Each form shows "Not sent yet" until it is ready, then "Ready to send".'],
+  ['If something is missing','The portal tells you which fields are missing and sends nothing until everything is complete. Fix it and press the button again.'],
+  ['Your entries','Unsent entries are kept only in your open page. If you refresh or close the page they are lost, so finish in one sitting or press Send.'],
+  ['Statuses','To do · Sent, waiting for HR · Accepted · Needs fixing (HR gives a reason).'],
+  ['Needs fixing','Open the item, read HR\'s note, correct it and send again.']],
+ rows:[
+  Q('t7-a','You press Send all to HR but one required field is empty.','',[],['Everything else is sent and the rest waits','Nothing is sent and the portal lists what is missing','The empty field is filled in for you'],'Nothing is sent and the portal lists what is missing','Sending is all-or-nothing. Fix the missing field and press again.','What happens?'),
+  Q('t7-b','You refresh the page halfway through the forms.','',[],['Unsent entries are lost','Everything is auto-saved forever','HR receives a half-finished copy'],'Unsent entries are lost','Sensitive entries are kept only in memory until sent, so finish or send before leaving.','What happens?'),
+  Q('t7-c','An item shows "Needs fixing".','',[['HR note','The expiry date is not visible']],['Ignore it, HR will fix it','Retake the photo and send again','Delete your account'],'Retake the photo and send again','Read the HR note, correct the item and send again.','What do you do?'),
+  Q('t7-d','What does "Accepted" mean?','',[],['HR has approved that item','You still need to send it','The item is hidden'],'HR has approved that item','Accepted means HR has checked and approved the item. No more action is needed.','Your answer')],
+ qs:[
+  Q('t7-q1','When is onboarding finished?','',[],['When every item is Accepted and HR finalises it','When you press Send once','After your first pay'],'When every item is Accepted and HR finalises it','HR finalises your onboarding once every item is accepted.','Your answer'),
+  Q('t7-q2','You are unsure about a question on a form.','',[],['Guess','Ask HR before you send','Leave the page'],'Ask HR before you send','Ask HR. Wrong tax, bank or ID details cause delays.','Your answer')]}
+];
+TASKS.forEach(t=>{t.rowsTitle='Work through each situation'; t.items=t.rows.concat(t.qs); t.items.forEach(i=>i.task=t.id);});
+
+/* ---------- scoring ---------- */
+function evalItem(it){ const v=S.a[it.id]; if (v===undefined||v==='') return null; return v===it.key; }
+function taskScore(t){ let c=0; t.items.forEach(i=>{ if(evalItem(i)===true) c++; }); return [c,t.items.length]; }
+function totals(){ let c=0,n=0; TASKS.forEach(t=>{const s=taskScore(t); c+=s[0]; n+=s[1];}); return [c,n]; }
+const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+function statusHTML(it){
+  const r = evalItem(it);
+  if (r===null) return '';
+  return r ? `<b>✔ Correct</b><span>${esc(it.why)}</span>` : '<b>✘ Check again</b><span>Re-read the brief and try another answer.</span>';
+}
+function optText(it,o){ return it.facts.length && it.options.length===it.facts.length && /^[A-D]$/.test(o) ? o+' · '+it.facts[it.options.indexOf(o)][1] : o; }
+function itemHTML(it){
+  const facts = it.facts.length ? `<dl class="facts">${it.facts.map(f=>`<div><dt>${esc(f[0])}</dt><dd>${esc(f[1])}</dd></div>`).join('')}</dl>` : '';
+  const v = S.a[it.id] ?? '';
+  const ctl = `<select id="${it.id}" data-item="${it.id}"><option value="">Choose…</option>${it.options.map(o=>`<option value="${esc(o)}"${o===v?' selected':''}>${esc(optText(it,o))}</option>`).join('')}</select>`;
+  const r = evalItem(it);
+  return `<div class="row${r===true?' ok':r===false?' no':''}" data-row="${it.id}">
+    <div><div class="row-head">${esc(it.head)}${it.sub?`<small>${esc(it.sub)}</small>`:''}</div>${facts}</div>
+    <div class="row-answer"><label for="${it.id}">${esc(it.label||'Your answer')}</label>${ctl}<p class="status ${r===true?'ok':r===false?'no':''}" aria-live="polite">${statusHTML(it)}</p></div></div>`;
+}
+function refreshItem(id){
+  const it = TASKS.flatMap(t=>t.items).find(i=>i.id===id); const el = document.querySelector(`[data-row="${id}"]`); if(!it||!el) return;
+  const r = evalItem(it);
+  el.className = 'row'+(r===true?' ok':r===false?' no':'');
+  const st = el.querySelector('.status'); st.className = 'status '+(r===true?'ok':r===false?'no':''); st.innerHTML = statusHTML(it);
+}
+function refreshAll(){
+  const [c,n] = totals();
+  $('#mbar').style.width = (n?c/n*100:0)+'%'; $('#mtxt').textContent = c+' / '+n;
+  buildNav();
+  const sc = document.querySelector('[data-score]'); if (sc){ const t=TASKS.find(x=>x.id===sc.dataset.score); const s=taskScore(t); sc.querySelector('b').textContent = s[0]+' / '+s[1]; }
+}
+
+/* ---------- views ---------- */
+const NAVSECS = [['Start',[['start','Start here']]],['Tasks',TASKS.map(t=>[t.id,'Task '+t.num+' · '+t.title])]];
+let route = 'start';
+function buildNav(){
+  $('#nav').innerHTML = NAVSECS.map(([sec,links])=>`<div class="sec">${sec}</div>`+links.map(([id,label])=>{
+    const t = TASKS.find(x=>x.id===id); let b='';
+    if (t){ const s=taskScore(t); b=`<span class="badge${s[0]===s[1]?' done':''}">${s[0]}/${s[1]}</span>`; }
+    return `<a href="#${id}"${id===route?' aria-current="page"':''}>${esc(label)}${b}</a>`; }).join('')).join('');
+}
+function viewStart(){
+  const [c,n] = totals();
+  const rows = TASKS.map(t=>{const s=taskScore(t);const st=s[0]===0?'Not started':s[0]===s[1]?'Complete':'In progress';
+    return `<tr><td><a href="#${t.id}">Task ${t.num} · ${esc(t.title)}</a></td><td>${esc(t.who)}</td><td>${t.mins}</td><td>${s[0]}</td><td>${s[1]}</td><td><span class="pill${st==='Complete'?' done':''}">${st}</span></td></tr>`;}).join('');
+  const mins = TASKS.reduce((a,t)=>a+t.mins,0);
+  const pct = n? Math.round(c/n*100):0;
+  return `<div class="pagehead"><div><p class="eyebrow">Hands-on workshop</p><h1>New starter onboarding</h1>
+    <p class="lead">Learn how to complete your onboarding on the Panalo training portal, step by step, before you do it for real. For new employees and new contractors.</p></div></div>
+  <section class="panel"><dl class="brief">
+    <dt>Who it is for</dt><dd>Anyone HR has added as a new applicant: employees and contractors. Tasks marked <b>Employees only</b> or <b>Contractors only</b> apply to one group; do the others anyway if you are unsure.</dd>
+    <dt>How long</dt><dd>About ${(mins/60).toFixed(1)} hours: ${TASKS.length} tasks. Do one at a time.</dd>
+    <dt>Have ready</dt><dd>Your email invite from HR, a photo ID (driver licence or passport), your White Card and tickets, and for employees your TFN, super fund details and bank details. Contractors: ABN, insurance certificates and the signed agreement.</dd>
+    <dt>Sample data</dt><dd>All names, numbers and dates here are made up. <b>Never type your real TFN, bank, ID or ABN into this workshop page.</b> Enter real details only on the portal onboarding card.</dd>
+    <dt>Not scored for HR</dt><dd>This page only helps you practise. Your answers stay in this browser and HR does not receive them.</dd></dl></section>
+  <h2>Two paths</h2>
+  <div class="cols5" style="margin-bottom:22px">
+    <div class="q5"><b>Employee</b><p>Personal details, right to work, photo ID, emergency contact, TFN declaration, super, bank, tickets, acknowledgements, contract.</p></div>
+    <div class="q5"><b>Contractor</b><p>Personal details, right to work, photo ID, emergency contact, White Card, tickets, ABN, insurance, signed agreement.</p></div>
+    <div class="q5"><b>Both</b><p>Sign in, fill in the forms, upload certificates, press Send all to HR, then fix anything marked Needs fixing.</p></div></div>
+  <h2>How it works</h2>
+  <section class="panel"><p style="margin-top:0">Open a task, read the brief, then answer each yellow field. The result shows straight away with the reason. Your progress is saved in this browser.</p>
+    <div class="legend" style="margin-top:14px"><div class="sw"><i style="background:var(--surface)">Info</i>Given to you. Read it.</div>
+      <div class="sw"><i style="background:var(--input-bg);color:var(--input-ink);border-color:var(--input-line)">Answer</i>You choose here.</div>
+      <div class="sw"><i style="background:var(--good-bg);color:var(--good)">✔</i>Correct, with the reason.</div>
+      <div class="sw"><i style="background:var(--bad-bg);color:var(--bad)">✘</i>Check again.</div></div></section>
+  <h2>Your progress</h2>
+  <section class="panel"><div class="tbl-wrap"><table class="prog"><thead><tr><th>Task</th><th>For</th><th>Minutes</th><th>Correct</th><th>Out of</th><th>Status</th></tr></thead><tbody>${rows}</tbody>
+    <tfoot><tr><td><b>Total</b></td><td></td><td><b>${mins}</b></td><td><b>${c}</b></td><td><b>${n}</b></td><td><b>${pct}% correct</b></td></tr></tfoot></table></div>
+    <div class="settings" style="margin-top:14px"><div><label for="target" class="hint" style="margin:0 0 3px">Workshop target (%)</label><input type="number" id="target" min="0" max="100" value="${esc(S.target)}"></div>
+    <div><p class="status ${pct>=S.target&&n?'ok':''}" style="font-weight:600">${n? (pct>=S.target?'<b>✔ Target met</b>':'Keep practising'):''}</p></div></div>
+    <p class="hint">The target is a workshop pass mark only. It is not a competency decision.</p></section>
+  <h2>Sign-off</h2>
+  <section class="panel"><div class="signoff">
+    <div><label for="so-tr">Trainee name</label><input type="text" id="so-tr" data-so="trainee" value="${esc(S.so.trainee||'')}"></div>
+    <div><label for="so-fa">Facilitator name</label><input type="text" id="so-fa" data-so="facilitator" value="${esc(S.so.facilitator||'')}"></div>
+    <div><label for="so-dt">Date completed</label><input type="text" id="so-dt" data-so="date" placeholder="dd/mm/yyyy" value="${esc(S.so.date||'')}"></div>
+    <div class="wide"><label for="so-cm">Comments / follow-up training</label><textarea id="so-cm" data-so="comments">${esc(S.so.comments||'')}</textarea></div></div>
+    <p class="hint">Saved only in this browser. Record the official sign-off in your normal training records.</p>
+    <button class="btn warn" id="resetall" type="button">Reset all answers</button></section>`;
+}
+function viewTask(t){
+  const s = taskScore(t);
+  let h = `<div class="pagehead"><div><p class="eyebrow">Task ${t.num} of ${TASKS.length} · ${esc(t.who)} · about ${t.mins} min · sample data</p><h1>${esc(t.title)}</h1></div>
+    <div class="score" data-score="${t.id}"><b>${s[0]} / ${s[1]}</b><span>correct</span></div></div>
+    <section class="panel"><dl class="brief">${t.brief.map(b=>`<dt>${esc(b[0])}</dt><dd>${esc(b[1])}</dd>`).join('')}</dl></section>`;
+  h += `<h2>${esc(t.rowsTitle)}</h2><div class="rows">${t.rows.map(itemHTML).join('')}</div><h2>Quick questions</h2><div class="rows">${t.qs.map(itemHTML).join('')}</div>`;
+  const i = TASKS.indexOf(t), nx = TASKS[i+1];
+  h += `<div class="foot"><button class="btn" type="button" data-reset="${t.id}">Reset this task</button>${nx?`<a class="btn primary" href="#${nx.id}">Next: Task ${nx.num}</a>`:`<a class="btn primary" href="#start">See my progress</a>`}</div>`;
+  return h;
+}
+function render(){
+  const h = location.hash.slice(1);
+  route = (h==='start'||TASKS.some(t=>t.id===h)) ? h : 'start';
+  const t = TASKS.find(x=>x.id===route);
+  $('#main').innerHTML = t ? viewTask(t) : viewStart();
+  buildNav(); refreshAll();
+}
+window.addEventListener('hashchange', ()=>{ render(); window.scrollTo(0,0); });
+const main = $('#main');
+main.addEventListener('change', e=>{
+  const el = e.target;
+  if (el.dataset.item){ S.a[el.dataset.item] = el.value; save(); refreshItem(el.dataset.item); refreshAll(); }
+  else if (el.id==='target'){ S.target=Math.min(100,Math.max(0,parseFloat(el.value)||0)); save(); render(); }
+});
+main.addEventListener('input', e=>{ const el=e.target; if (el.dataset.so){ S.so[el.dataset.so]=el.value; save(); } });
+let armed = null;
+main.addEventListener('click', e=>{
+  const b = e.target.closest('button'); if(!b) return;
+  const twoStep = (btn, fn)=>{ if (armed===btn){ armed=null; fn(); } else { armed=btn; const old=btn.textContent; btn.textContent='Click again to confirm'; setTimeout(()=>{ if(armed===btn){armed=null; btn.textContent=old;} },3500); } };
+  if (b.dataset.reset){ twoStep(b,()=>{ TASKS.find(t=>t.id===b.dataset.reset).items.forEach(i=>delete S.a[i.id]); save(); render(); }); }
+  else if (b.id==='resetall'){ twoStep(b,()=>{ S.a={}; save(); render(); }); }
+});
+render();
+</script></body></html>
