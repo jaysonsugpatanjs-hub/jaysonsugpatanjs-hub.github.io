@@ -56,12 +56,15 @@ async function reference(admin: Client) {
 
 async function peopleList(admin: Client) {
   const today = sydneyDate(new Date());
-  const [employees, licences, members] = await Promise.all([
+  const nowIso = new Date().toISOString();
+  const [employees, licences, members, training, onboarding] = await Promise.all([
     admin.from("employees")
       .select("id,employee_number,full_name,email,employment_type,status,position_id,site_id,supervisor_id,start_date,end_date,profile_id")
       .order("full_name").limit(2000),
     admin.from("licences").select("id,employee_id,licence_type,licence_number,issuer,issued_on,expires_on,verified_at").limit(10000),
-    admin.from("ims_group_members").select("group_key,profile_id")
+    admin.from("ims_group_members").select("group_key,profile_id"),
+    admin.from("training_assignments").select("learner_id").in("status", ["assigned", "theory_passed"]).gt("expires_at", nowIso).limit(20000),
+    admin.from("onboarding_requests").select("employee_id,status,created_at,onboarding_items(status)").order("created_at", { ascending: false }).limit(5000)
   ]);
   if (employees.error || licences.error || members.error) throw httpError(500, "The employee register could not be loaded.");
   const byEmployee = new Map<string, any[]>();
@@ -71,6 +74,19 @@ async function peopleList(admin: Client) {
       id: licence.id, type: licence.licence_type, number: licence.licence_number, issuer: licence.issuer,
       issuedOn: licence.issued_on, expiresOn: licence.expires_on, verified: Boolean(licence.verified_at),
       status: licenceStatus(licence.expires_on, today)
+    });
+  }
+  // These two only add information to the register, so a failure here must not hide the people.
+  const trainingByProfile = new Map<string, number>();
+  for (const row of training.data || []) trainingByProfile.set(row.learner_id, (trainingByProfile.get(row.learner_id) || 0) + 1);
+  const onboardingByEmployee = new Map<string, { status: string; toReview: number; rejected: number }>();
+  for (const row of onboarding.data || []) {
+    if (onboardingByEmployee.has(row.employee_id)) continue; // newest first
+    const items = row.onboarding_items || [];
+    onboardingByEmployee.set(row.employee_id, {
+      status: row.status,
+      toReview: items.filter((i: any) => i.status === "uploaded").length,
+      rejected: items.filter((i: any) => i.status === "rejected").length
     });
   }
   const groupsByProfile = new Map<string, string[]>();
@@ -86,7 +102,9 @@ async function peopleList(admin: Client) {
       employmentType: e.employment_type, status: e.status, positionId: e.position_id, siteId: e.site_id,
       supervisorId: e.supervisor_id, startDate: e.start_date, endDate: e.end_date, profileId: e.profile_id,
       licences: byEmployee.get(e.id) || [],
-      groups: e.profile_id ? groupsByProfile.get(e.profile_id) || [] : []
+      groups: e.profile_id ? groupsByProfile.get(e.profile_id) || [] : [],
+      trainingCount: e.profile_id ? trainingByProfile.get(e.profile_id) || 0 : 0,
+      onboarding: onboardingByEmployee.get(e.id) || null
     }))
   };
 }

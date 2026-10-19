@@ -1,7 +1,7 @@
 // People register, positions and requirements, and the competency matrix.
 // Rendered with escaped template strings, like the rest of the admin page.
 import { api, config, friendlyError } from "../auth.js";
-import { showTemporaryPassword } from "./onboarding.js?v=20261019c";
+import { showTemporaryPassword } from "./onboarding.js?v=20261019d";
 import { endOfSydneyDayIso } from "./module-manager-core.js";
 
 const STATUS_LABEL = {
@@ -21,7 +21,7 @@ const STATUS_CLASS = {
 const LICENCE_CLASS = { current: "good", expiring: "warn", expired: "bad", no_expiry: "" };
 const LICENCE_LABEL = { current: "Current", expiring: "Expiring", expired: "Expired", no_expiry: "No expiry" };
 
-const state = { ref: null, people: null, selected: null, positionId: null, matrix: null, filters: { q: "", site: "", position: "" }, practical: null, perms: [], catalogue: null, access: null };
+const state = { ref: null, people: null, selected: null, positionId: null, matrix: null, filters: { q: "", site: "", position: "", login: "all" }, practical: null, perms: [], catalogue: null, access: null };
 const can = key => state.perms.includes(key);
 
 export function setPermissions(perms) { state.perms = perms || []; }
@@ -61,17 +61,36 @@ function renderPeople(root) {
   const q = state.filters.q.toLowerCase();
   const positions = new Map(ref.positions.map(p => [p.id, p]));
   const sites = new Map(ref.sites.map(s => [s.id, s]));
-  const rows = people.employees.filter(e => !q || [e.fullName, e.employeeNumber, e.email, positions.get(e.positionId)?.title, sites.get(e.siteId)?.name].join(" ").toLowerCase().includes(q));
-  root.querySelector("[data-people-body]").innerHTML = rows.map(e => {
+  const matches = people.employees.filter(e => !q || [e.fullName, e.employeeNumber, e.email, positions.get(e.positionId)?.title, sites.get(e.siteId)?.name].join(" ").toLowerCase().includes(q));
+  const noLogin = matches.filter(e => !e.profileId);
+  const linked = matches.filter(e => e.profileId);
+  const login = state.filters.login;
+  root.querySelector("[data-login-filter]").innerHTML = [["all", "Everyone", matches.length], ["none", "No sign-in yet", noLogin.length], ["linked", "Has a sign-in", linked.length]]
+    .map(([key, label, n]) => `<button type="button" data-login-pick="${key}" aria-pressed="${login === key}">${label}<b>${n}</b></button>`).join("");
+  const onboardingChip = e => {
+    const o = e.onboarding;
+    if (!o) return '<span class="chip">Not sent</span>';
+    if (o.status === "complete") return '<span class="chip good">Complete</span>';
+    if (o.status === "cancelled") return '<span class="chip">Cancelled</span>';
+    return o.toReview ? `<span class="chip pending">${o.toReview} to review</span>` : o.rejected ? `<span class="chip bad">${o.rejected} sent back</span>` : '<span class="chip info">Waiting on them</span>';
+  };
+  const personRow = e => {
     const lic = e.licences.filter(l => l.status === "expired" || l.status === "expiring");
     return `<tr class="${e.id === state.selected ? "selected-row" : ""}">
       <td><button type="button" class="link-btn" data-pick="${safe(e.id)}">${safe(e.fullName)}</button><small class="mono">${safe(e.employeeNumber)}</small></td>
       <td>${safe(positions.get(e.positionId)?.title || "—")}<small>${safe(sites.get(e.siteId)?.name || "")}</small></td>
       <td>${safe(e.employmentType)}<small>${safe(e.status.replace("_", " "))}</small></td>
-      <td>${e.profileId ? '<span class="chip good">Linked</span>' : '<span class="chip">No login</span>'}</td>
+      <td>${e.profileId ? '<span class="chip good">Linked</span>' : '<span class="chip">No login</span>'}${!e.profileId && !e.email ? '<small class="warn-text">No email address</small>' : ""}</td>
+      <td>${!e.profileId ? '<span class="muted">—</span>' : e.trainingCount ? `<span class="chip good">${e.trainingCount} assigned</span>` : '<span class="chip">None yet</span>'}</td>
+      <td>${onboardingChip(e)}</td>
       <td>${lic.length ? `<span class="chip ${lic.some(l => l.status === "expired") ? "bad" : "warn"}">${lic.length} licence${lic.length > 1 ? "s" : ""} due</span>` : '<span class="muted">—</span>'}</td>
     </tr>`;
-  }).join("");
+  };
+  const group = (title, note, list) => list.length ? `<tr class="group-row"><td colspan="7">${title} · ${list.length}<small>${note}</small></td></tr>${list.map(personRow).join("")}` : "";
+  const rows = login === "none" ? noLogin : login === "linked" ? linked : matches;
+  root.querySelector("[data-people-body]").innerHTML = login === "all"
+    ? group("No sign-in yet", "Send these people an invitation link or a temporary password.", noLogin) + group("Has a sign-in", "Can already open the training portal and onboarding.", linked)
+    : rows.map(personRow).join("");
   root.querySelector("[data-add-person]").classList.toggle("hidden", !can("people.manage"));
   message(root.querySelector("[data-people-msg]"), rows.length ? (people.truncated ? "Showing the first 2,000 people." : "") : "No one matches this search.");
   renderEditor(root);
@@ -319,6 +338,7 @@ export function bindPeople(root) {
     const target = event.target.closest("button");
     if (!target) return;
     const showPanel = name => root.dispatchEvent(new CustomEvent("people:panel", { detail: name }));
+    if (target.dataset.loginPick) { state.filters.login = target.dataset.loginPick; renderPeople(root); return; }
     if (target.dataset.pick) { state.selected = target.dataset.pick; renderPeople(root); showPanel("person"); window.scrollTo({ top: 0, behavior: "smooth" }); }
     if ("addPerson" in target.dataset) { state.selected = null; renderPeople(root); showPanel("person"); window.scrollTo({ top: 0, behavior: "smooth" }); }
     if ("newPerson" in target.dataset) { state.selected = null; renderEditor(root); }

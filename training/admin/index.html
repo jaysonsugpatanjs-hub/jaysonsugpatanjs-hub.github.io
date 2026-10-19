@@ -5,12 +5,12 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' https://*.supabase.co; font-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'">
 <title>Training Administration | Panalo Pipes</title>
-<link rel="stylesheet" href="../styles.css?v=20261019c">
-<link rel="stylesheet" href="./admin.css?v=20261019c">
-<link rel="stylesheet" href="../theme.css?v=20261019c">
-<link rel="stylesheet" href="../components.css?v=20261019c">
+<link rel="stylesheet" href="../styles.css?v=20261019d">
+<link rel="stylesheet" href="./admin.css?v=20261019d">
+<link rel="stylesheet" href="../theme.css?v=20261019d">
+<link rel="stylesheet" href="../components.css?v=20261019d">
 <script src="../config.js"></script>
-<script type="module" src="./admin.js?v=20261019c"></script>
+<script type="module" src="./admin.js?v=20261019d"></script>
 </head>
 <body>
 <header class="topbar">
@@ -115,7 +115,8 @@
         <section class="portal-card register-card" data-people-panel="register">
           <div class="register-head"><div><p class="eyebrow">EMPLOYEE REGISTER</p><h2>People</h2></div>
             <div class="register-tools"><input data-people-search type="search" placeholder="Search name, number, position or site" aria-label="Search people"><button class="primary hidden" type="button" data-add-person>+ Add person</button></div></div>
-          <div class="table-wrap"><table><thead><tr><th>Person</th><th>Position · site</th><th>Type · status</th><th>Training login</th><th>Licences</th></tr></thead><tbody data-people-body></tbody></table></div>
+          <div class="login-filter" data-login-filter role="group" aria-label="Filter by sign-in"></div>
+          <div class="table-wrap"><table class="people-table"><thead><tr><th>Person</th><th>Position · site</th><th>Type · status</th><th>Sign-in</th><th>Training modules</th><th>Onboarding</th><th>Licences</th></tr></thead><tbody data-people-body></tbody></table></div>
           <p class="form-message" data-people-msg></p>
         </section>
         <div class="people-side">
