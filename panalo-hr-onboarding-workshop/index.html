@@ -1,0 +1,328 @@
+<!doctype html><html lang="en-AU"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Panalo HR Onboarding Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: sticky charcoal header, left task nav (top strip on phones), one working column of "row cards": facts on the left, drop-down answer on the right. */
+:root{
+  --bg:#F1F0ED; --surface:#FFFFFF; --ink:#25221E; --muted:#68625A; --line:#D9D5CC;
+  --accent:#8E6A1E; --accent-fill:#B58D3B; --hdr-bg:#2F2E2C; --hdr-fg:#F4F1EA; --hdr-muted:#B9B2A5;
+  --input-bg:#FFF3CF; --input-ink:#1B3FA6; --input-line:#D8BE73;
+  --good:#1D6A2D; --good-bg:#DCEEDC; --bad:#A3261D; --bad-bg:#F6DCD8; --chip:#ECE8DF;
+  --font-display:'Barlow Semi Condensed','Arial Narrow',Arial,sans-serif;
+  --font-body:'IBM Plex Sans',Arial,sans-serif;
+  --font-mono:'IBM Plex Mono',Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#1A1917; --surface:#252320; --ink:#EDE9E0; --muted:#A59E92; --line:#3B3833;
+  --accent:#D8B056; --accent-fill:#B58D3B; --hdr-bg:#100F0E; --hdr-fg:#F4F1EA; --hdr-muted:#9B9488;
+  --input-bg:#3A3220; --input-ink:#A9C0FF; --input-line:#6B5A2C;
+  --good:#86D395; --good-bg:#1E3A26; --bad:#FF9E95; --bad-bg:#4A2220; --chip:#312E29; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1A1917; --surface:#252320; --ink:#EDE9E0; --muted:#A59E92; --line:#3B3833;
+  --accent:#D8B056; --accent-fill:#B58D3B; --hdr-bg:#100F0E; --hdr-fg:#F4F1EA; --hdr-muted:#9B9488;
+  --input-bg:#3A3220; --input-ink:#A9C0FF; --input-line:#6B5A2C;
+  --good:#86D395; --good-bg:#1E3A26; --bad:#FF9E95; --bad-bg:#4A2220; --chip:#312E29; color-scheme:dark}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:15px;line-height:1.5}
+*{box-sizing:border-box}
+a{color:var(--accent)}
+h1,h2,h3{font-family:var(--font-display);font-weight:700;line-height:1.15;text-wrap:balance;margin:0}
+:focus-visible{outline:2px solid var(--accent-fill);outline-offset:2px}
+
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--hdr-bg);color:var(--hdr-fg);border-bottom:3px solid var(--accent-fill)}
+.top-in{max-width:1180px;margin:0 auto;padding:10px 16px;display:flex;gap:16px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.brand{display:flex;flex-direction:column;min-width:0}
+.brand b{font-family:var(--font-display);font-size:1.15rem;letter-spacing:.02em}
+.brand span{font-size:.78rem;color:var(--hdr-muted)}
+.meter{display:flex;align-items:center;gap:10px;font-size:.8rem;color:var(--hdr-muted)}
+.meter .bar{width:140px;height:8px;background:#ffffff26;border-radius:4px;overflow:hidden}
+.meter .bar i{display:block;height:100%;background:var(--accent-fill);width:0;transition:width .3s}
+.meter strong{color:var(--hdr-fg);font-variant-numeric:tabular-nums}
+
+.shell{max-width:1180px;margin:0 auto;padding-inline:16px;padding-block:20px 64px;display:grid;grid-template-columns:230px minmax(0,1fr);gap:28px}
+nav.side{position:sticky;top:calc(env(safe-area-inset-top,0px) + 76px);align-self:start;display:flex;flex-direction:column;gap:2px}
+nav.side a{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:8px 10px;border-radius:6px;text-decoration:none;color:var(--ink);font-weight:500;font-size:.9rem}
+nav.side a:hover{background:var(--chip)}
+nav.side a[aria-current="page"]{background:var(--hdr-bg);color:var(--hdr-fg)}
+nav.side .sec{font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:12px 10px 4px}
+nav.side .badge{font-family:var(--font-mono);font-size:.72rem;opacity:.85;white-space:nowrap}
+nav.side .badge.done{color:var(--good)}
+nav.side a[aria-current="page"] .badge.done{color:#8FE0A0}
+main{min-width:0}
+
+.pagehead{display:flex;gap:16px;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;margin-bottom:18px}
+.eyebrow{font-size:.74rem;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);font-weight:600;margin:0 0 4px}
+h1{font-size:2rem}
+h2{font-size:1.2rem;margin-bottom:10px}
+.lead{color:var(--muted);max-width:68ch;margin:6px 0 0}
+.score{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 14px;text-align:center;min-width:110px}
+.score b{display:block;font-family:var(--font-display);font-size:1.6rem;font-variant-numeric:tabular-nums}
+.score span{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px 18px;margin-bottom:18px}
+.brief{display:grid;grid-template-columns:110px minmax(0,1fr);gap:10px 16px;margin:0}
+.brief dt{font-weight:600;color:var(--accent);font-size:.82rem;text-transform:uppercase;letter-spacing:.06em;padding-top:2px}
+.brief dd{margin:0;min-width:0}
+.brief ul{margin:0;padding-left:1.1em}
+.mono{font-family:var(--font-mono);font-size:.86em}
+a.dl{color:var(--accent);text-decoration:none;border-bottom:1px solid var(--accent-fill)}
+a.dl:hover{background:var(--chip)}
+
+.rows{display:flex;flex-direction:column;gap:10px;margin-bottom:22px}
+.row{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px 14px;display:grid;grid-template-columns:minmax(0,1fr) minmax(210px,290px);gap:12px 20px;align-items:start}
+.row.ok{border-color:var(--good)}
+.row.no{border-color:var(--bad)}
+.row-head{font-weight:600}
+.row-head small{display:block;font-weight:400;color:var(--muted);font-size:.84rem}
+.facts{display:flex;flex-wrap:wrap;gap:6px 18px;margin:8px 0 0}
+.facts div{min-width:0}
+.facts dt{font-size:.68rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+.facts dd{margin:0;font-variant-numeric:tabular-nums}
+.row-answer label{display:block;font-size:.68rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:3px}
+select,input[type=number],input[type=text],textarea{width:100%;font:inherit;padding:8px 10px;border-radius:6px;border:1px solid var(--input-line);background:var(--input-bg);color:var(--input-ink);font-weight:500}
+textarea{min-height:76px;resize:vertical}
+select{appearance:auto}
+.status{margin:6px 0 0;font-size:.84rem;min-height:1.2em}
+.status.ok{color:var(--good)}
+.status.no{color:var(--bad)}
+.status b{display:inline-block;padding:1px 7px;border-radius:4px;margin-right:6px;font-size:.8rem}
+.status.ok b{background:var(--good-bg)}
+.status.no b{background:var(--bad-bg)}
+.status span{color:var(--muted)}
+
+.ledger{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+.ledger td{padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+.ledger td:nth-child(2){text-align:right;font-weight:600;white-space:nowrap}
+.ledger td:nth-child(3){color:var(--muted);font-size:.86rem}
+.hint{color:var(--muted);font-size:.86rem;margin:8px 0 12px}
+.settings{display:flex;gap:18px;flex-wrap:wrap;align-items:end}
+.settings div{min-width:140px;flex:1 1 160px;max-width:260px}
+.settings .fixed{padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:var(--chip);font-weight:600}
+
+.btn{font:inherit;font-weight:600;padding:8px 14px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer;text-decoration:none;display:inline-block}
+.btn:hover{border-color:var(--accent-fill)}
+.btn.primary{background:var(--hdr-bg);color:var(--hdr-fg);border-color:var(--hdr-bg)}
+.btn.warn{border-color:var(--bad);color:var(--bad)}
+.foot{display:flex;gap:10px;flex-wrap:wrap;justify-content:space-between;margin-top:6px}
+
+.cols5{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}
+.q5{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px 14px}
+.q5 b{display:block;font-family:var(--font-display);font-size:1.05rem;margin-bottom:4px}
+.q5 p{margin:0;color:var(--muted);font-size:.9rem}
+.legend{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.sw{display:flex;gap:10px;align-items:center;font-size:.9rem}
+.sw i{flex:none;width:46px;height:26px;border-radius:5px;border:1px solid var(--line);display:grid;place-items:center;font-style:normal;font-size:.75rem;font-weight:600}
+.tbl-wrap{overflow-x:auto}
+table.prog{width:100%;border-collapse:collapse;min-width:520px;font-variant-numeric:tabular-nums}
+table.prog th{font-size:.7rem;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);text-align:left;padding:6px 8px;border-bottom:2px solid var(--line)}
+table.prog td{padding:8px;border-bottom:1px solid var(--line)}
+.pill{display:inline-block;padding:1px 9px;border-radius:99px;font-size:.78rem;font-weight:600;background:var(--chip)}
+.pill.done{background:var(--good-bg);color:var(--good)}
+.signoff{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.signoff label{display:block;font-size:.72rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:3px}
+.signoff .wide{grid-column:1/-1}
+.example{display:grid;grid-template-columns:minmax(0,1fr) minmax(210px,290px);gap:12px 20px;align-items:center;border:1px dashed var(--line);border-radius:8px;padding:12px 14px}
+.example .fake{padding:8px 10px;border-radius:6px;border:1px solid var(--input-line);background:var(--input-bg);color:var(--input-ink);font-weight:500}
+
+.proc{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px 16px;margin-bottom:10px}
+.proc header{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;margin-bottom:8px}
+.proc header .mono{background:var(--hdr-bg);color:var(--hdr-fg);padding:1px 8px;border-radius:4px}
+.proc h3{font-size:1.1rem}
+.proc .role{color:var(--muted);font-size:.86rem;margin-left:auto}
+.proc .g{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px 20px}
+.proc h4{margin:0 0 3px;font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--accent)}
+.proc ul{margin:0;padding-left:1.1em}
+.proc p{margin:0}
+.proc .note{margin-top:8px;font-size:.84rem;color:var(--muted)}
+.search{max-width:420px;margin-bottom:14px}
+
+.rt{display:flex;flex-direction:column;gap:8px}
+.rt label{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;align-items:start;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 14px;cursor:pointer}
+.rt input{margin-top:4px;width:18px;height:18px;accent-color:var(--accent-fill)}
+.rt .when{font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--accent);font-weight:600}
+.rt .meta{color:var(--muted);font-size:.85rem}
+.rt label:has(input:checked){background:var(--good-bg);border-color:var(--good)}
+
+.keyitem{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr) minmax(0,1.4fr);gap:6px 16px;padding:8px 0;border-bottom:1px solid var(--line)}
+.keyitem b{font-weight:600}
+.keyitem small{color:var(--muted)}
+
+@media (max-width:899px){
+  .shell{grid-template-columns:minmax(0,1fr);gap:14px;padding-block:14px 48px}
+  nav.side{position:static;flex-direction:row;overflow-x:auto;gap:6px;padding-bottom:6px}
+  nav.side a{white-space:nowrap;background:var(--surface);border:1px solid var(--line)}
+  nav.side .sec{display:none}
+  h1{font-size:1.6rem}
+}
+@media (max-width:640px){
+  .row,.example{grid-template-columns:minmax(0,1fr)}
+  .brief{grid-template-columns:minmax(0,1fr);gap:2px}
+  .brief dd{margin-bottom:10px}
+  .keyitem{grid-template-columns:minmax(0,1fr)}
+  .meter .bar{width:90px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+ol.steps{margin:0 0 20px;padding-left:1.3em;display:flex;flex-direction:column;gap:6px;max-width:72ch}
+table.info{width:100%;border-collapse:collapse;background:var(--surface);border:1px solid var(--line);margin-bottom:6px}
+table.info th{text-align:left;font-weight:600;width:34%;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+table.info td{padding:9px 12px;border-bottom:1px solid var(--line);color:var(--ink)}
+.notes{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin:22px 0}
+.note{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px 16px}
+.note h3{font-size:1rem;margin-bottom:6px}
+.note ul{margin:0;padding-left:1.1em}
+.note.tip{border-color:var(--good)}.note.tip h3{color:var(--good)}
+.note.warn{border-color:var(--bad)}.note.warn h3{color:var(--bad)}
+.shots{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;margin:0 0 22px}
+.shot{margin:0;min-width:0}
+.shot figcaption{font-size:.84rem;color:var(--muted);margin-top:6px}
+.win{background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden;box-shadow:0 1px 0 var(--line)}
+.win-bar{display:flex;gap:6px;align-items:center;padding:7px 10px;background:var(--chip);border-bottom:1px solid var(--line)}
+.win-bar i{width:9px;height:9px;border-radius:50%;background:var(--line)}
+.win-bar span{margin-left:8px;font-family:var(--font-mono);font-size:.7rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.win-body{padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+.win-body h4{margin:0;font-family:var(--font-display);font-size:1.05rem;display:flex;justify-content:space-between;gap:8px;align-items:center}
+.mchip{font-family:var(--font-body);font-size:.68rem;font-weight:600;padding:1px 8px;border-radius:99px;background:var(--chip);color:var(--muted);white-space:nowrap}
+.mchip.ok{background:var(--good-bg);color:var(--good)}.mchip.no{background:var(--bad-bg);color:var(--bad)}
+.mf{position:relative}
+.mf label{display:block;font-size:.66rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:2px}
+.mf div.v{border:1px solid var(--input-line);background:var(--input-bg);color:var(--input-ink);border-radius:5px;padding:6px 9px;font-size:.88rem;font-weight:500;min-height:31px;overflow-wrap:anywhere}
+.mf.file div.v{border-style:dashed;display:flex;gap:8px;align-items:center}
+.mrow{display:flex;gap:8px;flex-wrap:wrap;position:relative}
+.mbtn{position:relative;font-size:.82rem;font-weight:600;padding:6px 12px;border-radius:5px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+.mbtn.p{background:var(--hdr-bg);color:var(--hdr-fg);border-color:var(--hdr-bg)}
+.mitem{display:flex;justify-content:space-between;gap:8px;align-items:center;border:1px solid var(--line);border-radius:6px;padding:7px 10px;font-size:.86rem;position:relative}
+.mnote{font-size:.78rem;color:var(--muted)}
+.mn{position:absolute;top:-8px;right:-6px;width:20px;height:20px;border-radius:50%;background:var(--accent-fill);color:#fff;font-size:.72rem;font-weight:700;display:grid;place-items:center;border:2px solid var(--surface)}
+.mbtn .mn,.mitem .mn{top:-9px}
+.mleg{margin:6px 0 0;padding-left:1.2em;font-size:.84rem}
+@media (max-width:640px){table.info th{width:40%}}
+</style>
+
+<style>html{color-scheme:light}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style></head><body><header class="top"><div class="top-in">
+  <div class="brand"><b>Panalo Pipes · Adding and removing people (HR)</b><span>Information sheet · examples are made up</span></div>
+  
+</div></header>
+<div class="shell">
+  <nav class="side" id="nav" aria-label="Workshop sections"></nav>
+  <main id="main" tabindex="-1"></main>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+/* Every name, number and date below is made up. */
+const SECTIONS = [
+{id:'s1', title:'Before you start: who can do what', who:'HR and authorised staff', intro:'What you can see and do on the admin page depends on the permissions on your account. If a button or sidebar item is missing, you do not have that permission.',
+ steps:['Go to the admin page: the training portal address followed by <b>/admin/</b>. Sign in with your own account.','Look at the left sidebar. <b>People</b>, <b>Onboarding</b> and <b>HR files</b> sit under <b>People &amp; HR</b>.','If you need a permission you do not have, ask a system administrator. Do not use someone else\'s sign-in.'],
+ tables:[{title:'Permissions used in this guide',rows:[['Manage the people register','Add and edit people, licences, positions and sites'],['HR onboarding and records','Send onboarding requests, review documents including tax, bank and ID, attach and finalise contracts'],['Sign-in and access','Create logins, issue temporary passwords, disable sign-in, set permissions and document groups'],['Training administration','Assign training and publish modules']]}],
+ tips:['One person can hold all of these. Others may hold only some, for example HR can review documents but a system administrator creates logins.','Everything you open or view here is recorded in the audit log.'],
+ warn:['Tax file numbers, bank details and ID are sensitive. Open them only when you need to, and never copy them into email or chat.']},
+
+{id:'s2', title:'Add a person to the register', who:'Needs: manage the people register', intro:'Every employee and contractor starts as a person on the register. Onboarding can only be sent to someone who is on it.',
+ steps:['In the sidebar, open <b>People</b>, then <b>Add / edit person</b>. (Or press <b>+ Add person</b> on the Employee register.)','Fill in the details (see the table).','Press <b>Add person</b>. They appear in the Employee register.','Check the email address carefully. It becomes their username.'],
+ tables:[{title:'Fields',rows:[['Employee number','Required. Use your numbering, e.g. PP-0042'],['Type','applicant for a new employee, contractor for a contractor, employee once they have started'],['Full legal name','As on their ID'],['Email','Required to give them a sign-in. Must be their own address'],['Position and Site','From the lists. Add a new one under Positions & required training if missing'],['Supervisor','Optional'],['Status','applicant until they start, then active'],['Start date / End date','Start date when known. Leave End date blank']]}],
+ tips:['Choosing <b>contractor</b> as the type gives them the contractor checklist automatically. For an applicant who will work as a contractor you can instead tick the contractor box when you send onboarding (section 4).','Use the search box on the register to check the person is not already there before adding.'],
+ warn:['A wrong email sends the invitation, and later their private documents, to the wrong person. Check it twice.']},
+
+{id:'s3', title:'Give them a sign-in', who:'Needs: sign-in and access', intro:'A person needs a sign-in before they can see their onboarding checklist. You can do this here, or let the onboarding request create it (section 4).',
+ steps:['Open <b>People</b>, then the person (click their name in the register).','Scroll to <b>Sign-in and access</b>. It shows their username (their email).','Choose <b>Email an invitation link</b> (they set their own password) or <b>Create temporary password</b>.','For a temporary password, a box shows it once. Give it to them by phone, SMS or in person, not by email, then press <b>I\'ve recorded it</b>.'],
+ tables:[{title:'Later changes on the same panel',rows:[['Issue new temporary password','Their current password stops working'],['Disable sign-in','Signs them out of everything. Records are kept'],['Enable sign-in','Turns it back on'],['What they can access','Position default, Allow or Deny for each area']]}],
+ tips:['They must change a temporary password the first time they sign in.','Prefer the invitation link when you can. You never see their password.'],
+ warn:['The temporary password is shown only once. If it is lost, issue a new one.']},
+
+{id:'s4', title:'Send the onboarding request', who:'Needs: HR onboarding and records', intro:'This sends the person their checklist: the documents they must fill in, upload or sign.',
+ steps:['Open <b>Onboarding</b> in the sidebar.','Under <b>Send onboarding link</b>, choose the <b>Person</b> from the register. Anyone with an open request is greyed out.','For someone who will work as a contractor, tick <b>This person is a contractor</b>. The list changes to contractor documents.','Check the document list. Required items are ticked. Untick or tick optional ones.','Set <b>Due by</b>, choose how they will sign in, and add a short message if you like.','Press <b>Send request</b>.'],
+ tables:[{title:'The document list',rows:[['Fill in','A form on the portal, e.g. personal details, tax declaration, bank details'],['Photo/PDF','They upload a file, e.g. White Card, insurance certificate'],['Sign online','The employment contract (employees)'],['Optional / Sensitive','Optional items can be left out. Sensitive items are only visible to authorised HR']]},
+  {title:'Employee or contractor?',rows:[['Employee','Personal details, right to work, photo ID, emergency contact, tax, super, bank, acknowledgements, tickets, contract'],['Contractor','Personal details, right to work, photo ID, emergency contact, White Card, tickets, ABN, insurance, contractor agreement']]}],
+ tips:['Send the New starter onboarding guide link with your message so they know how to fill it in.','Add the person to the register first. The form reminds you.'],
+ warn:['Choose employee or contractor before sending. Check the list under "Documents for ...".']},
+
+{id:'s5', title:'Review what they send', who:'Needs: HR onboarding and records', intro:'As people send items, the request shows how many need your review.',
+ steps:['In <b>Onboarding</b>, the list shows each request with <i>Waiting on applicant</i>, <i>N to review</i>, <i>Complete</i> or <i>Cancelled</i>.','Click the person\'s name to open the request.','Read each item. Sensitive answers are hidden: press <b>Show</b> only when needed. File links last two minutes.','Press <b>Accept</b> if it is correct, or <b>Send back</b> and type what they must fix. They see your message as Needs fixing.','To accept many at once, use <b>Accept everything waiting for review</b> after checking each.'],
+ tables:[{title:'Item statuses',rows:[['Not filled in / Nothing uploaded','They have not sent it yet'],['Waiting for review','They sent it. Accept or send back'],['Accepted','Done'],['Sent back','They must correct it and send again']]}],
+ tips:['Be specific when sending back: "Expiry date is cut off. Retake the photo flat."','You can cancel an open request with a reason if it was sent by mistake.'],
+ warn:['Opening answers and viewing files is logged under your name.']},
+
+{id:'s6', title:'Contracts: attach, sign and finalise', who:'Employees · needs: HR onboarding and records', intro:'The employment contract is signed online. You attach it, the employee signs, then you stamp and file the finished copy.',
+ steps:['Open the request, then the contract item. Type a <b>Document name</b> and press <b>Upload contract (PDF)</b>. PDF only, up to 20 MB.','The employee can download it, fill in a copy and upload it. Their copy appears under <b>Filled-in copies from the applicant</b>. Check it, then attach the final PDF as the contract. They sign that version.','When they have signed, use the <b>Finalize</b> panel: press <b>Place the signature on the contract</b> and click where the signature and date go.','To also sign for Panalo, tick <b>Also sign for Panalo</b>, enter the name and position, and type or write the signature.','Press <b>Preview signed contract</b>, check it, then <b>Finalize &amp; file</b>. The finished copy is filed in the HR folder.'],
+ tables:[{title:'Good to know',rows:[['Contract format','PDF. Save Word files as PDF first'],['Several documents','The employee signs once and covers every file listed'],['Panalo signatory','Usually the Managing Director or the HR representative'],['Where it is filed','The HR folder, only when you finalise']]}],
+ tips:['Download and read their filled-in copy before attaching the final PDF.','Place the signature on a clear area of the page.'],
+ warn:['Finalise only after the preview looks right.']},
+
+{id:'s7', title:'Access, training and the onboarding guide', who:'Needs: training administration', intro:'Once onboarding is under way or complete, give the person the training and access for their role.',
+ steps:['Open <b>People</b> and click the person. Find <b>Role pathway</b>.','Tick the training modules, role workshops and document folders to give. The <b>New starter onboarding guide</b> is ticked for everyone.','Set <b>Access ends after</b> and press <b>Grant ticked items</b>.','Use <b>Positions &amp; required training</b> to set what each position needs and its default access.'],
+ tables:[{title:'Access settings',rows:[['Position default','What their position normally allows'],['Allow / Deny','Override for one person only'],['Document folder groups','Which document folders they can open'],['Access ends after','A date. Review before it passes']]}],
+ tips:['Set up positions once. Then new people inherit sensible access.','Use Deny for a single area you do not want someone to have.'],
+ warn:['They need a sign-in before access can be granted. The button is greyed out until then.']},
+
+{id:'s8', title:'When someone leaves, or you made a mistake', who:'Needs: manage the people register and sign-in and access', intro:'People are not deleted. Records must be kept. Instead you close their record and turn off their access.',
+ steps:['Open <b>People</b> and click the person. Set <b>Status</b> to <i>terminated</i> and enter the <b>End date</b>. Press <b>Save changes</b>.','In <b>Sign-in and access</b>, press <b>Disable sign-in</b> and confirm. They are signed out of everything and their records are kept.','In <b>Onboarding</b>, open any open request for them and press <b>Cancel request</b>. Give a short reason.','To take back one area of access, set it to <b>Deny</b> in the access table.','If they return, set Status back and press <b>Enable sign-in</b>.'],
+ tables:[{title:'Fixing mistakes',rows:[['Wrong detail on the register','Open the person, correct it and Save changes'],['Wrong licence record','Press Delete beside it. The deletion is audited'],['Request sent to the wrong person','Cancel request with a reason, then send a new one'],['Sign-in created with the wrong email','Correct the email, then issue a new invitation']]}],
+ tips:['Do all three: set terminated, disable sign-in, cancel open requests.','Keep the End date accurate. Reports and licence tracking use it.'],
+ warn:['Disabling sign-in signs them out at once. Do it at the right time.']}
+];
+const SHOTS = {
+s1:[{cap:'The sidebar items you see depend on your permissions.',url:'training portal · admin',head:'People & HR',items:[['People','',''],['Onboarding','',''],['HR files','','']],legend:[]}],
+s2:[{cap:'People › Add / edit person.',url:'admin · people · new person',head:'Add to the register',fields:[{l:'Employee number',v:'PP-0042'},{l:'Type',v:'applicant',n:1},{l:'Full legal name',v:'Sam Rivera'},{l:'Email (links their training login)',v:'sam.rivera@example.com',n:2},{l:'Position · Site',v:'Welder · Workshop'}],btns:[{t:'Add person',p:1,n:3}],legend:['Applicant for a new employee, contractor for a contractor.','Their username. Check it.','Saves them to the register.']}],
+s3:[{cap:'Sign-in and access, on the person\'s page.',url:'admin · people · Sam Rivera',head:'Sign-in and access',fields:[{l:'Username',v:'sam.rivera@example.com'}],btns:[{t:'Email an invitation link',n:1},{t:'Create temporary password',n:2}],note:'No sign-in yet.',legend:['They set their own password.','Shown once. Pass it on by phone or in person.']}],
+s4:[{cap:'Onboarding › Send onboarding link.',url:'admin · onboarding',head:'Request details',fields:[{l:'Person',v:'Sam Rivera · applicant',n:1},{l:'☑ This person is a contractor',v:'Ticked: contractor documents shown',n:2},{l:'Documents for contractors',v:'☑ ABN details  ☑ Public liability  ☑ White Card'},{l:'Due by',v:'26/10/2026'}],btns:[{t:'Send request',p:1,n:3}],legend:['Choose from the register.','Only for someone who will work as a contractor.','Sends their checklist.']}],
+s5:[{cap:'Open a request, then accept or send back each item.',url:'admin · onboarding · Sam Rivera',head:'Sam Rivera',chip:['2 to review','no'],items:[['Bank details','Waiting for review',''],['Photo ID','Accepted','ok'],['White Card','Sent back','no']],btns:[{t:'Accept',p:1,n:1},{t:'Send back',n:2}],legend:['Item is correct.','Type what they must fix.']}],
+s6:[{cap:'Attach the contract, then finalise after they sign.',url:'admin · onboarding · contract',head:'Employment contract',chip:['Signed','ok'],fields:[{l:'Document name',v:'Employment contract'}],btns:[{t:'Upload contract (PDF)',n:1},{t:'Place the signature on the contract',n:2}],btns2:[{t:'Preview signed contract',n:3},{t:'Finalize & file',p:1,n:4}],legend:['PDF only, up to 20 MB.','Click where the signature goes.','Check before filing.','Files it in the HR folder.']}],
+s7:[{cap:'Role pathway on the person\'s page.',url:'admin · people · Sam Rivera',head:'Role pathway · Welder',fields:[{l:'Training',v:'☑ Welding induction'},{l:'Workshops',v:'☑ New starter onboarding guide ☑ Welders and Fabricators'},{l:'Access ends after',v:'19/04/2027'}],btns:[{t:'Grant ticked items',p:1,n:1}],legend:['Needs a sign-in first.']}],
+s8:[{cap:'Close the record, then turn off access.',url:'admin · people · Sam Rivera',head:'Edit person',fields:[{l:'Status',v:'terminated',n:1},{l:'End date',v:'30/11/2026',n:2}],btns:[{t:'Save changes',p:1},{t:'Disable sign-in',n:3}],legend:['Do not delete: set terminated.','Keep it accurate.','Signs them out. Records are kept.']}]
+};
+function shotHTML(x){
+  const n=v=>v?`<span class="mn">${v}</span>`:'';
+  const f=(x.fields||[]).map(q=>`<div class="mf${q.file?' file':''}"><label>${esc(q.l)}</label><div class="v">${esc(q.v)}</div>${n(q.n)}</div>`).join('');
+  const it=(x.items||[]).map(q=>`<div class="mitem"><span>${esc(q[0])}</span><span class="mchip ${q[2]}">${esc(q[1])}</span></div>`).join('');
+  const b=a=>a&&a.length?`<div class="mrow">${a.map(q=>`<span class="mbtn${q.p?' p':''}">${esc(q.t)}${n(q.n)}</span>`).join('')}</div>`:'';
+  const chip=x.chip?`<span class="mchip ${x.chip[1]||''}">${esc(x.chip[0])}</span>`:'';
+  return `<figure class="shot"><div class="win" role="img" aria-label="${esc(x.cap)}"><div class="win-bar"><i></i><i></i><i></i><span>${esc(x.url)}</span></div>
+   <div class="win-body"><h4>${esc(x.head)}${chip}</h4>${it}${f}${b(x.btns)}${b(x.btns2)}${x.note?`<div class="mnote">${esc(x.note)}</div>`:''}</div></div>
+   <figcaption>${esc(x.cap)}${x.legend?`<ol class="mleg">${x.legend.map(l=>`<li>${esc(l)}</li>`).join('')}</ol>`:''}</figcaption></figure>`;
+}
+
+let route='start';
+function buildNav(){
+  $('#nav').innerHTML = '<div class="sec">Guide</div><a href="#start"'+(route==='start'?' aria-current="page"':'')+'>Start here</a><div class="sec">Sections</div>'+
+    SECTIONS.map((s,i)=>`<a href="#${s.id}"${s.id===route?' aria-current="page"':''}>${i+1} · ${esc(s.title)}</a>`).join('');
+}
+function viewStart(){
+  const rows=[['Add a person to the register','People › Add / edit person','Manage the people register','2'],['Give them a sign-in','People › person › Sign-in and access','Sign-in and access','3'],['Send the onboarding request','Onboarding','HR onboarding and records','4'],['Review and accept documents','Onboarding › open request','HR onboarding and records','5'],['Attach and finalise contracts','Onboarding › contract item','HR onboarding and records','6'],['Grant training and access','People › person › Role pathway','Training administration','7'],['Remove a leaver or fix a mistake','People › person; Onboarding','Manage the people register; Sign-in and access','8']];
+  return `<div class="pagehead"><div><p class="eyebrow">Information sheet · for HR</p><h1>Adding and removing employees and contractors</h1>
+    <p class="lead">How an HR representative, or anyone with authority to add or remove people, sets up a new employee or contractor and closes the record when they leave.</p></div></div>
+  <section class="panel"><dl class="brief">
+    <dt>Who it is for</dt><dd>HR representatives and staff who hold the people, onboarding or sign-in permissions. Each section says which permission it needs.</dd>
+    <dt>The order</dt><dd>Add the person · give a sign-in · send onboarding · review · contract · access and training. When they leave: set terminated, disable sign-in, cancel open requests.</dd>
+    <dt>Examples</dt><dd>Every name, number and date here is made up. The pictures are illustrations of the admin page, not screenshots.</dd>
+    <dt>Privacy</dt><dd>Tax, bank and ID details are sensitive and every view is logged. Open them only when needed.</dd></dl></section>
+  <h2>Where to find each job</h2>
+  <div class="tbl-wrap"><table class="prog"><thead><tr><th>Job</th><th>Where</th><th>Permission</th><th>Section</th></tr></thead><tbody>
+  ${rows.map(r=>`<tr><td>${esc(r[0])}</td><td>${esc(r[1])}</td><td>${esc(r[2])}</td><td>${r[3]}</td></tr>`).join('')}</tbody></table></div>
+  <h2 style="margin-top:22px">The short version</h2>
+  <div class="cols5" style="margin-bottom:22px">
+    <div class="q5"><b>1 · Register</b><p>Add the person with the right type and a correct email.</p></div>
+    <div class="q5"><b>2 · Sign-in</b><p>Invitation link, or a temporary password given in person.</p></div>
+    <div class="q5"><b>3 · Onboard</b><p>Send the checklist. Tick contractor when it applies.</p></div>
+    <div class="q5"><b>4 · Review</b><p>Accept or send back with a clear reason. Finalise contracts.</p></div>
+    <div class="q5"><b>5 · Leave</b><p>Terminated, sign-in disabled, requests cancelled. Nothing deleted.</p></div></div>`;
+}
+function viewSection(s,i){
+  const nx=SECTIONS[i+1], pv=SECTIONS[i-1];
+  return `<div class="pagehead"><div><p class="eyebrow">Section ${i+1} of ${SECTIONS.length} · <span class="pill">${esc(s.who)}</span></p><h1>${esc(s.title)}</h1><p class="lead">${esc(s.intro)}</p></div></div>
+  <h2>What to do</h2><ol class="steps">${s.steps.map(x=>`<li>${x}</li>`).join('')}</ol>
+  ${SHOTS[s.id]?`<h2>What it looks like</h2><div class="shots">${SHOTS[s.id].map(shotHTML).join('')}</div><p class="hint" style="margin-top:-12px">Illustrations with made-up data. Your screen may look slightly different.</p>`:''}
+  ${s.tables.map(t=>`<h2>${esc(t.title)}</h2><div class="tbl-wrap"><table class="info"><tbody>${t.rows.map(r=>`<tr><th scope="row">${esc(r[0])}</th><td>${esc(r[1])}</td></tr>`).join('')}</tbody></table></div>`).join('')}
+  <div class="notes"><div class="note tip"><h3>Tips</h3><ul>${s.tips.map(x=>`<li>${x}</li>`).join('')}</ul></div>
+  <div class="note warn"><h3>Watch out</h3><ul>${s.warn.map(x=>`<li>${x}</li>`).join('')}</ul></div></div>
+  <div class="foot">${pv?`<a class="btn" href="#${pv.id}">Back: ${esc(pv.title)}</a>`:`<a class="btn" href="#start">Back to start</a>`}${nx?`<a class="btn primary" href="#${nx.id}">Next: ${esc(nx.title)}</a>`:`<a class="btn primary" href="#start">Back to start</a>`}</div>`;
+}
+function render(){
+  const h=location.hash.slice(1); route=SECTIONS.some(s=>s.id===h)?h:'start';
+  const i=SECTIONS.findIndex(s=>s.id===route);
+  $('#main').innerHTML = i>=0 ? viewSection(SECTIONS[i],i) : viewStart();
+  buildNav();
+}
+window.addEventListener('hashchange',()=>{render();window.scrollTo(0,0);});
+render();
+</script></body></html>
