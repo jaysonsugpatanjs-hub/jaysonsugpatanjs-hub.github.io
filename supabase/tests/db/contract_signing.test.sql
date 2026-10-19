@@ -44,6 +44,9 @@ begin
   -- The new item exists as a sign item; the old upload-a-signed-copy one is retired.
   perform pg_temp.eq((select kind from public.hr_document_types where key = 'contract_esign'), 'sign', 'contract_esign is a sign item');
   perform pg_temp.eq((select active from public.hr_document_types where key = 'contract'), false, 'old contract upload item is retired');
+  perform pg_temp.eq((select kind from public.hr_document_types where key = 'contractor_esign'), 'sign', 'contractor_esign is a sign item');
+  perform pg_temp.eq((select applies_to::text from public.hr_document_types where key = 'contractor_esign'), '{contractor}', 'contractor_esign is for contractors');
+  perform pg_temp.eq((select active from public.hr_document_types where key = 'contractor_agreement'), false, 'old contractor upload item is retired');
   perform pg_temp.expect_error(format('select public.onboarding_create(%L, %L, %L, null, %L)', pg_temp.s('boss'), v_emp, '{contract}', ''), 'Unknown document');
 
   v_req := public.onboarding_create(pg_temp.s('boss'), v_emp, '{contract_esign}', null, '');

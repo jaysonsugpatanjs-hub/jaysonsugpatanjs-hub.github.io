@@ -43,7 +43,7 @@ function signHtml(i) {
       <span class="row-actions"><button type="button" class="secondary-action small" data-sign-view="${safe(d.id)}">View</button>${i.canChangeContract
         ? `<button type="button" class="revoke" data-sign-remove="${safe(d.id)}">Remove</button>` : ""}</span></li>`).join("")}</ul>` : "";
   const upload = i.canChangeContract ? `<div class="add-file">
-      <div class="field onb-field"><label for="sign-label-${id}">Document name</label><input id="sign-label-${id}" data-sign-label maxlength="80" value="Employment contract"></div>
+      <div class="field onb-field"><label for="sign-label-${id}">Document name</label><input id="sign-label-${id}" data-sign-label maxlength="80" value="${safe(i.name || "Employment contract")}"></div>
       <label class="upload-button"><input type="file" accept=".pdf,application/pdf" data-sign-upload="${id}"><span>${i.signDocs?.length ? "Add another PDF" : "Upload contract (PDF)"}</span></label>
       <small class="muted">${i.signDocs?.length
         ? "The applicant signs once and covers every file listed."

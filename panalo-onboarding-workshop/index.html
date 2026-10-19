@@ -238,10 +238,10 @@ const SECTIONS = [
  warn:['A wrong TFN or bank number is rejected and delays your pay. If unsure, ask HR before sending.']},
 
 {id:'s4', title:'Contractor details', who:'Contractors only', intro:'HR ticks "This person is a contractor" on your record, so your checklist is different. You will not see TFN, super, bank, Fair Work, casual or employment-contract items.',
- steps:['Complete personal details, right to work, photo ID and emergency contact (section 2).','Open <b>ABN details</b> and fill in the form.','Upload your White Card, tickets, public liability and workers compensation certificates (section 5).','Upload your signed contractor agreement.'],
+ steps:['Complete personal details, right to work, photo ID and emergency contact (section 2).','Open <b>ABN details</b> and fill in the form.','Upload your White Card, tickets, public liability and workers compensation certificates (section 5).','Open <b>Contractor agreement</b>, read it, then sign online (section 6 works the same way for contractors).'],
  tables:[
   {title:'ABN details',rows:[['ABN','11 digits, e.g. 12 345 678 901 (spaces are fine, the number is checked)'],['Business name','Dana Welding Pty Ltd'],['GST','Yes or no: are you registered for GST?']]},
-  {title:'Insurance and agreement',rows:[['Public liability','Current certificate (not expired)'],['Workers compensation','Current certificate'],['Contractor agreement','Signed and dated: one PDF, or clear photos of every signed page']]}],
+  {title:'Insurance and agreement',rows:[['Public liability','Current certificate (not expired)'],['Workers compensation','Current certificate'],['Contractor agreement','HR attaches it. Read it, download and fill in a copy if needed, then sign online']]}],
  tips:['Get renewed certificates from your insurer before you upload.','If you see employee items by mistake (or the reverse), tell HR. They can switch your checklist.'],
  warn:['An expired certificate cannot be accepted.']},
 
@@ -251,7 +251,7 @@ const SECTIONS = [
  tips:['Phone photos (including HEIC) are fine.','Use good light and lay the card flat so nothing is cut off.'],
  warn:['A blurry photo or one that cuts off the expiry date will come back as <b>Needs fixing</b>.']},
 
-{id:'s6', title:'Your contract: download, fill in, upload, sign', who:'Employees', intro:'HR adds your employment contract to your checklist. You can read it, fill in your copy, upload it, and then sign online.',
+{id:'s6', title:'Your contract: download, fill in, upload, sign', who:'Employees and contractors', intro:'HR adds your employment contract to your checklist. You can read it, fill in your copy, upload it, and then sign online.',
  steps:['Open the contract item and read it. Press <b>Download</b> to save a copy.','Open the copy in Word or a PDF reader, fill in any blank details and save it.','In the <b>Fill it in first</b> box, upload your filled-in copy as a PDF or Word file. You can remove it and upload another.','Sign online: type your full name exactly as it appears on the register, or draw your signature. No printing or scanning.'],
  tables:[{title:'Signing',rows:[['Typed signature','Must match your name on the register, e.g. Alex J. Morgan'],['Drawn signature','Use your finger or mouse in the signature box'],['Copy upload','PDF or Word']]}],
  tips:['Uploading your copy does not replace signing. You still sign online.','Your uploaded copy is visible only to you and HR.'],
@@ -305,7 +305,7 @@ function viewStart(){
     <dt>Need help?</dt><dd>Ask HR before you send if anything is unclear.</dd></dl></section>
   <h2>Your checklist</h2>
   <div class="tbl-wrap"><table class="prog"><thead><tr><th>Item</th><th>Employee</th><th>Contractor</th><th>Section</th></tr></thead><tbody>
-   ${[['Personal details','Yes','Yes','2'],['Right to work','Yes','Yes','2'],['Photo ID','Yes','Yes','2'],['Emergency contact','Yes','Yes','2'],['Tax file number declaration','Yes','No','3'],['Super choice','Yes','No','3'],['Bank details','Yes','No','3'],['Fair Work / casual acknowledgements','Yes','No','3'],['White Card and tickets','Yes','Yes','5'],['ABN details','No','Yes','4'],['Public liability and workers compensation','No','Yes','4, 5'],['Contractor agreement (signed, uploaded)','No','Yes','4'],['Employment contract (sign online)','Yes','No','6']].map(r=>`<tr><td>${esc(r[0])}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td></tr>`).join('')}
+   ${[['Personal details','Yes','Yes','2'],['Right to work','Yes','Yes','2'],['Photo ID','Yes','Yes','2'],['Emergency contact','Yes','Yes','2'],['Tax file number declaration','Yes','No','3'],['Super choice','Yes','No','3'],['Bank details','Yes','No','3'],['Fair Work / casual acknowledgements','Yes','No','3'],['White Card and tickets','Yes','Yes','5'],['ABN details','No','Yes','4'],['Public liability and workers compensation','No','Yes','4, 5'],['Contractor agreement (sign online)','No','Yes','4, 6'],['Employment contract (sign online)','Yes','No','6']].map(r=>`<tr><td>${esc(r[0])}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td></tr>`).join('')}
   </tbody></table></div>
   <h2 style="margin-top:22px">The short version</h2>
   <div class="cols5" style="margin-bottom:22px">
