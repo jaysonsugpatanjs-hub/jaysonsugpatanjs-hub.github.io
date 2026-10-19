@@ -47,7 +47,7 @@ function signHtml(i) {
       <label class="upload-button"><input type="file" accept=".pdf,application/pdf" data-sign-upload="${id}"><span>${i.signDocs?.length ? "Add another PDF" : "Upload contract (PDF)"}</span></label>
       <small class="muted">${i.signDocs?.length
         ? "The applicant signs once and covers every file listed."
-        : "PDF only, up to 20 MB. Save Word files as PDF first. The applicant can sign as soon as a file is attached."}</small>
+        : "PDF only, up to 20 MB. Save Word files as PDF first. The applicant can sign as soon as a file is attached."}${i.status === "uploaded" ? " They have already signed: changing the contract sends it back so they sign the new version." : ""}</small>
       <p class="form-message" data-sign-msg role="status" aria-live="polite"></p></div>` : "";
   const finalize = i.canFinalize ? `<div class="finalize-panel" data-finalize="${id}">
       <p class="eyebrow">FINALIZE</p>

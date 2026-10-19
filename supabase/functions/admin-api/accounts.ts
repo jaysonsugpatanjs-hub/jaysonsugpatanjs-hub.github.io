@@ -246,7 +246,7 @@ async function onboardingDetail(admin: Client, actor: Actor, body: any) {
         answers: (typeMap.get(i.doc_type) as any)?.kind === "sign" ? describeSignature(i.answers) : describeAnswers(i.doc_type, i.answers), submittedAt: i.submitted_at,
         signDocs: signDocs.get(i.id) || [],
         copies: copies.get(i.id) || [],
-        canChangeContract: data.status === "open" && ["pending", "rejected"].includes(i.status),
+        canChangeContract: data.status === "open" && ["pending", "rejected", "uploaded"].includes(i.status),
         canFinalize: data.status === "open" && i.status === "uploaded" && (typeMap.get(i.doc_type) as any)?.kind === "sign",
         hasHandwriting: Boolean(signatureImagePath(i.answers)),
         files: (i.onboarding_files || [])
@@ -403,7 +403,7 @@ async function signItem(admin: Client, itemId: string) {
 
 function mayChangeContract(item: any) {
   if (item.onboarding_requests?.status !== "open") throw httpError(409, "This onboarding request is closed.");
-  if (!["pending", "rejected"].includes(item.status)) throw httpError(409, "The contract has been signed. Send it back first if it needs to change.");
+  if (!["pending", "rejected", "uploaded"].includes(item.status)) throw httpError(409, "HR has accepted and filed this contract, so it can no longer be changed.");
 }
 
 async function onboardingSignPrepare(admin: Client, _actor: Actor, body: any) {

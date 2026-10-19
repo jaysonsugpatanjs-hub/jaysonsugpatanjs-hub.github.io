@@ -97,13 +97,11 @@ begin
 
   -- Signed means signed: no second signature, no swapping the contract underneath it.
   perform pg_temp.expect_error(format('select public.onboarding_record_signature(%L, %L, %L, %L, %L, null)', pg_temp.s('applicant'), v_item, 'typed', 'Jose Dela Cruz', v_text), 'already signed');
-  perform pg_temp.expect_error(format('select public.onboarding_sign_doc_remove(%L, %L)', pg_temp.s('boss'), v_doc), 'has been signed');
-  perform pg_temp.expect_error(format('select public.onboarding_sign_doc_add(%L, %L, %L, %L, %L, %L, 100)', pg_temp.s('boss'), v_item, v_req || '/' || v_item || '/new.pdf', 'new.pdf', 'Replacement', v_sha), 'has been signed');
-
-  -- HR sends it back (the contract needs changing); they can swap the file and the applicant re-signs by hand.
-  perform public.onboarding_review(pg_temp.s('boss'), v_item, false, 'Wrong start date in the contract');
-  perform pg_temp.eq((select status from public.onboarding_items where id = v_item), 'rejected', 'sent back');
+  -- HR can change the contract even after it is signed: the item goes back to the person to sign the new version.
   perform public.onboarding_sign_doc_remove(pg_temp.s('boss'), v_doc);
+  perform pg_temp.eq((select status from public.onboarding_items where id = v_item), 'rejected', 'changing a signed contract sends it back');
+  perform pg_temp.eq((select reject_reason like 'HR updated your contract%' from public.onboarding_items where id = v_item), true, 'the person is told why');
+  perform pg_temp.eq((select count(*)::int from public.training_audit_events where event_type = 'onboarding_contract_changed_after_signing'), 1, 'the change after signing is audited');
   v_hash := repeat('b', 64);
   perform public.onboarding_sign_doc_add(pg_temp.s('boss'), v_item, v_req || '/' || v_item || '/contract-2.pdf', 'Contract v2.pdf', 'Employment contract', v_hash, 4096);
   v_res := public.onboarding_record_signature(pg_temp.s('applicant'), v_item, 'drawn', 'ignored', v_text, v_req || '/' || v_item || '/signature-abc123.png');
