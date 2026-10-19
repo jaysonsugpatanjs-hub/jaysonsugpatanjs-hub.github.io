@@ -331,11 +331,11 @@ Deno.test("contract signing: HR attaches the contract, the applicant signs, HR a
   if (item.status !== "uploaded" || item.signed?.name !== "Contract Signer" || item.signed?.method !== "typed" || !item.signed?.at || item.answers !== null) throw new Error(`signed state wrong: ${JSON.stringify(item)}`);
   expectStatus(await sign({ method: "typed", name: "Contract Signer" }), 409, "already signed");
 
-  // Once signed, HR cannot swap the contract underneath the signature.
-  expectStatus(await call(adminApi, HR, { action: "onboarding_sign_prepare", itemId: item.id, fileName: "other.pdf", size: 100 }), 409, "no new files once signed");
-  expectStatus(await call(adminApi, HR, { action: "onboarding_sign_remove", docId: item.signDocs[0].id }), 409, "cannot remove once signed");
+  // HR may now change a contract after it is signed (that sends it back to be signed again, covered by the
+  // database test); the person's signature stays on record until then.
+  await ok(adminApi, HR, { action: "onboarding_sign_prepare", itemId: item.id, fileName: "other.pdf", size: 100 });
   detail = (await ok(adminApi, HR, { action: "onboarding_detail", requestId: sent.requestId })).items.find((i: any) => i.id === item.id);
-  if (detail.canChangeContract || detail.status !== "uploaded") throw new Error("contract should be locked after signing");
+  if (!detail.canChangeContract || detail.status !== "uploaded") throw new Error("HR should still be able to change a signed contract that is waiting for review");
   const rows = Object.fromEntries(detail.answers.map((r: any) => [r.label, r.value]));
   if (rows["Signed by"] !== "Contract Signer" || !/Typed their full name \("contract SIGNER"\)/.test(rows["How they signed"]) || rows["Contract file: Employment contract"] !== `SHA-256 ${await sha256(pdfV1)}`) throw new Error(`HR cannot see what was signed: ${JSON.stringify(rows)}`);
   expectStatus(await call(adminApi, HR, { action: "onboarding_sign_view", itemId: item.id }), 404, "a typed signature has no image");
