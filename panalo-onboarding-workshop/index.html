@@ -172,6 +172,29 @@ table.info td{padding:9px 12px;border-bottom:1px solid var(--line);color:var(--i
 .note ul{margin:0;padding-left:1.1em}
 .note.tip{border-color:var(--good)}.note.tip h3{color:var(--good)}
 .note.warn{border-color:var(--bad)}.note.warn h3{color:var(--bad)}
+.shots{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;margin:0 0 22px}
+.shot{margin:0;min-width:0}
+.shot figcaption{font-size:.84rem;color:var(--muted);margin-top:6px}
+.win{background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden;box-shadow:0 1px 0 var(--line)}
+.win-bar{display:flex;gap:6px;align-items:center;padding:7px 10px;background:var(--chip);border-bottom:1px solid var(--line)}
+.win-bar i{width:9px;height:9px;border-radius:50%;background:var(--line)}
+.win-bar span{margin-left:8px;font-family:var(--font-mono);font-size:.7rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.win-body{padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+.win-body h4{margin:0;font-family:var(--font-display);font-size:1.05rem;display:flex;justify-content:space-between;gap:8px;align-items:center}
+.mchip{font-family:var(--font-body);font-size:.68rem;font-weight:600;padding:1px 8px;border-radius:99px;background:var(--chip);color:var(--muted);white-space:nowrap}
+.mchip.ok{background:var(--good-bg);color:var(--good)}.mchip.no{background:var(--bad-bg);color:var(--bad)}
+.mf{position:relative}
+.mf label{display:block;font-size:.66rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:2px}
+.mf div.v{border:1px solid var(--input-line);background:var(--input-bg);color:var(--input-ink);border-radius:5px;padding:6px 9px;font-size:.88rem;font-weight:500;min-height:31px;overflow-wrap:anywhere}
+.mf.file div.v{border-style:dashed;display:flex;gap:8px;align-items:center}
+.mrow{display:flex;gap:8px;flex-wrap:wrap;position:relative}
+.mbtn{position:relative;font-size:.82rem;font-weight:600;padding:6px 12px;border-radius:5px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+.mbtn.p{background:var(--hdr-bg);color:var(--hdr-fg);border-color:var(--hdr-bg)}
+.mitem{display:flex;justify-content:space-between;gap:8px;align-items:center;border:1px solid var(--line);border-radius:6px;padding:7px 10px;font-size:.86rem;position:relative}
+.mnote{font-size:.78rem;color:var(--muted)}
+.mn{position:absolute;top:-8px;right:-6px;width:20px;height:20px;border-radius:50%;background:var(--accent-fill);color:#fff;font-size:.72rem;font-weight:700;display:grid;place-items:center;border:2px solid var(--surface)}
+.mbtn .mn,.mitem .mn{top:-9px}
+.mleg{margin:6px 0 0;padding-left:1.2em;font-size:.84rem}
 @media (max-width:640px){table.info th{width:40%}}
 </style>
 
@@ -241,6 +264,32 @@ const SECTIONS = [
  warn:['Unsent entries are kept only in your open page, to protect your tax and bank details. If you refresh or close the page they are lost. Finish and send in one sitting.']}
 ];
 
+
+/* Illustrations: drawn mock-ups of the portal with made-up data. Not screenshots. */
+const SHOTS = {
+s1:[{cap:'Sign in with the email HR invited.',url:'training portal · sign in',head:'Sign in',fields:[{l:'Email',v:'sam.rivera@example.com'},{l:'Password',v:'••••••••••••••••',n:1}],btns:[{t:'Sign in',p:1,n:2}],legend:['Your password: 12+ characters, mixed.','Press Sign in.']},
+    {cap:'The Onboarding card on the home page lists your items.',url:'training portal · home',head:'Your onboarding details',chip:['2 of 9 done'],items:[['Personal details','Accepted','ok'],['Photo ID','To do',''],['Emergency contact','To do','']],note:'Open each item to fill it in.',n:1,legend:['This card is your checklist.']}],
+s2:[{cap:'Fill in each field. Postcode is exactly 4 digits.',url:'training portal · personal details',head:'Personal details',chip:['Not sent yet'],fields:[{l:'Date of birth',v:'15/03/1990'},{l:'Mobile',v:'0400 000 000'},{l:'Street address',v:'12 Example St'},{l:'Suburb · State · Postcode',v:'Sampletown · NSW · 2000',n:1}],legend:['Postcode: 4 digits, no letters.']},
+    {cap:'Photo ID: type, number, state and expiry.',url:'training portal · photo ID',head:'Photo ID',chip:['Ready to send','ok'],fields:[{l:'ID type',v:'Driver licence'},{l:'Number',v:'12345678'},{l:'State or country',v:'NSW'},{l:'Expiry',v:'30/06/2029',n:1}],note:'Bring the original on your first day.',legend:['Expiry is on the front of the card.']}],
+s3:[{cap:'Bank details: BSB is 6 digits, digits only.',url:'training portal · bank details',head:'Bank details',chip:['Not sent yet'],fields:[{l:'Account name',v:'Sam Rivera'},{l:'BSB',v:'123456',n:1},{l:'Account number',v:'12345678',n:2}],legend:['BSB: 6 digits, no dash.','Account number: 5 to 10 digits.']},
+    {cap:'Super: name your fund or choose the Panalo default.',url:'training portal · super choice',head:'Super choice',chip:['Not sent yet'],fields:[{l:'Choice',v:'My own fund',n:1},{l:'Fund name',v:'Example Super'},{l:'USI',v:'EXA0000AU'},{l:'Member number',v:'M-100200'}],legend:['Pick one. Fund details appear if you choose your own.']}],
+s4:[{cap:'ABN details for contractors.',url:'training portal · ABN details',head:'ABN details',chip:['Not sent yet'],fields:[{l:'ABN',v:'12 345 678 901',n:1},{l:'Business name',v:'Dana Welding Pty Ltd'},{l:'Registered for GST?',v:'Yes',n:2}],legend:['11 digits. Spaces are fine.','Yes or no.']}],
+s5:[{cap:'Add a ticket: name, expiry, then the file.',url:'training portal · tickets',head:'Tickets',chip:['Not sent yet'],fields:[{l:'Ticket name',v:'Working at Heights'},{l:'Expiry',v:'01/05/2028',n:1},{l:'File',v:'📎 heights-ticket.jpg · 1.2 MB',file:1,n:2}],btns:[{t:'Add another ticket'}],legend:['Always enter the expiry date.','PDF, JPG, PNG, WebP or HEIC, up to 20 MB.']}],
+s6:[{cap:'Download, fill in your copy, upload it, then sign.',url:'training portal · employment contract',head:'Employment contract',chip:['To do'],btns:[{t:'Download contract',n:1}],fields:[{l:'Fill it in first',v:'📎 contract-filled.pdf · 240 KB',file:1,n:2},{l:'Sign: type your full name',v:'Sam Rivera',n:3}],btns2:[{t:'Sign contract',p:1}],legend:['Save a copy to fill in.','Upload your filled-in copy (PDF or Word).','Typed name must match the register, or draw it.']}],
+s7:[{cap:'One button at the bottom sends every form.',url:'training portal · onboarding',head:'Your onboarding details',chip:['9 of 9 ready','ok'],items:[['Personal details','Ready to send','ok'],['Bank details','Ready to send','ok'],['Photo ID','Ready to send','ok']],btns:[{t:'Send all to HR',p:1,n:1}],legend:['Sends everything at once.']},
+    {cap:'After HR reviews, each item shows a status.',url:'training portal · onboarding',head:'Your onboarding details',chip:['1 needs fixing','no'],items:[['Personal details','Accepted','ok'],['White Card','Needs fixing','no'],['Bank details','Sent · waiting for HR','']],note:'HR note: the expiry date is not visible. Retake the photo.',n:1,legend:['Open the item, read the note, fix it, send again.']}]
+};
+function shotHTML(x){
+  const n=v=>v?`<span class="mn">${v}</span>`:'';
+  const f=(x.fields||[]).map(q=>`<div class="mf${q.file?' file':''}"><label>${esc(q.l)}</label><div class="v">${esc(q.v)}</div>${n(q.n)}</div>`).join('');
+  const it=(x.items||[]).map(q=>`<div class="mitem"><span>${esc(q[0])}</span><span class="mchip ${q[2]}">${esc(q[1])}</span></div>`).join('');
+  const b=a=>a&&a.length?`<div class="mrow">${a.map(q=>`<span class="mbtn${q.p?' p':''}">${esc(q.t)}${n(q.n)}</span>`).join('')}</div>`:'';
+  const chip=x.chip?`<span class="mchip ${x.chip[1]||''}">${esc(x.chip[0])}</span>`:'';
+  return `<figure class="shot"><div class="win" role="img" aria-label="${esc(x.cap)}"><div class="win-bar"><i></i><i></i><i></i><span>${esc(x.url)}</span></div>
+   <div class="win-body"><h4>${esc(x.head)}${chip}</h4>${it}${f}${b(x.btns)}${b(x.btns2)}${x.note?`<div class="mnote">${esc(x.note)}</div>`:''}</div></div>
+   <figcaption>${esc(x.cap)}${x.legend?`<ol class="mleg">${x.legend.map(l=>`<li>${esc(l)}</li>`).join('')}</ol>`:''}</figcaption></figure>`;
+}
+
 let route='start';
 function buildNav(){
   $('#nav').innerHTML = '<div class="sec">Guide</div><a href="#start"'+(route==='start'?' aria-current="page"':'')+'>Start here</a><div class="sec">Sections</div>'+
@@ -270,6 +319,7 @@ function viewSection(s,i){
   const nx=SECTIONS[i+1], pv=SECTIONS[i-1];
   return `<div class="pagehead"><div><p class="eyebrow">Section ${i+1} of ${SECTIONS.length} · <span class="pill">${esc(s.who)}</span></p><h1>${esc(s.title)}</h1><p class="lead">${esc(s.intro)}</p></div></div>
   <h2>What to do</h2><ol class="steps">${s.steps.map(x=>`<li>${x}</li>`).join('')}</ol>
+  ${SHOTS[s.id]?`<h2>What it looks like</h2><div class="shots">${SHOTS[s.id].map(shotHTML).join('')}</div><p class="hint" style="margin-top:-12px">Illustrations with made-up data. Your screen may look slightly different.</p>`:''}
   ${s.tables.map(t=>`<h2>${esc(t.title)}</h2><div class="tbl-wrap"><table class="info"><tbody>${t.rows.map(r=>`<tr><th scope="row">${esc(r[0])}</th><td>${esc(r[1])}</td></tr>`).join('')}</tbody></table></div>`).join('')}
   <div class="notes"><div class="note tip"><h3>Tips</h3><ul>${s.tips.map(x=>`<li>${x}</li>`).join('')}</ul></div>
   <div class="note warn"><h3>Watch out</h3><ul>${s.warn.map(x=>`<li>${x}</li>`).join('')}</ul></div></div>
