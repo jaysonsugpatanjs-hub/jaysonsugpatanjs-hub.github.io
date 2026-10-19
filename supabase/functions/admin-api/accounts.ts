@@ -96,6 +96,11 @@ async function accountCreate(admin: Client, actor: Actor, body: any) {
 
 async function accountResetPassword(admin: Client, actor: Actor, body: any) {
   const profileId = uuid(body.profileId, "Sign-in");
+  // A disabled sign-in is blocked at the login itself, so a new password would still not work.
+  const profile = await admin.from("training_profiles").select("active").eq("id", profileId).maybeSingle();
+  if (profile.error) throw httpError(500, "The sign-in could not be checked.");
+  if (!profile.data) throw httpError(404, "Sign-in not found.");
+  if (!profile.data.active) throw httpError(409, "This sign-in is disabled, so a new password would not work. Press Enable sign-in first, then issue the temporary password.");
   const tempPassword = generateTemporaryPassword();
   const updated = await admin.auth.admin.updateUserById(profileId, { password: tempPassword, email_confirm: true });
   if (updated.error) throw httpError(500, "The temporary password could not be set.");

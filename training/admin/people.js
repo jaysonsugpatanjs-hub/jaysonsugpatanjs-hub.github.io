@@ -282,8 +282,9 @@ async function renderSignIn(root, e) {
   const status = !a.active ? '<span class="chip bad">Sign-in disabled</span>' : a.mustChangePassword ? '<span class="chip pending">Must change temporary password</span>' : '<span class="chip good">Active</span>';
   box.innerHTML = `${head}
     <div class="list-row"><div><strong>${safe(a.email)}</strong><small>${a.systemAdmin ? "System administrator: holds every permission" : a.passwordSetAt ? `Password set ${new Intl.DateTimeFormat("en-AU", { dateStyle: "medium" }).format(new Date(a.passwordSetAt))}` : "Has not set their own password yet"}</small></div>${status}</div>
-    <div class="form-actions"><button type="button" class="secondary-action small" data-reset-password>Issue new temporary password</button>
+    <div class="form-actions"><button type="button" class="secondary-action small" data-reset-password ${a.active ? "" : "disabled"}>Issue new temporary password</button>
       <button type="button" class="${a.active ? "revoke" : "secondary-action small"}" data-set-active="${a.active ? "false" : "true"}">${a.active ? "Disable sign-in" : "Enable sign-in"}</button></div>
+    ${a.active ? "" : '<p class="muted small">This sign-in is disabled, so they cannot sign in even with a new password. Press Enable sign-in first, then issue a temporary password.</p>'}
     <h3>What they can access</h3>
     <p class="muted small">"Position default" follows their position's settings below. Allow or deny overrides it for this person only.</p>
     <div class="table-wrap"><table class="compact perm-table"><thead><tr><th>Area</th><th>Now</th><th>Setting</th></tr></thead><tbody>

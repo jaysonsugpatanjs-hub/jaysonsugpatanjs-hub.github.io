@@ -126,6 +126,7 @@ Deno.test("temporary password: shown once, then forced change", async () => {
 
   await ok(adminApi, A, { action: "account_set_active", profileId: id, active: false });
   expectStatus(await call(trainingApi, id, { action: "bootstrap" }), 403, "disabled account");
+  expectStatus(await call(adminApi, A, { action: "account_reset_password", profileId: id }), 409, "no temporary password while the sign-in is disabled");
   await ok(adminApi, A, { action: "account_set_active", profileId: id, active: true });
   const calls = await (await fetch(`${BASE}/rpc/test_auth_calls`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ p_id: id }) })).json();
   if (!calls.some((c: any) => c.fields.includes("ban_duration"))) throw new Error("sign-in was not blocked in Auth");
