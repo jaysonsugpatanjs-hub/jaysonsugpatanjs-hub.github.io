@@ -1,8 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
-  AGREEMENT_TEXT, SIGNATURE_MAX_BYTES, SignError, decodeSignatureImage, describeSignature, looksLikePdf,
-  namesMatch, normalizeName, sha256Hex, signatureImagePath, validateSignature
+  AGREEMENT_TEXT, SIGNATURE_MAX_BYTES, SignError, contractExtension, contractFormat, contractMatches, decodeSignatureImage,
+  describeSignature, looksLikePdf, namesMatch, normalizeName, sha256Hex, signatureImagePath, validateSignature
 } from "../../supabase/functions/_shared/contract-signing.ts";
 
 const PNG_HEAD = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
@@ -59,7 +59,25 @@ test("writing: only a real PNG of sensible size is accepted", () => {
   failsOn(() => decodeSignatureImage("A".repeat(2_000_000)), "signature"); // refused on length, before any pattern runs
 });
 
-test("contracts must be PDFs", () => {
+test("contracts can be PDF or Word, and the bytes must match the extension", () => {
+  assert.equal(contractExtension("Contractor agreement.DOCX"), "docx");
+  assert.equal(contractExtension("x/y/contract-a-1.doc"), "doc");
+  assert.equal(contractExtension("contract.pdf"), "pdf");
+  assert.equal(contractExtension("contract.odt"), "");
+  assert.equal(contractExtension("contract"), "");
+  assert.equal(contractFormat("contract.pdf"), "pdf");
+  assert.equal(contractFormat("contract.docx"), "word");
+  const docx = Uint8Array.from([0x50, 0x4b, 0x03, 0x04, 1, 2, 3]);
+  const doc = Uint8Array.from([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1, 0]);
+  assert.ok(contractMatches(docx, "docx"));
+  assert.ok(contractMatches(doc, "doc"));
+  assert.ok(!contractMatches(docx, "doc"));
+  assert.ok(!contractMatches(new TextEncoder().encode("%PDF-1.7"), "docx"));
+  assert.ok(!contractMatches(docx, "pdf"));
+  assert.ok(!contractMatches(docx, "odt"));
+});
+
+test("a PDF contract must really be a PDF", () => {
   assert.ok(looksLikePdf(new TextEncoder().encode("%PDF-1.7\n%âãÏÓ\n1 0 obj")));
   assert.ok(looksLikePdf(new TextEncoder().encode("\n\n%PDF-1.4 with a little junk before the header")));
   assert.ok(!looksLikePdf(new TextEncoder().encode("PK\u0003\u0004 word/document.xml")));

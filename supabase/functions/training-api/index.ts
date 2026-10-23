@@ -4,7 +4,7 @@ import { allLearningSlidesComplete, gradeAssessment, isSlideUnlocked } from "../
 import { corsHeaders, errorJson, httpError, json, rpc } from "../_shared/http.ts";
 import { passwordProblem } from "../_shared/accounts.ts";
 import { FORMS, FormError, validateAnswers } from "../_shared/onboarding-forms.ts";
-import { AGREEMENT_TEXT, SignError, validateSignature } from "../_shared/contract-signing.ts";
+import { AGREEMENT_TEXT, SignError, contractExtension, contractFormat, validateSignature } from "../_shared/contract-signing.ts";
 import { COPY_MAX_BYTES, COPY_MAX_FILES, COPY_TYPES, CopyError, copyDisplayName, copyFolder, isStoredCopyName, parseCopyName, storedCopyName } from "../_shared/contract-copies.ts";
 
 type Client = any;
@@ -448,12 +448,12 @@ async function handleOnboardingView(admin: Client, userId: string) {
   if (signIds.length) {
     await Promise.all(signIds.map(async (id: string) => { copies.set(id, await listCopies(admin, { request_id: data.id, id })); }));
     const [docs, emp] = await Promise.all([
-      admin.from("onboarding_sign_documents").select("id,item_id,label,file_name,added_at").in("item_id", signIds).order("added_at"),
+      admin.from("onboarding_sign_documents").select("id,item_id,path,label,file_name,added_at").in("item_id", signIds).order("added_at"),
       admin.from("employees").select("full_name").eq("id", data.employee_id).maybeSingle()
     ]);
     if (docs.error || emp.error) throw httpError(500, "Your contract could not be loaded.");
     signAs = String(emp.data?.full_name || "").replace(/\s+/g, " ").trim();
-    for (const d of docs.data) signDocs.set(d.item_id, [...(signDocs.get(d.item_id) || []), { id: d.id, label: d.label, fileName: d.file_name }]);
+    for (const d of docs.data) signDocs.set(d.item_id, [...(signDocs.get(d.item_id) || []), { id: d.id, label: d.label, fileName: d.file_name, format: contractFormat(d.path) }]);
   }
   return {
     request: { id: data.id, status: data.status, dueOn: data.due_on, message: data.message, createdAt: data.created_at },
@@ -507,8 +507,9 @@ async function handleContractUrl(admin: Client, userId: string, body: any) {
   const request = data?.onboarding_items?.onboarding_requests;
   if (!data || request?.profile_id !== userId || !["open", "complete"].includes(request?.status)) throw httpError(404, "Contract not found.");
   // "download" makes the browser save the file instead of showing it, so it can be filled in.
-  const download = body.download === true;
-  const saveAs = String(data.file_name || `${data.label}.pdf`).replace(/[^A-Za-z0-9._ -]+/g, "-").slice(0, 150) || "contract.pdf";
+  // Browsers can't show Word files, so those are always saved.
+  const download = body.download === true || contractFormat(data.path) === "word";
+  const saveAs = String(data.file_name || `${data.label}.${contractExtension(data.path) || "pdf"}`).replace(/[^A-Za-z0-9._ -]+/g, "-").slice(0, 150) || "contract.pdf";
   const signed = await admin.storage.from(HR_BUCKET).createSignedUrl(data.path, 300, download ? { download: saveAs } : undefined);
   if (signed.error || !signed.data?.signedUrl) throw httpError(500, "A link to your contract could not be created.");
   await rpc(admin, "ims_audit", {

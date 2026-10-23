@@ -282,9 +282,9 @@ Deno.test("contract signing: HR attaches the contract, the applicant signs, HR a
   // Nothing to sign until HR attaches the contract.
   expectStatus(await sign({ method: "typed", name: "Contract Signer" }), 409, "no contract attached yet");
 
-  // HR attaches it: PDFs only, checked and fingerprinted on the server.
+  // HR attaches it: PDF or Word only, checked and fingerprinted on the server.
   expectStatus(await call(adminApi, L, { action: "onboarding_sign_prepare", itemId: item.id, fileName: "contract.pdf", size: 100 }), 403, "a learner cannot attach contracts");
-  expectStatus(await call(adminApi, HR, { action: "onboarding_sign_prepare", itemId: item.id, fileName: "contract.docx", size: 100 }), 400, "Word files are not accepted");
+  expectStatus(await call(adminApi, HR, { action: "onboarding_sign_prepare", itemId: item.id, fileName: "contract.odt", size: 100 }), 400, "only PDF and Word files are accepted");
   expectStatus(await call(adminApi, HR, { action: "onboarding_sign_prepare", itemId: item.id, fileName: "contract.pdf", size: 30 * 1024 * 1024 }), 400, "too large");
   const notThere = await ok(adminApi, HR, { action: "onboarding_sign_prepare", itemId: item.id, fileName: "contract.pdf", size: 100 });
   expectStatus(await call(adminApi, HR, { action: "onboarding_sign_attach", itemId: item.id, path: notThere.path, label: "Employment contract" }), 409, "upload never arrived");
@@ -460,6 +460,66 @@ Deno.test("contract signing: HR attaches the contract, the applicant signs, HR a
   if (!(await ok(adminApi, HR, { action: "personnel_open", documentId: employment[0].id })).url) throw new Error("no link to the signed copy");
   const done = await ok(trainingApi, applicant, { action: "onboarding_view" });
   if (done.request?.status !== "complete") throw new Error("request should be complete");
+});
+
+Deno.test("contract signing with a Word file: kept as it is, signed online, filed beside the signed record", async () => {
+  const sha256 = async (b: Uint8Array) => [...new Uint8Array(await crypto.subtle.digest("SHA-256", new Uint8Array(b)))].map(x => x.toString(16).padStart(2, "0")).join("");
+  const BUCKET = "hr-documents";
+  const docx = Uint8Array.from([0x50, 0x4b, 0x03, 0x04, ...new TextEncoder().encode("word/document.xml Contractor agreement ".repeat(20))]);
+  const upload = async (itemId: string, name: string, bytes: Uint8Array) => {
+    const prepared = await ok(adminApi, HR, { action: "onboarding_sign_prepare", itemId, fileName: name, size: bytes.length });
+    putStorage(BUCKET, prepared.path, bytes);
+    return prepared;
+  };
+
+  const emp = await ok(adminApi, A, { action: "employee_save", employeeNumber: "C-9020", fullName: "Word Signer", email: "word.signer@panalo.test", employmentType: "contractor", status: "applicant" });
+  const sent = await ok(adminApi, HR, { action: "onboarding_create", employeeId: emp.id, types: ["contract_esign"], signIn: "invite" });
+  const applicant = await profile("word.signer@panalo.test");
+  const itemOf = async () => (await ok(trainingApi, applicant, { action: "onboarding_view" })).items.find((i: any) => i.docType === "contract_esign");
+  let item = await itemOf();
+
+  // The bytes must match the extension: a PDF renamed .docx is refused.
+  const renamed = await upload(item.id, "agreement.docx", new TextEncoder().encode("%PDF-1.7 not a Word file"));
+  const notWord = await call(adminApi, HR, { action: "onboarding_sign_attach", itemId: item.id, path: renamed.path, label: "Contractor agreement" });
+  expectStatus(notWord, 400, "a PDF renamed .docx");
+  if (!/isn't a Word document/.test(notWord.body.message)) throw new Error(`should explain: ${notWord.body.message}`);
+
+  const prepared = await upload(item.id, "Contractor agreement.docx", docx);
+  if (!prepared.path.endsWith(".docx") || prepared.contentType !== "application/vnd.openxmlformats-officedocument.wordprocessingml.document") throw new Error(`Word upload should keep its type: ${JSON.stringify(prepared)}`);
+  const attached = await ok(adminApi, HR, { action: "onboarding_sign_attach", itemId: item.id, path: prepared.path, fileName: "Contractor agreement.docx", label: "Contractor agreement" });
+  if (attached.sha256 !== await sha256(docx)) throw new Error("the Word file should be fingerprinted like a PDF");
+  let detail = (await ok(adminApi, HR, { action: "onboarding_detail", requestId: sent.requestId })).items.find((i: any) => i.id === item.id);
+  if (detail.signDocs[0]?.format !== "word") throw new Error(`HR should see it is a Word file: ${JSON.stringify(detail.signDocs)}`);
+  expectStatus(await call(adminApi, HR, { action: "onboarding_sign_bytes", docId: detail.signDocs[0].id }), 400, "a Word file has no pages to place a signature on");
+  if (!(await ok(adminApi, HR, { action: "onboarding_sign_view", docId: detail.signDocs[0].id })).download) throw new Error("HR's View should save a Word file, not open it");
+
+  // The applicant downloads it to read it (browsers can't show Word files), then signs online as usual.
+  item = await itemOf();
+  if (item.signDocs[0]?.format !== "word") throw new Error("the applicant should be told it is a Word file");
+  await ok(trainingApi, applicant, { action: "onboarding_contract_url", docId: item.signDocs[0].id });
+  const viewed = await rest("training_audit_events?select=details&event_type=eq.onboarding_contract_viewed");
+  if (!viewed.some((e: any) => e.details.documentId === item.signDocs[0].id && e.details.download === true)) throw new Error("a Word contract should always be downloaded");
+  await ok(trainingApi, applicant, { action: "onboarding_sign", itemId: item.id, agreed: true, method: "typed", name: "Word Signer" });
+
+  // HR finalizes without placing anything: there are no pages, so nothing is stamped.
+  const noPages = { page: "last", signature: { x: 0.55, y: 0.9 }, date: null };
+  const drawsBefore = pdfDraws.length;
+  const preview = await ok(adminApi, HR, { action: "onboarding_sign_preview", itemId: item.id, placement: noPages });
+  if (!preview.pdf) throw new Error("the signed record should be previewable");
+  if (pdfDraws.slice(drawsBefore).some(d => d.text === "Word Signer" && Math.abs(d.x - (0.55 * 595 + 2)) < 0.01)) throw new Error("nothing should be stamped for a Word contract");
+  if (!pdfText.join(" ").includes("attached as a Word document")) throw new Error("the record should say the contract is a Word file filed beside it");
+  const finalized = await ok(adminApi, HR, { action: "onboarding_review", itemId: item.id, accept: true, placement: noPages });
+  if (finalized.filed !== 1 || finalized.filingDeferred) throw new Error(`a Word contract should file straight away: ${JSON.stringify(finalized)}`);
+
+  const file = await ok(adminApi, HR, { action: "personnel_view", employeeId: emp.id });
+  const employment = file.categories.find((c: any) => c.key === "employment").documents;
+  const titles = employment.map((d: any) => d.title).sort();
+  if (JSON.stringify(titles) !== JSON.stringify(["Contractor agreement (Word file, signed online)", "Employment contract (signed)"])) throw new Error(`HR folder wrong: ${JSON.stringify(employment)}`);
+  const original = employment.find((d: any) => d.title.includes("Word file"));
+  if (original.fileName !== "Contractor agreement.docx") throw new Error(`the original should keep its name: ${original.fileName}`);
+  if (!storageCalls.some(c => c.startsWith(`copy ${BUCKET}/${prepared.path} -> personnel/${emp.id}/employment/`) && c.endsWith(".docx"))) throw new Error("the Word file should be copied, unchanged, into the HR folder");
+  if (file.filedNow !== 0 || (await ok(adminApi, HR, { action: "personnel_view", employeeId: emp.id })).categories.find((c: any) => c.key === "employment").documents.length !== 2) throw new Error("nothing should be filed twice");
+  if (!(await ok(adminApi, HR, { action: "personnel_open", documentId: original.id })).url) throw new Error("no link to the filed Word file");
 });
 
 Deno.test("learner invite with a temporary password", async () => {
