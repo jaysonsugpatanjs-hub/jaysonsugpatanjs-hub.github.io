@@ -34,24 +34,31 @@ function filesHtml(item) {
 
 const kb = n => (n >= 1048576 ? `${(n / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`);
 
-/** Online contract signing: HR attaches the PDF(s); the applicant signs on the portal. */
+const WORD_TYPES = ".doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+/** A PDF gets the signature stamped on its page; a contract with only Word files has no pages to place it on. */
+const hasPdfContract = item => (item?.signDocs || []).some(d => d.format !== "word");
+
+/** Online contract signing: HR attaches the PDF or Word file(s); the applicant signs on the portal. */
 function signHtml(i) {
   if (i.kind !== "sign") return "";
   const id = safe(i.id);
+  const pdfPages = hasPdfContract(i);
   const docs = i.signDocs?.length ? `<ul class="file-list admin-files">${i.signDocs.map(d => `<li><div><strong>${safe(d.label)}</strong>
-      <small>${safe(d.fileName)} · ${kb(d.size)} · added ${fmt(d.addedAt)} · SHA-256 ${safe(d.sha256.slice(0, 12))}…</small></div>
+      <small>${d.format === "word" ? "Word · " : ""}${safe(d.fileName)} · ${kb(d.size)} · added ${fmt(d.addedAt)} · SHA-256 ${safe(d.sha256.slice(0, 12))}…</small></div>
       <span class="row-actions"><button type="button" class="secondary-action small" data-sign-view="${safe(d.id)}">View</button>${i.canChangeContract
         ? `<button type="button" class="revoke" data-sign-remove="${safe(d.id)}">Remove</button>` : ""}</span></li>`).join("")}</ul>` : "";
   const upload = i.canChangeContract ? `<div class="add-file">
       <div class="field onb-field"><label for="sign-label-${id}">Document name</label><input id="sign-label-${id}" data-sign-label maxlength="80" value="${safe(i.name || "Employment contract")}"></div>
-      <label class="upload-button"><input type="file" accept=".pdf,application/pdf" data-sign-upload="${id}"><span>${i.signDocs?.length ? "Add another PDF" : "Upload contract (PDF)"}</span></label>
+      <label class="upload-button"><input type="file" accept=".pdf,application/pdf,${WORD_TYPES}" data-sign-upload="${id}"><span>${i.signDocs?.length ? "Add another file" : "Upload contract (PDF or Word)"}</span></label>
       <small class="muted">${i.signDocs?.length
         ? "The applicant signs once and covers every file listed."
-        : "PDF only, up to 20 MB. Save Word files as PDF first. The applicant can sign as soon as a file is attached."}${i.status === "uploaded" ? " They have already signed: changing the contract sends it back so they sign the new version." : ""}</small>
+        : "PDF or Word (.doc, .docx), up to 20 MB. A PDF gets the signature stamped on its page; a Word file is filed unchanged with the signature record. The applicant can sign as soon as a file is attached."}${i.status === "uploaded" ? " They have already signed: changing the contract sends it back so they sign the new version." : ""}</small>
       <p class="form-message" data-sign-msg role="status" aria-live="polite"></p></div>` : "";
   const finalize = i.canFinalize ? `<div class="finalize-panel" data-finalize="${id}">
       <p class="eyebrow">FINALIZE</p>
-      <p class="muted small">The signature is stamped onto the contract and the finished copy is filed in the HR folder only when you finalize. Show where the signature and date go, check the preview, then finalize.</p>
+      <p class="muted small">${pdfPages
+        ? "The signature is stamped onto the contract and the finished copy is filed in the HR folder only when you finalize. Show where the signature and date go, check the preview, then finalize."
+        : "The contract is a Word file, so the signature isn't stamped on its pages: the Word file is filed unchanged with a signed record (who signed, how, when, and the file's fingerprint). Nothing is filed until you finalize."}</p>
       <div class="placer" data-placer="${id}" hidden></div>
       <div class="counter-sign">
         <label class="check-field"><input type="checkbox" data-company-on><span><strong>Also sign for Panalo</strong>
@@ -72,9 +79,9 @@ function signHtml(i) {
         </div>
       </div>
       <div class="form-actions">
-        <button type="button" class="secondary-action" data-place-open="${id}">Place the signature on the contract</button>
-        <button type="button" class="secondary-action" data-sign-preview="${id}" disabled>Preview signed contract</button>
-        <button type="button" class="primary" data-finalize-go="${id}" disabled>Finalize &amp; file</button>
+        ${pdfPages ? `<button type="button" class="secondary-action" data-place-open="${id}">Place the signature on the contract</button>` : ""}
+        <button type="button" class="secondary-action" data-sign-preview="${id}"${pdfPages ? " disabled" : ""}>${pdfPages ? "Preview signed contract" : "Preview signed record"}</button>
+        <button type="button" class="primary" data-finalize-go="${id}"${pdfPages ? " disabled" : ""}>Finalize &amp; file</button>
       </div>
       <p class="form-message" data-finalize-msg role="status" aria-live="polite"></p></div>` : "";
   // Filled-in copies the person downloaded the contract, filled in and sent back.
@@ -245,13 +252,18 @@ function syncCompany(panel) {
   placers.get(panel.dataset.finalize)?.setCompany(on ? { name: name || "Panalo" } : null);
 }
 
+// Word-only contracts have no pages to click on; the server needs a placement
+// anyway, and with no PDF pages nothing is stamped with it.
+const NO_PAGES = { page: "last", signature: { x: 0.55, y: 0.9 }, date: null, company: { signature: { x: 0.1, y: 0.9 }, date: null } };
+
 /**
  * What HR has set up in a finalize panel: where the signature (and Panalo's, if
  * counter-signing) goes, and who signs for Panalo. Returns { error } when
  * something is missing.
  */
 function readFinalize(panel) {
-  const placed = placers.get(panel.dataset.finalize)?.getPlacement();
+  const item = state.items.find(i => i.id === panel.dataset.finalize);
+  const placed = hasPdfContract(item) ? placers.get(panel.dataset.finalize)?.getPlacement() : NO_PAGES;
   if (!placed) return { error: "Click on the page where the signature goes first." };
   const { company: marks, ...placement } = placed;
   if (!panel.querySelector("[data-company-on]").checked) return { placement, company: null };
@@ -287,7 +299,7 @@ async function openPlacer(root, button) {
       };
       placers.set(id, await createPlacer(host, {
         signedName, dateText: todayText(item.submittedAt), companyDateText: todayText(new Date().toISOString()),
-        docs: item.signDocs.map(d => ({ label: d.label, load: async () => bytesFromBase64((await call("onboarding_sign_bytes", { docId: d.id })).pdf) })),
+        docs: item.signDocs.filter(d => d.format !== "word").map(d => ({ label: d.label, load: async () => bytesFromBase64((await call("onboarding_sign_bytes", { docId: d.id })).pdf) })),
         onChange: refresh
       }));
     }
@@ -332,7 +344,11 @@ async function finalizeContract(root, button) {
   const choice = readFinalize(panel);
   if (choice.error) { msg.textContent = choice.error; return; }
   const counter = choice.company ? ` It is also signed for Panalo by ${choice.company.name}${choice.company.position ? ` (${choice.company.position})` : ""}.` : "";
-  if (!window.confirm(`Finalize this contract? The signature is stamped on page ${choice.placement.page} and the signed copy is filed in the person's HR folder.${counter}`)) return;
+  const item = state.items.find(i => i.id === id);
+  const where = hasPdfContract(item)
+    ? `The signature is stamped on page ${choice.placement.page} and the signed copy is filed in the person's HR folder.`
+    : "The Word file and the signed record are filed in the person's HR folder.";
+  if (!window.confirm(`Finalize this contract? ${where}${counter}`)) return;
   button.disabled = true;
   try {
     const r = await call("onboarding_review", { itemId: id, accept: true, placement: choice.placement, company: choice.company });
@@ -347,13 +363,13 @@ async function finalizeContract(root, button) {
   }
 }
 
-/** Uploads a contract PDF: signed upload link, PUT, then the server checks and fingerprints it. */
+/** Uploads a contract (PDF or Word): signed upload link, PUT, then the server checks and fingerprints it. */
 async function uploadContract(root, input) {
   const file = input.files?.[0];
   if (!file) return;
   const box = input.closest(".add-file");
   const msg = box.querySelector("[data-sign-msg]");
-  if (!/\.pdf$/i.test(file.name)) { msg.textContent = "Choose a PDF. Save Word files as PDF first."; input.value = ""; return; }
+  if (!/\.(pdf|docx?)$/i.test(file.name)) { msg.textContent = "Choose a PDF or a Word file (.doc or .docx)."; input.value = ""; return; }
   if (file.size > 20 * 1024 * 1024) { msg.textContent = `${file.name} is over 20 MB.`; input.value = ""; return; }
   const label = (box.querySelector("[data-sign-label]")?.value || "").trim() || "Employment contract";
   input.disabled = true;
@@ -361,7 +377,7 @@ async function uploadContract(root, input) {
   try {
     const itemId = input.dataset.signUpload;
     const prepared = await call("onboarding_sign_prepare", { itemId, fileName: file.name, size: file.size });
-    const res = await fetch(prepared.signedUrl, { method: "PUT", headers: { "Content-Type": "application/pdf" }, body: file });
+    const res = await fetch(prepared.signedUrl, { method: "PUT", headers: { "Content-Type": prepared.contentType }, body: file });
     if (!res.ok) throw new Error(`The upload failed (${res.status}). Please try again.`);
     await call("onboarding_sign_attach", { itemId, path: prepared.path, fileName: file.name, label });
     await loadOnboarding(root, { canIssuePasswords: state.canIssuePasswords });
@@ -432,7 +448,15 @@ export function bindOnboarding(root) {
       } else if (b.dataset.signView || b.dataset.signSignature) {
         b.disabled = true;
         const r = await call("onboarding_sign_view", b.dataset.signView ? { docId: b.dataset.signView } : { itemId: b.dataset.signSignature });
-        window.open(r.url, "_blank", "noopener");
+        if (r.download) {
+          // A Word contract: save it rather than open a tab the browser can't show.
+          const link = document.createElement("a");
+          link.href = r.url;
+          link.rel = "noopener";
+          document.body.append(link);
+          link.click();
+          link.remove();
+        } else window.open(r.url, "_blank", "noopener");
         b.disabled = false;
       } else if (b.dataset.companyClear) {
         attachPad(b.closest("[data-finalize]").querySelector("[data-company-pad]"))?.clear();

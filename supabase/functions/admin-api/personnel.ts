@@ -2,10 +2,10 @@
 // Accepted onboarding items are filed automatically: uploads in place, typed
 // answers as a generated PDF record. HR can add, view and archive documents.
 // Nothing is deleted. Every view, filing and archive is audited.
-import { DEFAULT_PLACEMENT, SignError, describeCompany, describeSignature, sha256Hex, signatureImagePath, type CompanySignature, type Placement, type StoredCompanySignature } from "../_shared/contract-signing.ts";
+import { DEFAULT_PLACEMENT, SignError, contractExtension, contractFormat, describeCompany, describeSignature, sha256Hex, signatureImagePath, type CompanySignature, type Placement, type StoredCompanySignature } from "../_shared/contract-signing.ts";
 import { describeAnswers } from "../_shared/onboarding-forms.ts";
 import { createRecordPdf } from "../_shared/record-pdf.ts";
-import { createSignedContractPdf } from "../_shared/signed-contract-pdf.ts";
+import { SIGNED_MIXED_NOTE, SIGNED_WORD_NOTE, createSignedContractPdf } from "../_shared/signed-contract-pdf.ts";
 import { httpError, rpc } from "../_shared/http.ts";
 import type { Actor } from "./accounts.ts";
 
@@ -39,19 +39,23 @@ async function downloadHrFile(admin: Client, path: string, what: string): Promis
  * Builds the signed contract as one PDF: the contract pages with the signature
  * and date placed where HR chose, then the signature record. Each contract file
  * is checked against the fingerprint taken when HR attached it, so a signature
- * is never filed against a file that has changed. `preview` builds the same
- * document before HR has finalized it (nothing is stored).
+ * is never filed against a file that has changed. Word files have no fixed
+ * pages to stamp, so they are returned as `originals` to be filed unchanged
+ * beside the record. `preview` builds the same document before HR has
+ * finalized it (nothing is stored).
  */
 type Counter = { signature: CompanySignature; enteredBy: string | null };
 
 async function buildSignedContract(admin: Client, employeeId: string, item: any, type: any, placement: Placement, preview = false, counter?: Counter) {
-  const docs = await admin.from("onboarding_sign_documents").select("path,file_name,label,sha256").eq("item_id", item.id).order("added_at");
+  const docs = await admin.from("onboarding_sign_documents").select("id,path,file_name,label,sha256").eq("item_id", item.id).order("added_at");
   if (docs.error) throw httpError(500, "The contract files could not be read.");
   const contracts: Uint8Array[] = [];
+  const originals: any[] = [];
   for (const doc of docs.data) {
     const bytes = await downloadHrFile(admin, doc.path, "A contract file");
     if (await sha256Hex(bytes) !== doc.sha256) throw httpError(409, "A contract file no longer matches the fingerprint taken when it was signed, so it can't be finalized. Send the contract back and attach it again.");
-    contracts.push(bytes);
+    if (contractFormat(doc.path) === "pdf") contracts.push(bytes);
+    else originals.push(doc);
   }
   const emp = await admin.from("employees").select("full_name,employee_number").eq("id", employeeId).maybeSingle();
   const imagePath = signatureImagePath(item.answers);
@@ -60,9 +64,10 @@ async function buildSignedContract(admin: Client, employeeId: string, item: any,
     ? (await admin.from("training_profiles").select("full_name,email").eq("id", item.reviewed_by).maybeSingle()).data
     : null;
   try {
-    return await createSignedContractPdf({
+    const built = await createSignedContractPdf({
       contracts, preview,
       record: {
+        note: originals.length ? (contracts.length ? SIGNED_MIXED_NOTE : SIGNED_WORD_NOTE) : undefined,
         title: type.name || item.doc_type,
         personName: emp.data?.full_name || "", employeeNumber: emp.data?.employee_number || "",
         submittedAt: item.submitted_at, acceptedAt: preview ? null : item.reviewed_at, acceptedBy: reviewer?.full_name || reviewer?.email || null,
@@ -82,6 +87,7 @@ async function buildSignedContract(admin: Client, employeeId: string, item: any,
         } : undefined
       }
     });
+    return { ...built, originals };
   } catch (error) {
     if (error instanceof SignError) throw httpError(400, error.message);
     throw error;
@@ -114,10 +120,29 @@ async function finalizedChoices(admin: Client, item: any): Promise<{ placement: 
   return { placement: f.placement, counter: { signature: { ...stored, image }, enteredBy: who?.full_name || who?.email || null } };
 }
 
+/**
+ * Files a Word contract unchanged in the person's HR folder. The copy's name is
+ * fixed by the contract file, so a retry after a failure never files it twice.
+ */
+async function fileWordOriginal(admin: Client, actor: Actor, employeeId: string, doc: any, type: any, category: string) {
+  const path = `personnel/${employeeId}/${category}/${slug(doc.label || type.name || "contract")}-original-${String(doc.id).slice(0, 8)}.${contractExtension(doc.path)}`;
+  const existing = await admin.from("personnel_documents").select("id").eq("path", path).maybeSingle();
+  if (existing.error) throw httpError(500, "The HR folder could not be read.");
+  if (existing.data) return;
+  const copied = await admin.storage.from(BUCKET).copy(doc.path, path);
+  if (copied.error && !/exists/i.test(String(copied.error.message))) throw httpError(500, "The Word contract could not be filed.");
+  await rpc(admin, "personnel_file_document", {
+    p_actor: actor.id, p_employee: employeeId, p_category: category, p_title: `${doc.label || type.name || "Contract"} (Word file, signed online)`,
+    p_path: path, p_file_name: String(doc.file_name || path.split("/").pop()).slice(0, 200), p_source: "hr_upload", p_item: null, p_file: null, p_expires: null
+  });
+}
+
 /** Files the finalized contract in the person's HR folder. */
 async function fileSignedContract(admin: Client, actor: Actor, employeeId: string, item: any, type: any, category: string) {
   const { placement, counter } = await finalizedChoices(admin, item);
-  const { bytes } = await buildSignedContract(admin, employeeId, item, type, placement, false, counter);
+  const { bytes, originals } = await buildSignedContract(admin, employeeId, item, type, placement, false, counter);
+  // Word files first: filing the signed record is what marks the contract as filed.
+  for (const doc of originals) await fileWordOriginal(admin, actor, employeeId, doc, type, category);
   const path = `personnel/${employeeId}/${category}/${slug(type.name || item.doc_type)}-signed-${Date.now().toString(36)}.pdf`;
   const up = await admin.storage.from(BUCKET).upload(path, bytes, { contentType: "application/pdf", upsert: false });
   if (up.error) throw httpError(500, "The signed contract could not be saved.");

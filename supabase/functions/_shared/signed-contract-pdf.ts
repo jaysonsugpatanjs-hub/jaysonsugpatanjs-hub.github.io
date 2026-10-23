@@ -11,6 +11,12 @@ import { inkOnTransparent } from "./png-ink.ts";
 export const SIGNED_NOTE =
   "Electronically signed on the Panalo portal after signing in with the person's own account. The contract pages before this record are the exact files the person was shown, with the signature and date placed on them; the SHA-256 fingerprints above identify the original files. The original files and the audit trail are kept in the system.";
 
+/** For contracts with Word files, which are filed unchanged beside this record. */
+export const SIGNED_WORD_NOTE =
+  "Electronically signed on the Panalo portal after signing in with the person's own account. The contract was attached as a Word document, which is filed unchanged beside this record; the SHA-256 fingerprints above identify the exact files the person was shown. The original files and the audit trail are kept in the system.";
+export const SIGNED_MIXED_NOTE =
+  "Electronically signed on the Panalo portal after signing in with the person's own account. The PDF contract pages before this record have the signature and date placed on them; the Word files are filed unchanged beside this record. The SHA-256 fingerprints above identify the exact files the person was shown. The original files and the audit trail are kept in the system.";
+
 export type Stamp = {
   placement: Placement;
   signedName: string;

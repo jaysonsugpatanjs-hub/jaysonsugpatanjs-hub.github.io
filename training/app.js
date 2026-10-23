@@ -191,10 +191,11 @@ function signItemHtml(item) {
   const docs = item.signDocs || [];
   const chips = `${item.required ? "" : '<span class="chip">Optional</span>'}<span class="chip">Sign online</span>`;
   const reject = item.status === "rejected" && item.rejectReason ? `<p class="reject-note">HR says: ${safe(item.rejectReason)}</p>` : "";
+  // Browsers can't show Word files, so a Word contract is downloaded to read.
   const list = docs.length ? `<ul class="file-list contract-docs">${docs.map(d => `<li>
-      <div><strong>${safe(d.label)}</strong><small>PDF · Read opens it in a new tab</small></div>
-      <span class="row-actions"><button type="button" class="secondary-action small" data-read-contract="${safe(d.id)}">Read</button>
-        <button type="button" class="secondary-action small" data-download-contract="${safe(d.id)}">Download</button></span></li>`).join("")}</ul>` : "";
+      <div><strong>${safe(d.label)}</strong><small>${d.format === "word" ? "Word document · Download it to read it" : "PDF · Read opens it in a new tab"}</small></div>
+      <span class="row-actions">${d.format === "word" ? "" : `<button type="button" class="secondary-action small" data-read-contract="${safe(d.id)}">Read</button>
+        `}<button type="button" class="secondary-action small" data-download-contract="${safe(d.id)}">Download</button></span></li>`).join("")}</ul>` : "";
   // Before signing, the person can download the contract, fill it in and send the file back.
   const copies = item.copies || [];
   const copyBox = docs.length && !item.signed ? `<div class="copy-box" data-copy-for="${safe(item.id)}">

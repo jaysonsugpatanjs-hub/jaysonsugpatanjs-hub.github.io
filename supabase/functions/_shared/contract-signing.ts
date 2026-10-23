@@ -1,7 +1,7 @@
 // Rules for signing the employment contract online. Pure functions only (no
 // Deno, network or database), so training/tests can run them under Node.
 //
-// HR attaches the contract as a PDF. The applicant ticks that they have read
+// HR attaches the contract as a PDF or Word file. The applicant ticks that they have read
 // and agree, then signs either by typing their full name or by writing it on
 // screen. The database (onboarding_record_signature) is the final authority on
 // the name check; these helpers give the person a clear message first.
@@ -74,9 +74,43 @@ export function validateSignature(raw: unknown, registerName: string): Signature
   return { method: "drawn", image: decodeSignatureImage(input.signatureImage) };
 }
 
-/** Contracts must be PDFs, so everyone sees the same pages. */
 export function looksLikePdf(bytes: Uint8Array): boolean {
   return new TextDecoder("latin1").decode(bytes.subarray(0, 1024)).includes("%PDF-");
+}
+
+/**
+ * Contracts HR can attach. A PDF is stamped with the signature on its page; a
+ * Word file is kept exactly as attached, and its fingerprint is recorded with
+ * the signature (a Word file has no fixed pages to stamp).
+ */
+export const CONTRACT_TYPES: Record<string, string> = {
+  pdf: "application/pdf",
+  doc: "application/msword",
+  docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+};
+export type ContractFormat = "pdf" | "word";
+
+/** Lower-case extension of a contract file name or path, or "" when it isn't one HR can attach. */
+export function contractExtension(name: unknown): string {
+  const match = /\.([A-Za-z]+)$/.exec(String(name ?? ""));
+  const ext = match ? match[1].toLowerCase() : "";
+  return CONTRACT_TYPES[ext] ? ext : "";
+}
+
+export function contractFormat(name: unknown): ContractFormat {
+  return contractExtension(name) === "pdf" ? "pdf" : "word";
+}
+
+const ZIP_MAGIC = [0x50, 0x4b, 0x03, 0x04]; // .docx
+const OLE_MAGIC = [0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1]; // .doc
+const startsWith = (bytes: Uint8Array, magic: number[]) => magic.every((b, i) => bytes[i] === b);
+
+/** True when the bytes really are the kind of file the extension says. */
+export function contractMatches(bytes: Uint8Array, ext: string): boolean {
+  if (ext === "pdf") return looksLikePdf(bytes);
+  if (ext === "docx") return startsWith(bytes, ZIP_MAGIC);
+  if (ext === "doc") return startsWith(bytes, OLE_MAGIC);
+  return false;
 }
 
 export async function sha256Hex(bytes: Uint8Array): Promise<string> {

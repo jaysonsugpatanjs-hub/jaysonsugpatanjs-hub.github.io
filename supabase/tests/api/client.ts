@@ -121,6 +121,15 @@ export function createClient() {
           if (body instanceof Uint8Array) storedBytes.set(`${bucket}/${path}`, body);
           return { data: { path }, error: null };
         },
+        copy: async (from: string, to: string) => {
+          const bytes = storedBytes.get(`${bucket}/${from}`);
+          if (!bytes) return { data: null, error: { message: "Object not found" } };
+          if (uploaded.has(`${bucket}/${to}`)) return { data: null, error: { message: "The resource already exists" } };
+          storageCalls.push(`copy ${bucket}/${from} -> ${to}`);
+          uploaded.add(`${bucket}/${to}`);
+          storedBytes.set(`${bucket}/${to}`, bytes);
+          return { data: { path: to }, error: null };
+        },
         remove: async (paths: string[]) => {
           for (const path of paths) { storageCalls.push(`remove ${bucket}/${path}`); uploaded.delete(`${bucket}/${path}`); storedBytes.delete(`${bucket}/${path}`); }
           return { data: paths.map(name => ({ name })), error: null };

@@ -2,7 +2,7 @@
 // Passwords go only to Supabase Auth; temporary ones are returned once to the
 // administrator who issued them and never stored or logged here.
 import { generateTemporaryPassword } from "../_shared/accounts.ts";
-import { CONTRACT_MAX_BYTES, SignError, describeSignature, looksLikePdf, parseCompanySignature, parsePlacement, sha256Hex, signatureImagePath, toBase64, type CompanySignature, type Placement, type StoredCompanySignature } from "../_shared/contract-signing.ts";
+import { CONTRACT_MAX_BYTES, CONTRACT_TYPES, SignError, contractExtension, contractFormat, contractMatches, describeSignature, parseCompanySignature, parsePlacement, sha256Hex, signatureImagePath, toBase64, type CompanySignature, type Placement, type StoredCompanySignature } from "../_shared/contract-signing.ts";
 import { FORMS, describeAnswers } from "../_shared/onboarding-forms.ts";
 import { httpError, inviteError, rpc } from "../_shared/http.ts";
 import { copyDisplayName, copyFolder, isStoredCopyName } from "../_shared/contract-copies.ts";
@@ -224,10 +224,10 @@ async function onboardingDetail(admin: Client, actor: Actor, body: any) {
   const copies = new Map<string, any[]>();
   await Promise.all(signIds.map(async (id: string) => { copies.set(id, await listFilledCopies(admin, data.id, id)); }));
   if (signIds.length) {
-    const docs = await admin.from("onboarding_sign_documents").select("id,item_id,label,file_name,size_bytes,sha256,added_at").in("item_id", signIds).order("added_at");
+    const docs = await admin.from("onboarding_sign_documents").select("id,item_id,path,label,file_name,size_bytes,sha256,added_at").in("item_id", signIds).order("added_at");
     if (docs.error) throw httpError(500, "The contract files could not be loaded.");
     for (const d of docs.data) {
-      signDocs.set(d.item_id, [...(signDocs.get(d.item_id) || []), { id: d.id, label: d.label, fileName: d.file_name, size: d.size_bytes, sha256: d.sha256, addedAt: d.added_at }]);
+      signDocs.set(d.item_id, [...(signDocs.get(d.item_id) || []), { id: d.id, label: d.label, fileName: d.file_name, format: contractFormat(d.path), size: d.size_bytes, sha256: d.sha256, addedAt: d.added_at }]);
     }
   }
   const withAnswers = (data.onboarding_items || []).filter((i: any) => i.answers);
@@ -415,26 +415,30 @@ async function onboardingSignPrepare(admin: Client, _actor: Actor, body: any) {
   const item = await signItem(admin, uuid(body.itemId, "Document"));
   mayChangeContract(item);
   const size = Number(body.size);
-  if (!Number.isFinite(size) || size < 1 || size > CONTRACT_MAX_BYTES) throw httpError(400, "The contract must be a PDF under 20 MB.");
+  if (!Number.isFinite(size) || size < 1 || size > CONTRACT_MAX_BYTES) throw httpError(400, "The contract must be under 20 MB.");
   const raw = String(body.fileName || "").trim();
-  if (!/\.pdf$/i.test(raw)) throw httpError(400, "Upload the contract as a PDF. Save Word files as PDF first.");
-  const stem = raw.slice(0, -4).replace(/[^A-Za-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 100) || "contract";
-  const path = `${item.request_id}/${item.id}/contract-${stem}-${Date.now().toString(36)}.pdf`;
+  const ext = contractExtension(raw);
+  if (!ext) throw httpError(400, "Upload the contract as a PDF or a Word file (.doc or .docx).");
+  const stem = raw.slice(0, -(ext.length + 1)).replace(/[^A-Za-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 100) || "contract";
+  const path = `${item.request_id}/${item.id}/contract-${stem}-${Date.now().toString(36)}.${ext}`;
   const signed = await admin.storage.from(HR_BUCKET).createSignedUploadUrl(path, { upsert: false });
   if (signed.error || !signed.data?.signedUrl) throw httpError(500, "A secure upload link could not be created.");
-  return { path, signedUrl: signed.data.signedUrl, contentType: "application/pdf" };
+  return { path, signedUrl: signed.data.signedUrl, contentType: CONTRACT_TYPES[ext] };
 }
 
 async function onboardingSignAttach(admin: Client, actor: Actor, body: any) {
   const item = await signItem(admin, uuid(body.itemId, "Document"));
   mayChangeContract(item);
   const path = String(body.path || "");
-  if (!path.startsWith(`${item.request_id}/${item.id}/`)) throw httpError(400, "Invalid upload path.");
+  const ext = contractExtension(path);
+  if (!path.startsWith(`${item.request_id}/${item.id}/`) || !ext) throw httpError(400, "Invalid upload path.");
   const downloaded = await admin.storage.from(HR_BUCKET).download(path);
   if (downloaded.error || !downloaded.data) throw httpError(409, "The upload didn't arrive. Please try again.");
   const bytes = new Uint8Array(await downloaded.data.arrayBuffer());
-  if (!bytes.length || bytes.length > CONTRACT_MAX_BYTES) throw httpError(400, "The contract must be a PDF under 20 MB.");
-  if (!looksLikePdf(bytes)) throw httpError(400, "That file isn't a PDF. Save the contract as a PDF and try again.");
+  if (!bytes.length || bytes.length > CONTRACT_MAX_BYTES) throw httpError(400, "The contract must be under 20 MB.");
+  if (!contractMatches(bytes, ext)) {
+    throw httpError(400, ext === "pdf" ? "That file isn't a PDF. Save the contract as a PDF and try again." : "That file isn't a Word document. Save it from Word as .docx and try again.");
+  }
   // The fingerprint is taken from the stored bytes, so it identifies exactly what the applicant will be shown.
   const sha256 = await sha256Hex(bytes);
   const label = String(body.label || "").trim().replace(/\s+/g, " ").slice(0, 80) || "Employment contract";
@@ -488,9 +492,9 @@ async function onboardingSignView(admin: Client, actor: Actor, body: any) {
   let row: any;
   if (body.docId) {
     const { data, error } = await admin.from("onboarding_sign_documents")
-      .select("id,path,label,item_id,onboarding_items(doc_type,request_id,onboarding_requests(profile_id))").eq("id", uuid(body.docId, "Document")).maybeSingle();
+      .select("id,path,label,file_name,item_id,onboarding_items(doc_type,request_id,onboarding_requests(profile_id))").eq("id", uuid(body.docId, "Document")).maybeSingle();
     if (error) throw httpError(500, "The contract could not be found.");
-    if (data) row = { path: data.path, label: data.label, itemId: data.item_id, docType: data.onboarding_items?.doc_type, requestId: data.onboarding_items?.request_id, subject: data.onboarding_items?.onboarding_requests?.profile_id };
+    if (data) row = { path: data.path, label: data.label, fileName: data.file_name, itemId: data.item_id, docType: data.onboarding_items?.doc_type, requestId: data.onboarding_items?.request_id, subject: data.onboarding_items?.onboarding_requests?.profile_id };
   } else {
     const itemId = uuid(body.itemId, "Document");
     const { data, error } = await admin.from("onboarding_items").select("id,answers,doc_type,request_id,onboarding_requests(profile_id)").eq("id", itemId).maybeSingle();
@@ -499,13 +503,15 @@ async function onboardingSignView(admin: Client, actor: Actor, body: any) {
     if (data && path) row = { path, label: "Handwritten signature", itemId, docType: data.doc_type, requestId: data.request_id, subject: data.onboarding_requests?.profile_id };
   }
   if (!row) throw httpError(404, "Nothing to show here yet.");
-  const signed = await admin.storage.from(HR_BUCKET).createSignedUrl(row.path, 120);
+  // Browsers can't show Word files, so a Word contract is saved under its own name.
+  const download = row.fileName && contractFormat(row.path) === "word" ? { download: String(row.fileName).replace(/[^A-Za-z0-9._ -]+/g, "-").slice(0, 150) } : undefined;
+  const signed = await admin.storage.from(HR_BUCKET).createSignedUrl(row.path, 120, download);
   if (signed.error || !signed.data?.signedUrl) throw httpError(500, "A viewing link could not be created.");
   await rpc(admin, "ims_audit", {
     p_actor: actor.id, p_event: "onboarding_document_viewed",
     p_details: { itemId: row.itemId, documentId: body.docId ?? null, label: row.label, docType: row.docType, requestId: row.requestId }, p_subject: row.subject ?? null
   });
-  return { url: signed.data.signedUrl, expiresIn: 120 };
+  return { url: signed.data.signedUrl, expiresIn: 120, download: Boolean(download) };
 }
 
 const PREVIEW_MAX_BYTES = 12 * 1024 * 1024;
@@ -524,6 +530,7 @@ async function onboardingSignBytes(admin: Client, actor: Actor, body: any) {
     .select("path,label,size_bytes,item_id,onboarding_items(doc_type,request_id,onboarding_requests(profile_id))").eq("id", docId).maybeSingle();
   if (error) throw httpError(500, "The contract could not be found.");
   if (!data) throw httpError(404, "Contract not found.");
+  if (contractFormat(data.path) !== "pdf") throw httpError(400, "A Word contract has no fixed pages to place a signature on. Open it with View instead.");
   if (data.size_bytes > PREVIEW_MAX_BYTES) throw httpError(413, "This contract is too large to show here. Open it with View instead.");
   const file = await admin.storage.from(HR_BUCKET).download(data.path);
   if (file.error || !file.data) throw httpError(500, "The contract could not be read from storage.");
