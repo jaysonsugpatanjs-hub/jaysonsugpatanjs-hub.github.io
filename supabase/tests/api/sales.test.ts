@@ -144,8 +144,10 @@ Deno.test("quote to invoice, credit note", async () => {
 });
 
 Deno.test("suppliers, purchase orders, bills, withholding and payments", async () => {
+  // Expiring in 10 days, counted from today, so the "expires within 30 days" warning never goes stale.
+  const insuranceExpiry = new Date(Date.now() + 10 * 864e5).toISOString().slice(0, 10);
   const { id: sup } = await ok(FIN, { action: "supplier_save", name: "Steel Supplies Hexham", abn: "51 824 753 556", termsDays: 30, subcontractor: false,
-    insuranceExpiry: "2026-10-20" });
+    insuranceExpiry });
   const { id: sub } = await ok(FIN, { action: "supplier_save", name: "Casual Rigger (no ABN)", subcontractor: true, gstRegistered: false });
   const sl = await ok(FIN, { action: "suppliers_list" });
   assert(sl.suppliers.find((s: any) => s.id === sub).warnings.some((w: string) => w.includes("47%")), "no-ABN warning");
