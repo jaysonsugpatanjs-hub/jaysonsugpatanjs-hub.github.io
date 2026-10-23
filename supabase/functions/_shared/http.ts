@@ -49,6 +49,20 @@ export function httpError(status: number, message: string, code?: string) {
   return Object.assign(new Error(message), { status, code });
 }
 
+// Supabase Auth's built-in mailer sends only a few emails an hour. When that
+// limit is hit, say so instead of blaming the email address.
+export function inviteError(error: any, fallback: string) {
+  const code = String(error?.code || "");
+  if (Number(error?.status) === 429 || code === "over_email_send_rate_limit") {
+    return httpError(429, "The sign-in email limit has been reached. Wait an hour and try again, or choose \"temporary password\" instead.", "email_rate_limited");
+  }
+  if (code === "email_exists" || Number(error?.status) === 422) {
+    return httpError(409, "This email already has a sign-in. Find the person on the register and link or reset their sign-in instead.", "email_exists");
+  }
+  if (error) console.error("inviteUserByEmail failed", code, error?.message);
+  return httpError(409, fallback);
+}
+
 // Calls an atomic SQL function. Database errors carry a SQLSTATE that maps to
 // the HTTP status the caller should see; the message is written for people.
 const SQLSTATE_STATUS: Record<string, number> = {

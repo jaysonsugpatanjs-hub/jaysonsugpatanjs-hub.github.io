@@ -76,6 +76,8 @@ begin
   perform pg_temp.expect_error(format('select public.employee_save(%L, %L)', pg_temp.a('hr'), '{"employeeNumber":"Z-1","fullName":"Z"}'), 'Manage the people register');
   perform public.app_set_profile_permission(pg_temp.a('boss'), pg_temp.a('hr'), 'people.manage', 'allow');
   perform public.employee_save(pg_temp.a('hr'), '{"employeeNumber":"Z-1","fullName":"Z"}');
+  -- A taken employee number names the person who holds it.
+  perform pg_temp.expect_error(format('select public.employee_save(%L, %L)', pg_temp.a('hr'), '{"employeeNumber":"Z-1","fullName":"Y"}'), 'Employee number Z-1 is already used by Z');
 
   -- Supervisors record practicals for their own team only.
   insert into public.training_modules (code, slug, title) values ('PP-TRN-ACC-001', 'pp-trn-acc-001', 'Access test') returning id into v_mod;
