@@ -1,5 +1,5 @@
 import { withSupabase } from "npm:@supabase/server@^1";
-import { corsHeaders, errorJson, httpError, json, rpc } from "../_shared/http.ts";
+import { corsHeaders, errorJson, httpError, inviteError, json, rpc } from "../_shared/http.ts";
 import { peopleActions } from "./people.ts";
 import { pathwayApply, pathwayGet, pathwaySaveMap } from "./pathway.ts";
 import { accountActions, type Actor } from "./accounts.ts";
@@ -517,7 +517,7 @@ async function invite(admin: Client, administrator: any, body: any) {
       data: { full_name: fullName, external_id: externalId, learner_type: learnerType }
     });
     if (invited.error || !invited.data?.user?.id) {
-      throw httpError(409, "This email could not be invited. Check whether it already has an account or try again later.");
+      throw inviteError(invited.error, "This email could not be invited. Check whether it already has an account or try again later.");
     }
     userId = invited.data.user.id;
     invitationSent = true;

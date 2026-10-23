@@ -4,7 +4,7 @@
 import { generateTemporaryPassword } from "../_shared/accounts.ts";
 import { CONTRACT_MAX_BYTES, SignError, describeSignature, looksLikePdf, parseCompanySignature, parsePlacement, sha256Hex, signatureImagePath, toBase64, type CompanySignature, type Placement, type StoredCompanySignature } from "../_shared/contract-signing.ts";
 import { FORMS, describeAnswers } from "../_shared/onboarding-forms.ts";
-import { httpError, rpc } from "../_shared/http.ts";
+import { httpError, inviteError, rpc } from "../_shared/http.ts";
 import { copyDisplayName, copyFolder, isStoredCopyName } from "../_shared/contract-copies.ts";
 import { fileAcceptedOnboarding, previewSignedContract } from "./personnel.ts";
 
@@ -68,7 +68,7 @@ export async function ensureLogin(admin: Client, actor: Actor, employee: any, mo
         redirectTo: `${appUrl()}?welcome=1`,
         data: { full_name: employee.full_name, external_id: employee.employee_number, learner_type: employee.employment_type }
       });
-      if (sent.error || !sent.data?.user?.id) throw httpError(409, "The invitation could not be sent. Check the email address and try again.");
+      if (sent.error || !sent.data?.user?.id) throw inviteError(sent.error, "The invitation could not be sent. Check the email address and try again.");
       profileId = sent.data.user.id;
       invited = true;
     }

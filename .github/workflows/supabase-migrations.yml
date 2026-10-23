@@ -123,11 +123,14 @@ jobs:
             exit 1
           fi
 
+      # --include-all: a migration can be applied to the live project before
+      # an older pending one (for example a hotfix), so apply every migration
+      # missing from the history, not only those newer than the latest.
       - name: Show pending migrations
         shell: bash
         run: |
           set -o pipefail
-          if ! supabase db push --dry-run --db-url "$DB_URL" 2>&1 | tee step.log; then
+          if ! supabase db push --dry-run --include-all --db-url "$DB_URL" 2>&1 | tee step.log; then
             grep -v '^\s*$' step.log | tail -15 | sed 's/^/::error title=dry run::/'
             exit 1
           fi
@@ -137,7 +140,7 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          if ! supabase db push --db-url "$DB_URL" 2>&1 | tee step.log; then
+          if ! supabase db push --include-all --db-url "$DB_URL" 2>&1 | tee step.log; then
             grep -v '^\s*$' step.log | tail -15 | sed 's/^/::error title=apply::/'
             exit 1
           fi
