@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import "./leadpilot-h8.css";
+import { submitLeadPilotMirror } from "./leadpilot-h8-delivery.js";
 
 const PORTFOLIO_CRM_INQUIRY_URL =
   "https://jayson-sugpatan-portfolio.jayrisse1490.chatgpt.site/api/inquiry";
@@ -67,20 +68,6 @@ function acquisitionMetadata() {
     utm_term: params.get("utm_term") || "",
     referrer: document.referrer || "",
   };
-}
-
-function mirrorToHubSpot(payload) {
-  const requestBody = new URLSearchParams();
-  Object.entries(payload).forEach(([key, value]) =>
-    requestBody.set(key, String(value ?? "")),
-  );
-
-  void fetch(LEADPILOT_INBOUND_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
-    body: requestBody.toString(),
-    keepalive: true,
-  }).catch(() => undefined);
 }
 
 export default function LeadPilotInquiryForm() {
@@ -155,6 +142,8 @@ export default function LeadPilotInquiryForm() {
     const service =
       SERVICE_OPTIONS.find((option) => option.value === inquiryType)?.label ?? "Other enquiry";
     const metadata = acquisitionMetadata();
+    const submissionId = randomId();
+    const consentTimestamp = new Date().toISOString();
 
     setStatus("sending");
     setFeedback("Saving your inquiry to the private portfolio CRM…");
@@ -189,7 +178,7 @@ export default function LeadPilotInquiryForm() {
         throw new Error(result?.error || `Portfolio CRM returned ${response.status}`);
       }
 
-      mirrorToHubSpot({
+      const mirrorResult = await submitLeadPilotMirror({
         firstname,
         lastname,
         email,
@@ -205,13 +194,19 @@ export default function LeadPilotInquiryForm() {
         source_detail: "GitHub Portfolio — consented private CRM capture",
         submitted_at: new Date().toISOString(),
         portfolio_inquiry_id: result?.inquiryId || "",
+        leadpilot_submission_id: submissionId,
+        contact_consent: "true",
+        consent_version: CONSENT_VERSION,
+        consent_timestamp: consentTimestamp,
         website_check: "",
         client_form_seconds: Math.max(0, Math.round((Date.now() - startedAt) / 1000)),
         ...metadata,
-      });
+      }, { url: LEADPILOT_INBOUND_URL });
 
       setStatus("success");
-      setFeedback("Thank you—your inquiry is saved and ready for follow-up.");
+      setFeedback(mirrorResult.accepted
+        ? "Thank you—your inquiry was saved. LeadPilot accepted the handoff for processing."
+        : "Your inquiry was saved to the private CRM, but the secondary LeadPilot handoff could not be confirmed. Please do not submit again; the saved record can be reviewed.");
       form.reset();
     } catch (error) {
       setStatus("error");

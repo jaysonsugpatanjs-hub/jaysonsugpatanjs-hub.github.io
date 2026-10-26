@@ -60,16 +60,18 @@ https://jayson-sugpatan-portfolio.jayrisse1490.chatgpt.site/crm
 
 The owner-only workspace provides intent scoring, searchable leads, pipeline
 stages, priorities, next actions, follow-up dates, and internal activity notes.
-The same form also sends a non-blocking secondary copy to the existing n8n
-intake for HubSpot synchronization:
+After saving the primary record, the form attempts a single secondary handoff to the existing n8n
+intake for HubSpot synchronization and reports whether that handoff was acknowledged:
 
 ```text
 https://jaysonsugpatan1490.app.n8n.cloud/webhook/leadpilot-inbound
 ```
 
 The H7 inbound workflow can continue normalizing and routing that copy to the
-LeadPilot HubSpot portal. A HubSpot or n8n interruption does not prevent the
-primary private-CRM record from being saved.
+LeadPilot HubSpot portal. A HubSpot or n8n interruption does not undo the
+primary private-CRM save. A webhook acknowledgement does not prove HubSpot
+processing completed. Live acceptance testing and server-side retry/idempotency
+are still required; see [H9 acceptance runbook](docs/leadpilot-h9-acceptance.md).
 
 The website captures acquisition context including the page URL, referrer, UTM
 parameters, source detail, and submission timestamp. It also includes client
