@@ -34,7 +34,7 @@ export async function submitLeadPilotMirror(
     return {
       accepted: false,
       httpStatus: null,
-      error: error?.name === "AbortError" ? "TIMEOUT" : "NETWORK_OR_CORS",
+      error: controller.signal.aborted || error?.name === "AbortError" ? "TIMEOUT" : "NETWORK_OR_CORS",
     };
   } finally {
     clearTimeout(timeout);
