@@ -17,9 +17,16 @@
 
 1. Review `src/LeadPilotH8.jsx`: find the primary `fetch(PORTFOLIO_CRM_INQUIRY_URL)`, then the `submitLeadPilotMirror` call. Explain why primary and secondary writes are distinct.
 2. Review `src/leadpilot-h8-delivery.js`: identify `response.ok`, `AbortController`, the `finally` cleanup, and why there is no retry.
-3. Run `node --test tests/leadpilot-h8-delivery.test.mjs` (four mocked scenarios: 200, 503, network/CORS, timeout).
+3. Run `node --test tests/leadpilot-h8-delivery.test.mjs` (seven mocked scenarios: 200, 202, 503, 429, network/CORS, AbortError timeout, and TypeError-after-abort timeout).
 4. Run `npm ci` then `npm run build` on the feature branch; inspect the compiled bundle to ensure no private `x-leadpilot-key` or HubSpot token is embedded.
 5. Test in a non-production environment or controlled test window. Inspect browser DevTools → Network: first the private CRM `/api/inquiry` response, then `/webhook/leadpilot-inbound`. A private CRM 2xx with an n8n failure should display a partial-success message, **not** encourage repeat submissions.
+
+## November 3 reliability regression note
+
+- Additional tests cover asynchronous `202 Accepted`, rate limiting (`429` without browser retry), and browsers that reject an aborted fetch with `TypeError` rather than `AbortError`.
+- The mirror helper now checks `signal.aborted` as well as the exception name to classify timeouts correctly.
+- The seven behavior tests passed in a local isolated Node reproduction on 3 November 2026; verify the repository test command and CI again against the updated PR head.
+- These are mocked HTTP tests, **not** H7/H9 live integration or HubSpot delivery evidence. H9-001 through H9-008 remain NOT RUN.
 
 ## H7 receiver checklist
 
