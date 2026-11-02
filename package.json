@@ -17,7 +17,8 @@
     "test:db": "bash supabase/tests/db/run.sh",
     "test:api": "bash supabase/tests/api/run.sh",
     "validate:training-private": "node training/scripts/provision-supabase-module.mjs --dry-run training/ppt/pp-trn-wld-001",
-    "check:training-public": "node training/scripts/check-public-training.mjs"
+    "check:training-public": "node training/scripts/check-public-training.mjs",
+    "test:leadpilot": "node --test tests/leadpilot-h8-delivery.test.mjs"
   },
   "dependencies": {
     "react": "19.2.6",
