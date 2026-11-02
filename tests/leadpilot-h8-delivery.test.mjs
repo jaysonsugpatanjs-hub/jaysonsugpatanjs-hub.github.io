@@ -54,3 +54,36 @@ test("reports a timeout and aborts the request", async () => {
   });
   assert.deepEqual(result, { accepted: false, httpStatus: null, error: "TIMEOUT" });
 });
+
+
+test("accepts HTTP 202 but does not imply downstream HubSpot completion", async () => {
+  const result = await submitLeadPilotMirror({ leadpilot_submission_id: "async-001" }, {
+    url,
+    fetchImpl: async () => ({ ok: true, status: 202 }),
+  });
+  assert.deepEqual(result, { accepted: true, httpStatus: 202, error: null });
+});
+
+test("rejects HTTP 429 without automatically retrying", async () => {
+  let attempts = 0;
+  const result = await submitLeadPilotMirror({ email: "tester@example.com" }, {
+    url,
+    fetchImpl: async () => {
+      attempts += 1;
+      return { ok: false, status: 429 };
+    },
+  });
+  assert.deepEqual(result, { accepted: false, httpStatus: 429, error: "HTTP_429" });
+  assert.equal(attempts, 1);
+});
+
+test("classifies an aborted fetch as TIMEOUT even if the browser rejects with TypeError", async () => {
+  const result = await submitLeadPilotMirror({}, {
+    url,
+    timeoutMs: 10,
+    fetchImpl: (_endpoint, { signal }) => new Promise((_resolve, reject) => {
+      signal.addEventListener("abort", () => reject(new TypeError("Failed to fetch")), { once: true });
+    }),
+  });
+  assert.deepEqual(result, { accepted: false, httpStatus: null, error: "TIMEOUT" });
+});
