@@ -87,3 +87,37 @@ test("classifies an aborted fetch as TIMEOUT even if the browser rejects with Ty
   });
   assert.deepEqual(result, { accepted: false, httpStatus: null, error: "TIMEOUT" });
 });
+
+test("never attaches internal CRM authentication to browser-originated request", async () => {
+  let request;
+  await submitLeadPilotMirror({ email: "tester@example.com" }, {
+    url,
+    fetchImpl: async (_endpoint, options) => {
+      request = options;
+      return { ok: true, status: 200 };
+    },
+  });
+  const headerNames = Object.keys(request.headers).map((name) => name.toLowerCase());
+  assert.equal(headerNames.includes("authorization"), false);
+  assert.equal(headerNames.includes("x-leadpilot-key"), false);
+  assert.equal(request.credentials, undefined);
+});
+
+test("preserves the exact correlation ID and encodes special characters safely", async () => {
+  let request;
+  const correlationId = "LP-2026-11-10/A+B & C";
+  const result = await submitLeadPilotMirror({
+    leadpilot_submission_id: correlationId,
+    service_requirement: "Pipe welding & maintenance + shutdown",
+  }, {
+    url,
+    fetchImpl: async (_endpoint, options) => {
+      request = options;
+      return { ok: true, status: 204 };
+    },
+  });
+  assert.equal(result.accepted, true);
+  const encoded = new URLSearchParams(request.body);
+  assert.equal(encoded.get("leadpilot_submission_id"), correlationId);
+  assert.equal(encoded.get("service_requirement"), "Pipe welding & maintenance + shutdown");
+});
