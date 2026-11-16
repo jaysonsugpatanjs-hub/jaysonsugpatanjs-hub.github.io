@@ -17,7 +17,7 @@
 
 1. Review `src/LeadPilotH8.jsx`: find the primary `fetch(PORTFOLIO_CRM_INQUIRY_URL)`, then the `submitLeadPilotMirror` call. Explain why primary and secondary writes are distinct.
 2. Review `src/leadpilot-h8-delivery.js`: identify `response.ok`, `AbortController`, the `finally` cleanup, and why there is no retry.
-3. Run `node --test tests/leadpilot-h8-delivery.test.mjs` (seven mocked scenarios: 200, 202, 503, 429, network/CORS, AbortError timeout, and TypeError-after-abort timeout).
+3. Run `node --test tests/leadpilot-h8-delivery.test.mjs` (nine mocked scenarios: 200, 202, 204, 503, 429, network/CORS, AbortError timeout, TypeError-after-abort timeout, browser credential isolation, and URL-encoded special-character preservation).
 4. Run `npm ci` then `npm run build` on the feature branch; inspect the compiled bundle to ensure no private `x-leadpilot-key` or HubSpot token is embedded.
 5. Test in a non-production environment or controlled test window. Inspect browser DevTools → Network: first the private CRM `/api/inquiry` response, then `/webhook/leadpilot-inbound`. A private CRM 2xx with an n8n failure should display a partial-success message, **not** encourage repeat submissions.
 
@@ -25,8 +25,15 @@
 
 - Additional tests cover asynchronous `202 Accepted`, rate limiting (`429` without browser retry), and browsers that reject an aborted fetch with `TypeError` rather than `AbortError`.
 - The mirror helper now checks `signal.aborted` as well as the exception name to classify timeouts correctly.
-- The seven behavior tests passed in a local isolated Node reproduction on 3 November 2026; verify the repository test command and CI again against the updated PR head.
+- The original seven behavior tests passed in a local isolated Node reproduction on 3 November 2026. On 17 November 2026, GitHub Actions for commit `f8862ee7382d9c11ed3aded04426f460e62c07bf` completed successfully (run 42700167109). This confirms the configured CI workflow passed; it does not establish live CRM delivery.
 - These are mocked HTTP tests, **not** H7/H9 live integration or HubSpot delivery evidence. H9-001 through H9-008 remain NOT RUN.
+
+## 17 November CI checkpoint
+
+- Current draft PR head: `f8862ee7382d9c11ed3aded04426f460e62c07bf`.
+- GitHub Actions run [42700167109](https://github.com/jaysonsugpatanjs-hub/jaysonsugpatanjs-hub.github.io/actions/runs/42700167109) completed with **success**.
+- The repository test file now contains **nine** test cases, including browser credential isolation and special-character/correlation-ID preservation.
+- **No H9-001 through H9-008 live acceptance evidence has been recorded.** Do not infer HubSpot completion from CI success.
 
 ## H7 receiver checklist
 
