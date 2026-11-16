@@ -17,7 +17,7 @@
 
 1. Review `src/LeadPilotH8.jsx`: find the primary `fetch(PORTFOLIO_CRM_INQUIRY_URL)`, then the `submitLeadPilotMirror` call. Explain why primary and secondary writes are distinct.
 2. Review `src/leadpilot-h8-delivery.js`: identify `response.ok`, `AbortController`, the `finally` cleanup, and why there is no retry.
-3. Run `node --test tests/leadpilot-h8-delivery.test.mjs` (nine mocked scenarios: 200, 202, 204, 503, 429, network/CORS, AbortError timeout, TypeError-after-abort timeout, browser credential isolation, and URL-encoded special-character preservation).
+3. Run `node --test tests/leadpilot-h8-delivery.test.mjs` (nine mocked scenarios: HTTP 200, HTTP 202, HTTP 503, HTTP 429, network/CORS failure, AbortError timeout, TypeError-after-abort timeout, browser credential isolation, and URL-encoded special-character preservation (with HTTP 204)).
 4. Run `npm ci` then `npm run build` on the feature branch; inspect the compiled bundle to ensure no private `x-leadpilot-key` or HubSpot token is embedded.
 5. Test in a non-production environment or controlled test window. Inspect browser DevTools → Network: first the private CRM `/api/inquiry` response, then `/webhook/leadpilot-inbound`. A private CRM 2xx with an n8n failure should display a partial-success message, **not** encourage repeat submissions.
 
