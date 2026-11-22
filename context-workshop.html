@@ -1,0 +1,646 @@
+<!doctype html><html lang="en-AU"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex,nofollow"><title>Panalo Context Workshop</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: a workshop floor. Sticky header with the "hold point" stage rail (like an ITP),
+   one stage at a time below, notes as tags on boards. Charcoal and safety yellow from Panalo's documents. */
+:root{
+  --bg:#f3f2ee; --panel:#ffffff; --ink:#1f2022; --muted:#5d5f63; --line:#d9d7d0; --charcoal:#252627; --on-charcoal:#f6f5f1;
+  --yellow:#ffc20e; --yellow-ink:#5a4300; --focus:#0b63ce;
+  --n-pe:#fff1bf; --n-s:#d9efd9; --n-w:#fde1cc; --n-o:#d8e8f8; --n-t:#f9d6dc; --n-ip:#e7e1f5; --n-gen:#eceae3;
+  --crit:#c0392b; --high:#f39c12; --mod:#f7dc6f; --low:#82c79b;
+  --o-strat:#1f6f43; --o-high:#52a373; --o-mod:#a9d8b8; --o-low:#e2f0e6;
+  --ok:#1f7a45; --warn:#9c5a00;
+  --f-display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
+  --f-body:"Barlow","Segoe UI",Arial,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#17181a; --panel:#212225; --ink:#ecebe6; --muted:#a6a8ad; --line:#3a3c40; --charcoal:#0f1011; --on-charcoal:#f6f5f1;
+  --yellow:#ffc20e; --yellow-ink:#ffd65a; --focus:#6aa8ff;
+  --n-pe:#4a3f12; --n-s:#1f3b25; --n-w:#4a2a17; --n-o:#1b3149; --n-t:#4a1f27; --n-ip:#332a4a; --n-gen:#2c2d30;
+  --ok:#6fd39a; --warn:#ffb648; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#17181a; --panel:#212225; --ink:#ecebe6; --muted:#a6a8ad; --line:#3a3c40; --charcoal:#0f1011; --on-charcoal:#f6f5f1;
+  --yellow:#ffc20e; --yellow-ink:#ffd65a; --focus:#6aa8ff;
+  --n-pe:#4a3f12; --n-s:#1f3b25; --n-w:#4a2a17; --n-o:#1b3149; --n-t:#4a1f27; --n-ip:#332a4a; --n-gen:#2c2d30;
+  --ok:#6fd39a; --warn:#ffb648; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0}body{padding-top:env(safe-area-inset-top,0px);background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--charcoal)}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.wrap{max-width:1280px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1,h2,h3{font-family:var(--f-display);letter-spacing:.01em;text-wrap:balance;margin:0}
+h2{font-size:2rem;line-height:1.1}
+h3{font-size:1.3rem}
+p{margin:0}
+.muted{color:var(--muted)}
+.mono{font-family:var(--f-mono);font-size:.78rem;letter-spacing:.02em}
+
+/* header */
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--charcoal);color:var(--on-charcoal)}
+.topbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;padding-block:10px}
+.brand{display:flex;flex-direction:column;min-width:0;margin-right:auto}
+.brand b{font-family:var(--f-display);font-size:1.35rem;letter-spacing:.03em;text-transform:uppercase;line-height:1}
+.brand span{font-size:.78rem;opacity:.75}
+.chip{display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(255,255,255,.25);border-radius:999px;padding:3px 10px;font-size:.8rem;white-space:nowrap}
+.chip.role{background:var(--yellow);color:#1f2022;border-color:var(--yellow);font-weight:600}
+.btn{border:1px solid var(--line);background:var(--panel);border-radius:6px;padding:6px 12px;cursor:pointer;font-weight:500}
+.btn:hover{border-color:var(--ink)}
+.btn.primary{background:var(--yellow);border-color:var(--yellow);color:#1f2022;font-weight:600}
+.btn.dark{background:transparent;color:var(--on-charcoal);border-color:rgba(255,255,255,.3)}
+.btn.small{padding:3px 8px;font-size:.82rem}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.rail{display:flex;gap:0;overflow-x:auto;padding-bottom:10px;scrollbar-width:thin}
+.hp{flex:1 0 auto;display:flex;align-items:center;gap:8px;background:none;border:0;color:var(--on-charcoal);opacity:.6;cursor:pointer;padding:6px 10px 6px 0;font-family:var(--f-display);font-size:1rem;letter-spacing:.03em;text-transform:uppercase;white-space:nowrap}
+.hp .dia{width:16px;height:16px;transform:rotate(45deg);border:2px solid currentColor;flex:none}
+.hp .bar{flex:1;min-width:14px;height:2px;background:rgba(255,255,255,.25)}
+.hp.done{opacity:.85}.hp.done .dia{background:var(--on-charcoal)}
+.hp.live{opacity:1;color:var(--yellow)}.hp.live .dia{background:var(--yellow);border-color:var(--yellow)}
+.hp.viewing{opacity:1;text-decoration:underline;text-underline-offset:6px}
+.hp:last-child .bar{display:none}
+
+.banner{background:var(--yellow);color:#1f2022;font-size:.88rem;padding-block:6px}
+.timer{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding-block:8px;border-bottom:1px solid var(--line);background:var(--panel)}
+.clock{font-family:var(--f-mono);font-size:1.4rem;font-variant-numeric:tabular-nums;min-width:4.5ch}
+.clock.up{color:var(--crit)}
+
+main{padding-block:24px 64px}
+.stagehead{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px;align-items:end;margin-bottom:18px}
+.eyebrow{font-family:var(--f-mono);font-size:.75rem;text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}
+.cols{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:20px;align-items:start}
+@media (max-width:900px){.cols{grid-template-columns:minmax(0,1fr)}.stagehead{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:16px}
+.panel h3{margin-bottom:8px}
+.steps{margin:0;padding-left:1.2em;display:grid;gap:6px}
+.say{border-left:4px solid var(--yellow);background:color-mix(in srgb,var(--yellow) 14%,var(--panel));padding:10px 12px;font-style:italic;border-radius:0 6px 6px 0}
+.say b{font-style:normal;color:var(--yellow-ink)}
+.side{display:grid;gap:14px}
+.facil{border-color:var(--yellow);border-width:2px}
+.facil .eyebrow{color:var(--yellow-ink)}
+.flow{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+@media (max-width:760px){.flow{grid-template-columns:minmax(0,1fr)}}
+.flow div{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px}
+.flow div.key{border:2px solid var(--yellow)}
+.flow b{font-family:var(--f-display);font-size:1.15rem;display:block}
+
+/* boards */
+.board{display:grid;gap:12px}
+.board.pestle{grid-template-columns:repeat(3,minmax(0,1fr))}
+.board.swot{grid-template-columns:repeat(2,minmax(0,1fr))}
+@media (max-width:900px){.board.pestle{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:600px){.board.pestle,.board.swot{grid-template-columns:minmax(0,1fr)}}
+.lane{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.lane header{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.lane header h3{font-size:1.25rem}
+.lane .q{font-size:.85rem;color:var(--muted)}
+.notes{display:grid;gap:8px}
+.note{border-radius:4px;padding:8px 10px;display:grid;gap:4px;position:relative;box-shadow:0 1px 0 rgba(0,0,0,.08);min-width:0}
+.note p{overflow-wrap:anywhere}
+.note .meta{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:.78rem;color:var(--muted)}
+.note .acts{display:flex;flex-wrap:wrap;gap:6px}
+.tag{font-family:var(--f-mono);font-size:.72rem;background:var(--charcoal);color:var(--on-charcoal);padding:1px 6px;border-radius:3px}
+.tag.new{background:transparent;color:var(--muted);border:1px dashed var(--muted)}
+.flag{font-weight:600;font-size:.75rem;border:1px solid currentColor;border-radius:3px;padding:0 5px}
+.sig{color:var(--yellow-ink);font-weight:600;font-size:.78rem}
+.c-PE{background:var(--n-pe)}.c-S{background:var(--n-s)}.c-W{background:var(--n-w)}.c-O{background:var(--n-o)}.c-T{background:var(--n-t)}.c-IP{background:var(--n-ip)}.c-GEN{background:var(--n-gen)}
+.note.draft{outline:1px dashed var(--muted);outline-offset:-1px}
+.note.hidden{opacity:.45}
+.addform{display:grid;gap:6px;border-top:1px dashed var(--line);padding-top:10px}
+.addform textarea,.addform input,.addform select,.field input,.field select,.field textarea{width:100%;border:1px solid var(--line);border-radius:6px;padding:6px 8px;background:var(--bg)}
+.addform textarea{min-height:56px;resize:vertical}
+.row{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.dot{width:26px;height:26px;border-radius:50%;border:2px solid var(--ink);background:transparent;cursor:pointer;padding:0}
+.dot.on{background:var(--yellow);border-color:var(--yellow-ink)}
+.tally{display:inline-flex;gap:3px;align-items:center}
+.tally i{width:10px;height:10px;border-radius:50%;background:var(--yellow);border:1px solid var(--yellow-ink);display:inline-block}
+
+/* scoring */
+.items{display:grid;gap:14px}
+.sitem{background:var(--panel);border:1px solid var(--line);border-radius:8px;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:0}
+@media (max-width:900px){.sitem{grid-template-columns:minmax(0,1fr)}}
+.sitem > div{padding:14px;min-width:0}
+.sitem .agree{border-left:1px solid var(--line);background:color-mix(in srgb,var(--yellow) 6%,var(--panel))}
+@media (max-width:900px){.sitem .agree{border-left:0;border-top:1px solid var(--line)}}
+.pick{display:flex;gap:4px;flex-wrap:wrap}
+.pick button{width:38px;height:34px;border:1px solid var(--line);background:var(--bg);border-radius:6px;cursor:pointer;font-weight:600}
+.pick button.on{background:var(--charcoal);color:var(--on-charcoal);border-color:var(--charcoal)}
+.dist{display:flex;gap:4px;align-items:flex-end;height:44px}
+.dist div{width:38px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;font-size:.7rem;color:var(--muted);height:100%}
+.dist span{display:block;width:100%;background:var(--yellow);border-radius:3px 3px 0 0;min-height:2px}
+.lvl{display:inline-block;padding:2px 8px;border-radius:4px;font-weight:700;font-size:.82rem;color:#1f2022}
+.lvl.Critical{background:var(--crit);color:#fff}.lvl.High{background:var(--high)}.lvl.Moderate{background:var(--mod)}.lvl.Low{background:var(--low)}
+.lvl.oStrategic{background:var(--o-strat);color:#fff}.lvl.oHigh{background:var(--o-high)}.lvl.oModerate{background:var(--o-mod)}.lvl.oLow{background:var(--o-low)}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.field{display:grid;gap:3px;font-size:.82rem}
+.field.full{grid-column:1/-1}
+.field label{color:var(--muted)}
+
+table.mx{border-collapse:collapse;font-variant-numeric:tabular-nums}
+table.mx td,table.mx th{width:44px;height:34px;text-align:center;font-weight:600;border:2px solid var(--panel);font-size:.9rem}
+table.mx th{background:var(--charcoal);color:var(--on-charcoal);font-weight:500}
+.tblwrap{overflow-x:auto}
+table.sum{border-collapse:collapse;width:100%;font-size:.9rem}
+table.sum th{text-align:left;background:var(--charcoal);color:var(--on-charcoal);padding:6px 8px;font-weight:500}
+table.sum td{border-bottom:1px solid var(--line);padding:6px 8px;vertical-align:top}
+
+dialog{border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--ink);max-width:min(560px,calc(100vw - 32px));padding:20px}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+.people{display:flex;flex-wrap:wrap;gap:6px}
+.people .chip{border-color:rgba(255,255,255,.25)}
+.toast{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--charcoal);color:var(--on-charcoal);padding:8px 14px;border-radius:6px;font-size:.9rem;z-index:50}
+.join{position:fixed;inset:0;z-index:60;background:var(--bg);overflow:auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:max(24px,env(safe-area-inset-top,0px)) 24px}
+.join .card{max-width:460px;margin:6vh auto 0;background:var(--panel);border:1px solid var(--line);border-top:6px solid var(--yellow);border-radius:8px;padding:24px;display:grid;gap:14px}
+.join h1{font-size:2.2rem;line-height:1}
+.join .field input{font-size:1.05rem;padding:10px 12px}
+.join .err{color:var(--crit);font-weight:600;min-height:1.2em}
+.empty{border:1px dashed var(--line);border-radius:6px;padding:10px;color:var(--muted);font-size:.88rem}
+@media (prefers-reduced-motion:no-preference){.note{transition:transform .12s}.note:hover{transform:translateY(-1px)}}
+</style>
+
+</head><body>
+<header class="top">
+  <div class="wrap">
+    <div class="topbar">
+      <div class="brand"><b>Context Workshop</b><span>Panalo Pipes &amp; Structurals · SWOT, PESTLE and risk register · ISO 9001:2026 clauses 4.1, 4.2, 6.1</span></div>
+      <div class="people" id="people" aria-label="Who is here"></div>
+      <span class="chip role" id="role">Loading</span>
+      <button class="btn dark small" id="followBtn" type="button">Following facilitator</button>
+      <button class="btn dark small" id="cardBtn" type="button">Scoring card</button>
+    </div>
+    <nav class="rail" id="rail" aria-label="Workshop stages"></nav>
+  </div>
+</header>
+<div class="banner" id="banner" hidden><div class="wrap" id="bannerText"></div></div>
+<div class="timer"><div class="wrap row" style="width:100%">
+  <span class="eyebrow">Timer</span><span class="clock" id="clock">--:--</span><span class="muted" id="timerLabel">No timer running</span>
+  <span class="row" id="timerCtl" hidden style="margin-left:auto">
+    <button class="btn small" data-timer="3" type="button">3 min</button>
+    <button class="btn small" data-timer="5" type="button">5 min</button>
+    <button class="btn small" data-timer="10" type="button">10 min</button>
+    <button class="btn small" data-timer="15" type="button">15 min</button>
+    <button class="btn small" data-timer="0" type="button">Stop</button>
+  </span>
+</div></div>
+<main class="wrap" id="main"></main>
+
+<dialog id="card" aria-label="Scoring card">
+  <h3>Scoring card</h3>
+  <p class="muted" style="margin:4px 0 10px">Score = Likelihood x Consequence (risks) or Likelihood x Benefit (opportunities). Each 1 to 5. If the room splits, take the higher number.</p>
+  <div class="tblwrap"><table class="sum">
+    <tr><th>#</th><th>Likelihood</th><th>Consequence</th><th>Benefit</th></tr>
+    <tr><td>1</td><td>Remote: not in 5 years</td><td>Fixed in-house same day</td><td>Small convenience</td></tr>
+    <tr><td>2</td><td>Unlikely: could in 5 years</td><td>Internal NCR, rework under a day</td><td>Saves some time or cost</td></tr>
+    <tr><td>3</td><td>Possible: in 1 to 2 years</td><td>Customer NCR, or delay under a week</td><td>Noticeable improvement</td></tr>
+    <tr><td>4</td><td>Likely: within a year</td><td>Delay over a week, payment held, complaint</td><td>New work or big cut in rework</td></tr>
+    <tr><td>5</td><td>Almost certain: several a year</td><td>Failure in service, contract or certification lost</td><td>Opens new markets</td></tr>
+  </table></div>
+  <div class="row" style="margin-top:12px;align-items:flex-start;gap:18px">
+    <div class="tblwrap"><table class="mx" id="mx"></table></div>
+    <div style="display:grid;gap:4px;font-size:.88rem">
+      <span><span class="lvl Critical">Critical</span> 17 to 25: tell the MD now</span>
+      <span><span class="lvl High">High</span> 10 to 16: plan within a month</span>
+      <span><span class="lvl Moderate">Moderate</span> 5 to 9: planned action</span>
+      <span><span class="lvl Low">Low</span> 1 to 4: existing controls</span>
+    </div>
+  </div>
+  <div class="row" style="justify-content:flex-end;margin-top:14px"><button class="btn primary" id="cardClose" type="button">Close</button></div>
+</dialog>
+<dialog id="confirm" aria-label="Confirm">
+  <h3 id="confirmTitle">Are you sure?</h3>
+  <p class="muted" id="confirmText" style="margin:6px 0 14px"></p>
+  <div class="row" style="justify-content:flex-end"><button class="btn" id="confirmNo" type="button">Cancel</button><button class="btn primary" id="confirmYes" type="button">Yes, go ahead</button></div>
+</dialog>
+<div class="toast" id="toast" hidden></div>
+<div class="join" id="join">
+ <form class="card" id="joinForm" autocomplete="off">
+  <div class="eyebrow">Panalo Pipes &amp; Structurals</div>
+  <h1>Context Workshop</h1>
+  <p class="muted">SWOT, PESTLE and the risk and opportunity register. No account needed: type your name and the room code the facilitator gave you.</p>
+  <div class="field"><label for="jName">Your name</label><input id="jName" maxlength="60" required placeholder="e.g. Sam (Welding Coordinator)"></div>
+  <div class="field"><label for="jCode">Room code</label><input id="jCode" maxlength="20" required placeholder="e.g. PANALO-AB12" style="text-transform:uppercase"></div>
+  <details id="facDetails"><summary class="muted">I am the facilitator</summary><div class="field" style="margin-top:8px"><label for="jPin">Facilitator PIN</label><input id="jPin" maxlength="40" type="password"></div></details>
+  <p class="err" id="jErr" role="alert"></p>
+  <button class="btn primary" type="submit" id="jBtn" style="padding:10px">Join the workshop</button>
+  <p class="muted" style="font-size:.82rem">Your name and notes are shared with everyone in this room and kept as a workshop record for Panalo's ISO 9001 system.</p>
+ </form>
+</div>
+
+<script>
+(function(){
+"use strict";
+/* ---------------- static content ---------------- */
+const STAGES=[
+ {id:"welcome",name:"Welcome",mins:15},
+ {id:"fit",name:"How it fits",mins:10},
+ {id:"pestle",name:"PESTLE",mins:45,breakAfter:"Break, 15 minutes"},
+ {id:"swot",name:"SWOT",mins:40},
+ {id:"vote",name:"Vote",mins:20},
+ {id:"ip",name:"Interested parties",mins:15,breakAfter:"Break, 10 minutes"},
+ {id:"score",name:"Score and own",mins:40},
+ {id:"wrap",name:"Wrap-up",mins:15}
+];
+const PE_CATS=[
+ ["PO","Political","Is government or client spending on infrastructure, mining, energy or defence going up or down? Are licensing rules, such as labour hire licensing, changing?"],
+ ["EC","Economic","What are steel, consumable and gas prices doing? How long are lead times? Are shutdown budgets growing or shrinking? Cash flow and interest rates?"],
+ ["SO","Social","Can we find qualified welders, boilermakers and supervisors? Is the workforce ageing? What do clients now expect from a contractor?"],
+ ["TE","Technological","Mechanised or orbital welding, digital ITPs and job packs, new NDT methods: are clients asking for them? Are competitors using them?"],
+ ["LE","Legal","WHS duties, labour hire and pay rules, codes clients call up (AS/NZS 1554, AS/NZS 5131, ISO 3834), contract terms. Anything new?"],
+ ["EN","Environmental","Heat on site, storms and floods, client carbon targets, waste and energy costs. Has weather cost us days this year? (ISO 9001 asks us to consider climate change.)"]
+];
+const SW_CATS=[
+ ["S","Strengths","Inside: what do clients thank us for? What can we do that many competitors cannot?"],
+ ["W","Weaknesses","Inside: where do we get NCRs, rework or delays? Who do we rely on too much? What is late at handover?"],
+ ["O","Opportunities","Outside: which tenders could ISO 9001 or ISO 3834 open? Which clients want one supplier for fabrication and shutdowns?"],
+ ["T","Threats","Outside: what could stop a shutdown starting on time, cost us a client, or hurt quality?"]
+];
+let REG={},DRAFT={pestle:[],swot:[],ip:[]};
+const ROLES=["Managing Director","Business Development and Marketing Coordinator","Estimating, Contracts and Procurement Coordinator","Operations and Project Manager","Workshop and Site Supervisor","Engineering and Technical Authority","Welding Coordinator","IMS and Quality Manager","QA/QC Inspector","WHS and Environmental Coordinator","Finance, Administration and People Coordinator","Stores, Materials and Plant Coordinator"];
+const TREAT={Risk:["Treat (reduce)","Avoid","Transfer","Accept"],Opportunity:["Pursue","Plan","Park"]};
+const RULES=["Evidence, not opinion: say where you know it from.","Inside or outside: strengths and weaknesses are ours; opportunities and threats come from outside.","Be specific: “2 of 5 welders hold current tickets”, not “staff skills”.","Each point goes in one box only.","Every significant point gets an owner and an action.","Everyone has a say; the Managing Director makes the final call.","First time rule: no silly ideas. We sort and cut later."];
+
+/* ---------------- state ---------------- */
+const S={
+  live:false, me:null, isFac:false, canWrite:false,
+  session:{stage:0,timerEnd:0,timerLabel:"",reveal:{},hidden:{},sig:{},refs:{}},
+  register:{items:{}},
+  contribs:{}, mine:{notes:{},votes:{},scores:{}},
+  names:{}, online:[], view:0, follow:true, loaded:{session:false,contrib:false}, room:'', secret:'', pin:'', rev:0, offset:0
+};
+const API="https://yqqrqfpdaiwynswqezvm.supabase.co",KEY="sb_publishable_fzxQ9vLXps8OmhhoUYkEKw_cnPm4HS2";
+
+/* ---------------- helpers ---------------- */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const uid=()=>Math.random().toString(36).slice(2,10)+Date.now().toString(36).slice(-4);
+function toast(msg){const t=$("#toast");t.textContent=msg;t.hidden=false;clearTimeout(toast.h);toast.h=setTimeout(()=>t.hidden=true,2600)}
+function level(score,type){if(!score)return"";const o=type==="Opportunity";if(score>=17)return o?"Strategic":"Critical";if(score>=10)return"High";if(score>=5)return"Moderate";return"Low"}
+function lvlBadge(score,type){const l=level(score,type);return l?`<span class="lvl ${type==="Opportunity"?"o":""}${l}">${score} ${l}</span>`:""}
+function nameOf(id){if(!id)return"Someone";if(S.me&&id===S.me)return"You";return S.names[id]||"Participant"}
+async function rpc(fn,args){const r=await fetch(API+"/rest/v1/rpc/"+fn,{method:"POST",headers:{"apikey":KEY,"Authorization":"Bearer "+KEY,"Content-Type":"application/json"},body:JSON.stringify(args)});const t=await r.text();let j=null;try{j=t?JSON.parse(t):null}catch(e){}if(!r.ok){const err=new Error((j&&j.message)||("HTTP "+r.status));err.code=(j&&j.message)||"";throw err}return j}
+function catColor(board,cat){if(board==="pestle")return"PE";if(board==="swot")return cat;if(board==="ip")return"IP";return"GEN"}
+function confirmBox(title,text){return new Promise(res=>{const d=$("#confirm");$("#confirmTitle").textContent=title;$("#confirmText").textContent=text;
+  const done=v=>{d.close();$("#confirmYes").onclick=null;$("#confirmNo").onclick=null;res(v)};$("#confirmYes").onclick=()=>done(true);$("#confirmNo").onclick=()=>done(false);d.showModal()})}
+
+/* all items on a board, drafts first */
+function items(board){
+  const out=[];const ses=S.session;
+  if(ses.reveal&&ses.reveal[board]||S.isFac){
+    (DRAFT[board]||[]).forEach(d=>out.push({key:"d:"+d[0],board,cat:d[1],text:d[2],flag:d[3],links:d[4],ref:d[0],draft:true,author:null}));
+  }
+  Object.entries(S.contribs).forEach(([u,doc])=>{const notes=(doc&&doc.notes)||{};
+    Object.entries(notes).forEach(([nid,n])=>{if(!n||n.board!==board)return;
+      out.push({key:u+":"+nid,nid,board,cat:n.cat,text:n.text,evidence:n.evidence,flag:n.flag,saidBy:n.saidBy,ts:n.ts||0,author:u,ref:ses.refs[u+":"+nid]||null,links:"",from:n.from||""})})});
+  return out.filter(i=>S.isFac||!ses.hidden[i.key]);
+}
+function allItems(){return ["pestle","swot","ip"].flatMap(b=>items(b))}
+function findItem(key){return allItems().find(i=>i.key===key)}
+function tally(key){let n=0;Object.values(S.contribs).forEach(d=>{if(d&&d.votes&&d.votes[key])n++});return n}
+function myVotesIn(cat){const sw=items("swot");return sw.filter(i=>i.cat===cat&&S.mine.votes[i.key]).length}
+function nextRef(board,cat){
+  const prefix=board==="pestle"?"PE-"+cat:board==="swot"?"SW-"+cat:"IP-";
+  const used=new Set([...(DRAFT[board]||[]).map(d=>d[0]),...Object.values(S.session.refs)]);
+  for(let n=1;n<100;n++){const r=prefix+String(n).padStart(2,"0");if(!used.has(r))return r}
+  return prefix+"99";
+}
+function nextRegId(type){const p=type==="Opportunity"?"O":"R";const used=new Set([...Object.keys(REG),...Object.values(S.register.items).map(x=>x&&x.id).filter(Boolean)]);
+  for(let n=1;n<200;n++){const r=p+String(n).padStart(2,"0");if(!used.has(r))return r}return p+"99"}
+function defaultType(it){if(it.board==="swot")return(it.cat==="S"||it.cat==="O")?"Opportunity":"Risk";if(it.board==="pestle")return it.flag==="O"?"Opportunity":"Risk";return"Risk"}
+
+/* ---------------- writes (serialised) ---------------- */
+let mineTimer=null,mineBusy=false,mineAgain=false;
+function saveMine(){S.contribs[S.me]=JSON.parse(JSON.stringify(S.mine));render();clearTimeout(mineTimer);mineTimer=setTimeout(flushMine,350)}
+async function flushMine(){mineTimer=null;if(mineBusy){mineAgain=true;return}mineBusy=true;
+  try{await rpc("ws_save",{p_code:S.room,p_pid:S.me,p_secret:S.secret,p_data:S.mine})}catch(e){handleWriteError(e)}
+  mineBusy=false;if(mineAgain){mineAgain=false;flushMine()}}
+const facQ={busy:false,again:false,t:null};
+function saveSession(){render();queueFac()}
+function saveRegister(){render();queueFac(500)}
+function queueFac(ms){if(!S.isFac)return;clearTimeout(facQ.t);facQ.t=setTimeout(flushFac,ms||250)}
+async function flushFac(){facQ.t=null;if(facQ.busy){facQ.again=true;return}facQ.busy=true;
+  try{await rpc("ws_fac_save",{p_code:S.room,p_pin:S.pin,p_session:S.session,p_register:S.register})}catch(e){handleWriteError(e)}
+  facQ.busy=false;if(facQ.again){facQ.again=false;flushFac()}}
+const sesQ=facQ,regQ=facQ;
+function flushRegister(){return flushFac()}
+function handleWriteError(e){const c=String(e&&e.code||"");
+  if(c.includes("too large"))toast("That is too much text for one person. Delete a few notes and try again.");
+  else if(c.includes("pin")||c.includes("secret"))banner("This device is no longer recognised in the room. Reload and join again.");
+  else toast("Could not save just now. Your change is kept on screen and will save with your next change.")}
+function banner(t){$("#bannerText").textContent=t;$("#banner").hidden=!t}
+
+/* ---------------- actions ---------------- */
+function addNote(board,cat,text,evidence,flag,saidBy,from){
+  if(!text.trim())return false;const id=uid();
+  S.mine.notes[id]={board,cat,text:text.trim().slice(0,400),evidence:(evidence||"").trim().slice(0,200),flag:flag||"",saidBy:(saidBy||"").trim().slice(0,60),from:from||"",ts:Date.now()};
+  saveMine();return true}
+function delNote(nid){delete S.mine.notes[nid];Object.keys(S.mine.votes).forEach(k=>{if(k.endsWith(":"+nid)&&k.startsWith(S.me))delete S.mine.votes[k]});saveMine()}
+function toggleVote(key,cat){if(S.mine.votes[key]){delete S.mine.votes[key]}else{if(myVotesIn(cat)>=3){toast("You have used your 3 dots here. Take one back to move it.");return}S.mine.votes[key]=true}saveMine()}
+function setScore(key,axis,v){const s=S.mine.scores[key]||{};s[axis]=s[axis]===v?undefined:v;if(s.l===undefined&&s.c===undefined)delete S.mine.scores[key];else S.mine.scores[key]={l:s.l,c:s.c};saveMine()}
+function toggleSig(it){const s=S.session;if(s.sig[it.key]){delete s.sig[it.key]}else{s.sig[it.key]=true;if(!it.draft&&!s.refs[it.key])s.refs[it.key]=nextRef(it.board,it.board==="ip"?"":it.cat)}saveSession()}
+function goStage(i){if(S.isFac){S.session.stage=i;S.view=i;saveSession();presence()}else{S.view=i;if(i!==S.session.stage)setFollow(false);render()}}
+function setFollow(v){S.follow=v;if(v)S.view=S.session.stage;render()}
+function setTimer(m){const s=S.session;if(!m){s.timerEnd=0;s.timerLabel=""}else{s.timerEnd=Date.now()+S.offset+m*60000;s.timerLabel=STAGES[s.stage].name+": "+m+" minutes"}saveSession()}
+function dist(key,axis){const d=[0,0,0,0,0,0];Object.values(S.contribs).forEach(c=>{const v=c&&c.scores&&c.scores[key]&&c.scores[key][axis];if(v>=1&&v<=5)d[v]++});return d}
+function suggest(d){const vals=[];for(let v=1;v<=5;v++)for(let k=0;k<d[v];k++)vals.push(v);if(!vals.length)return null;return vals[Math.ceil((vals.length-1)/2)]}
+
+/* ---------------- render ---------------- */
+function render(){renderRail();renderRole();renderPeople();renderMain();renderTimerCtl()}
+function renderRail(){
+  const live=S.session.stage;$("#rail").innerHTML=STAGES.map((st,i)=>`<button class="hp ${i<live?"done":""} ${i===live?"live":""} ${i===S.view?"viewing":""}" data-go="${i}" type="button" aria-current="${i===S.view?"step":"false"}"><span class="dia" aria-hidden="true"></span>${esc(st.name)}<span class="bar" aria-hidden="true"></span></button>`).join("");
+  const fb=$("#followBtn");fb.hidden=S.isFac;fb.textContent=S.follow?"Following facilitator":"Browsing freely · follow again";
+}
+function renderRole(){$("#role").textContent=S.isFac?"Facilitator":S.canWrite?"Participant":"Watching";}
+function renderPeople(){const ids=S.online.filter(id=>S.names[id]);
+  $("#people").innerHTML=ids.length?`<span class="chip">${ids.length} here</span>`+ids.slice(0,8).map(id=>`<span class="chip">${esc(nameOf(id))}</span>`).join("")+(ids.length>8?`<span class="chip">+${ids.length-8}</span>`:""):"";}
+function renderTimerCtl(){$("#timerCtl").hidden=!S.isFac}
+function stageHead(i,title,lead){const st=STAGES[i];
+  return `<div class="stagehead"><div><div class="eyebrow">Hold point ${i+1} of ${STAGES.length} · about ${st.mins} minutes${st.breakAfter?" · then "+esc(st.breakAfter):""}</div><h2>${esc(title)}</h2><p class="muted" style="max-width:70ch;margin-top:6px">${lead}</p></div>
+  ${S.isFac?`<div class="row">${i>0?`<button class="btn" data-go="${i-1}" type="button">Back</button>`:""}${i<STAGES.length-1?`<button class="btn primary" data-go="${i+1}" type="button">Move everyone to ${esc(STAGES[i+1].name)}</button>`:""}</div>`:(S.view!==S.session.stage?`<button class="btn primary" data-follow="1" type="button">Go to where the group is</button>`:"")}</div>`}
+function facPanel(sayText,doList){if(!S.isFac)return"";return `<div class="panel facil"><div class="eyebrow">Facilitator only</div><h3>Script</h3><div class="say"><b>Say: </b>${sayText}</div><ul class="steps" style="margin-top:10px">${doList.map(x=>`<li>${x}</li>`).join("")}</ul></div>`}
+function youPanel(steps){return `<div class="panel"><div class="eyebrow">What to do</div><h3>Your part</h3><ol class="steps">${steps.map(s=>`<li>${s}</li>`).join("")}</ol></div>`}
+function noteCard(it,opts){opts=opts||{};const s=S.session;const mine=it.author===S.me;
+  const flag=it.flag?`<span class="flag" title="${it.flag==="T"?"Threat":it.flag==="O"?"Opportunity":"Both"}">${it.flag==="T"?"Threat":it.flag==="O"?"Opportunity":"Both"}</span>`:"";
+  const ref=it.ref?`<span class="tag">${esc(it.ref)}</span>`:`<span class="tag new">new</span>`;
+  const who=it.draft?"Starting draft":esc(it.saidBy?it.saidBy+" (typed by "+nameOf(it.author)+")":nameOf(it.author));
+  const links=(it.links?`<span title="Already in the register">Register: ${esc(it.links)}</span>`:"")+(it.from?`<span>From ${esc(it.from)}</span>`:"");
+  const acts=[];
+  if(opts.copy&&(it.flag==="T"||it.flag==="O"||it.flag==="B")&&S.canWrite)acts.push(`<button class="btn small" data-copy="${esc(it.key)}" type="button">Bring to SWOT</button>`);
+  if(S.isFac&&opts.sig!==false)acts.push(`<button class="btn small" data-sig="${esc(it.key)}" type="button">${s.sig[it.key]?"Unmark significant":"Mark significant"}</button>`);
+  if(S.isFac&&!it.draft)acts.push(`<button class="btn small" data-hide="${esc(it.key)}" type="button">${s.hidden[it.key]?"Show to everyone":"Hide"}</button>`);
+  if(mine&&S.canWrite)acts.push(`<button class="btn small" data-del="${esc(it.nid)}" type="button">Delete</button>`);
+  if(opts.vote){const on=!!S.mine.votes[it.key];acts.unshift(`<button class="dot ${on?"on":""}" data-vote="${esc(it.key)}" data-cat="${it.cat}" type="button" aria-pressed="${on}" aria-label="${on?"Remove your dot":"Add a dot"}"></button><span class="tally" aria-label="${tally(it.key)} dots">${"<i></i>".repeat(tally(it.key))}</span>`)}
+  return `<article class="note c-${catColor(it.board,it.cat)} ${it.draft?"draft":""} ${s.hidden[it.key]?"hidden":""}">
+    <div class="meta">${ref}${flag}${s.sig[it.key]?`<span class="sig">★ Significant</span>`:""}${S.isFac&&it.draft&&!(s.reveal[it.board])?`<span>(not yet shown to the room)</span>`:""}</div>
+    <p>${esc(it.text)}</p>${it.evidence?`<div class="meta">Evidence: ${esc(it.evidence)}</div>`:""}
+    <div class="meta"><span>${who}</span>${links}</div>${acts.length?`<div class="acts row">${acts.join("")}</div>`:""}</article>`}
+function addForm(board,cat,withFlag){if(!S.canWrite)return "";
+  const f=`f-${board}-${cat}`;
+  return `<form class="addform" data-add="${board}" data-cat="${cat}">
+   <label class="mono" for="${f}-t">Add a note</label>
+   <textarea id="${f}-t" name="text" maxlength="400" placeholder="One idea, specific"></textarea>
+   <input id="${f}-e" name="evidence" maxlength="200" placeholder="How we know (optional): record, number, NCR">
+   ${withFlag?`<select id="${f}-f" name="flag" aria-label="Threat or opportunity"><option value="T">Threat</option><option value="O">Opportunity</option><option value="B">Both</option></select>`:""}
+   ${S.isFac?`<input id="${f}-s" name="saidBy" maxlength="60" placeholder="Said by (optional, if typing for someone)">`:""}
+   <button class="btn primary" type="submit">Add note</button></form>`}
+function lane(board,cat,title,q,list,opts){
+  return `<section class="lane" aria-label="${esc(title)}"><header><h3>${esc(title)}</h3><span class="mono">${list.length}</span></header><p class="q">${esc(q)}</p>
+   <div class="notes">${list.length?list.map(i=>noteCard(i,opts)).join(""):`<p class="empty">No notes yet.</p>`}</div>${opts&&opts.noAdd?"":addForm(board,cat,board==="pestle")}</section>`}
+function revealBtn(board){if(!S.isFac)return"";const on=S.session.reveal[board];return `<button class="btn ${on?"":"primary"}" data-reveal="${board}" type="button">${on?"Hide the starting draft":"Show the starting draft to everyone"}</button>`}
+
+function renderMain(){setTimeout(()=>{const rc=$("#roomCode"),rl=$("#roomLink");if(rc)rc.textContent=S.room;if(rl)rl.textContent=location.origin+location.pathname+"#room="+S.room},0);
+  const i=S.view;const id=STAGES[i].id;let h="";
+  if(id==="welcome")h=vWelcome(i);else if(id==="fit")h=vFit(i);else if(id==="pestle")h=vPestle(i);else if(id==="swot")h=vSwot(i);
+  else if(id==="vote")h=vVote(i);else if(id==="ip")h=vIp(i);else if(id==="score")h=vScore(i);else h=vWrap(i);
+  const m=$("#main");const active=document.activeElement;const keep=active&&active.id&&m.contains(active)?{id:active.id,val:active.value,s:active.selectionStart,e:active.selectionEnd}:null;
+  const drafts={};m.querySelectorAll("textarea,input[name],select[name]").forEach(el=>{if(el.id&&el.closest("form.addform"))drafts[el.id]=el.value});
+  m.innerHTML=h;
+  Object.entries(drafts).forEach(([k,v])=>{const el=document.getElementById(k);if(el&&el.closest("form.addform"))el.value=v});
+  if(keep){const el=document.getElementById(keep.id);if(el){el.focus();try{if(el.setSelectionRange&&keep.s!=null)el.setSelectionRange(keep.s,keep.e)}catch(e){}}}
+}
+
+function vWelcome(i){
+  const warm=itemsGen("warmup");
+  return stageHead(i,"Welcome to our first context workshop","Today we get what we already know out of our heads and onto the board, agree what matters most, and give each important point an owner. Nobody needs to be an expert, and nothing has to be perfect today.")+
+  `<div class="cols"><div style="display:grid;gap:16px">
+   <div class="panel"><div class="eyebrow">Ground rules</div><h3>Seven rules for today</h3><ol class="steps">${RULES.map(r=>`<li>${esc(r)}</li>`).join("")}</ol></div>
+   <section class="lane"><header><h3>Warm-up: what most often slows a job down?</h3><span class="mono">${warm.length}</span></header><p class="q">A few words each. We will use these in the SWOT.</p>
+   <div class="notes">${warm.length?warm.map(n=>noteCard(n,{sig:false})).join(""):`<p class="empty">Be the first to add one.</p>`}</div>${addForm("warmup","GEN",false)}</section>
+  </div><div class="side">
+   ${youPanel(["Keep your video call open beside this page.","Check your name shows at the top of the page among the people here.","This page moves to the next step when the facilitator does. You can look around, then press Go to where the group is.","Add one warm-up note now."])}
+   ${facPanel("Thanks for giving us the morning. This is our first SWOT and PESTLE workshop, so nobody is expected to be an expert. We are going to get what we know onto the board, agree what matters most, and who will look after it.",
+     ["Before the call: send everyone this page's link and the room code. No account is needed. Keep your PIN to yourself.","Check everyone appears in the people chips at the top.","Ask the Managing Director to say why this matters.","Read the ground rules; ask if anyone wants to add one.","Run a 3-minute timer for the warm-up notes, then read a few out."])}
+   ${S.isFac?`<div class="panel"><div class="eyebrow">Facilitator only</div><h3>Practice run?</h3><p class="muted" style="margin-bottom:8px">Clear every note, vote, score and decision to start fresh. Export first if you want to keep anything.</p><button class="btn" data-reset="1" type="button">Clear the workshop</button><p class="muted" style="margin-top:10px;font-size:.88rem">Room code: <b class="mono" id="roomCode"></b> · share link: <span class="mono" id="roomLink"></span></p></div>`:""}
+  </div></div>`}
+function itemsGen(board){const out=[];Object.entries(S.contribs).forEach(([u,d])=>{Object.entries((d&&d.notes)||{}).forEach(([nid,n])=>{if(n&&n.board===board&&(S.isFac||!S.session.hidden[u+":"+nid]))out.push({key:u+":"+nid,nid,board,cat:"GEN",text:n.text,evidence:n.evidence,saidBy:n.saidBy,author:u,ts:n.ts||0})})});return out.sort((a,b)=>a.ts-b.ts)}
+
+function vFit(i){
+  return stageHead(i,"How the pieces fit together","PESTLE looks out the window. SWOT looks in the mirror and out the window. Anything important goes on the risk and opportunity register with a score, an owner and an action. That register is what the auditor looks at.")+
+  `<div class="flow" role="list">
+   <div role="listitem"><span class="mono">Clause 4.1</span><b>PESTLE</b>What is changing outside Panalo?</div>
+   <div role="listitem"><span class="mono">Clause 4.1</span><b>SWOT</b>Our strengths and weaknesses, and the outside chances and dangers that matter.</div>
+   <div role="listitem"><span class="mono">Clause 4.2</span><b>Interested parties</b>Who cares about our quality and what they need.</div>
+   <div role="listitem" class="key"><span class="mono">Clause 6.1 · PP-IMS-REG-004</span><b>Register</b>Score, owner, action, due date. Every row quotes where it came from.</div>
+   <div role="listitem"><span class="mono">Clause 9.3</span><b>Management review</b>Are the actions working?</div></div>
+  <div class="cols" style="margin-top:20px"><div class="panel"><div class="eyebrow">The simple rule</div><h3>Where each point goes</h3>
+   <div class="tblwrap"><table class="sum"><tr><th>On the board</th><th>Becomes</th><th>Example reference</th></tr>
+   <tr><td><span class="lvl" style="background:var(--n-w)">Weakness</span> or <span class="lvl" style="background:var(--n-t)">Threat</span></td><td>A risk (R)</td><td><span class="tag">SW-W01</span> becomes R02</td></tr>
+   <tr><td><span class="lvl" style="background:var(--n-s)">Strength</span> or <span class="lvl" style="background:var(--n-o)">Opportunity</span></td><td>An opportunity (O)</td><td><span class="tag">SW-O01</span> becomes O01</td></tr>
+   <tr><td><span class="lvl" style="background:var(--n-pe)">PESTLE item</span></td><td>Carried into SWOT, then the register</td><td><span class="tag">PE-EC01</span> feeds R05</td></tr></table></div></div>
+   <div class="side">${youPanel(["Look at the five boxes above.","Note the colours: they are the colours of the notes you will add.","Ask a question now if anything is unclear."])}
+   ${facPanel("PESTLE looks out the window: things outside our control like steel prices, new laws or the weather. SWOT looks in the mirror. Anything important goes on the register. A starting draft already exists, but you will see your own ideas first.",["Walk through the five boxes left to right.","Open the Scoring card button to show it exists; you will use it later."])}</div></div>`}
+
+function vPestle(i){
+  const list=items("pestle");
+  return stageHead(i,"PESTLE: the world outside Panalo","One idea per note. Pick the factor, write what is happening, say how you know, and mark it threat, opportunity or both.")+
+  `<div class="row" style="margin-bottom:12px">${revealBtn("pestle")}</div>
+  <div class="cols"><div class="board pestle">${PE_CATS.map(([c,n,q])=>lane("pestle",c,n,q,list.filter(x=>x.cat===c),{copy:true})).join("")}</div>
+  <div class="side">${youPanel(["Read the prompt question at the top of each column.","Add your notes in any column, as many as you like.","Mark each as Threat, Opportunity or Both.","When the starting draft appears, think: keep, change or delete? Say so on the call.","Threats and opportunities can be copied to the SWOT with Bring to SWOT."])}
+  ${facPanel("For the next 10 minutes, add one idea per note: anything happening outside Panalo that could help or hurt our ability to do good work on time. Use the question at the top of each column.",
+   ["Start a 10-minute timer for silent writing.","Then 15 minutes: read each column out, ask authors to explain; hide duplicates.","Then show the starting draft and ask: keep, change or delete?","Mark the important ones significant (they get a reference such as PE-EC03).","Leave 5 minutes before the break."])}</div></div>`}
+
+function vSwot(i){
+  const list=items("swot");
+  return stageHead(i,"SWOT: inside and outside","Strengths and weaknesses are things Panalo controls. Opportunities and threats come from outside, and many came up in the PESTLE. Be honest: a weakness written down now is cheaper than one an auditor or client finds.")+
+  `<div class="row" style="margin-bottom:12px">${revealBtn("swot")}</div>
+  <div class="cols"><div class="board swot">${SW_CATS.map(([c,n,q])=>lane("swot",c,n,q,list.filter(x=>x.cat===c),{})).join("")}</div>
+  <div class="side">${youPanel(["Start with Strengths and Weaknesses (about 15 minutes).","Then Opportunities and Threats (about 15 minutes).","Look back at the warm-up notes: most of them are weaknesses.","Be specific and add the evidence if you have it."])}
+  ${facPanel("Now we look at ourselves. Strengths and weaknesses are things we control. Opportunities and threats come from outside.",
+   ["15-minute timer for strengths and weaknesses, then 15 for opportunities and threats.","Read out each quadrant; hide duplicates and vague notes after asking for an example.","Show the starting draft and ask: keep, change or delete?","Move on to the vote."])}</div></div>`}
+
+function vVote(i){
+  const list=items("swot");
+  return stageHead(i,"Vote: what matters most?","You have 3 dots in each box. Put them on the points you think matter most for quality and delivery. Tap a dot again to take it back.")+
+  `<div class="cols"><div class="board swot">${SW_CATS.map(([c,n])=>{const l=list.filter(x=>x.cat===c).sort((a,b)=>tally(b.key)-tally(a.key));
+    return `<section class="lane"><header><h3>${n}</h3><span class="mono">${S.canWrite?`your dots: ${3-myVotesIn(c)} left`:""}</span></header><div class="notes">${l.length?l.map(it=>noteCard(it,{vote:S.canWrite})).join(""):`<p class="empty">No notes in this box.</p>`}</div></section>`}).join("")}</div>
+  <div class="side">${youPanel(["Place up to 3 dots in each box.","The yellow dots under each note show everyone's votes live.","The facilitator marks the top points as significant; they go to scoring."])}
+  ${facPanel("You each have three dots per box. Put them on the points that matter most. You can move them until the timer ends.",
+   ["5-minute timer.","Notes are sorted by votes. Mark the top 4 to 6 per box as significant, or use the button below.","Check for any PESTLE or interested party items that should also be significant."])}
+  ${S.isFac?`<div class="panel facil"><button class="btn primary" data-top="5" type="button">Mark the top 5 in each box as significant</button></div>`:""}</div></div>`}
+
+function vIp(i){
+  const list=items("ip");
+  return stageHead(i,"Interested parties: who cares about our quality?","Check the list. Is anyone missing? What do they need from us that we could fail to deliver? Each answer can become a register entry.")+
+  `<div class="row" style="margin-bottom:12px">${revealBtn("ip")}</div>
+  <div class="cols"><div class="board">${lane("ip","IP","Parties and what they need","Write: who they are, then what they need from us.",list,{})}</div>
+  <div class="side">${youPanel(["Read the list once the facilitator shows it.","Add any party that is missing, or a need we have not listed.","Say on the call if a need is one we often struggle to meet."])}
+  ${facPanel("These are the people and organisations who care whether we do good work. For each one: have we got their needs right, and is anyone missing?",
+   ["Show the starting list first this time; it is short.","Ask whether the landlord, neighbours and the proposed Geelong site matter to the QMS.","Mark any need we could fail to meet as significant."])}</div></div>`}
+
+function vScore(i){
+  const sigItems=allItems().filter(it=>S.session.sig[it.key]).sort((a,b)=>(b.board==="swot"?tally(b.key):0)-(a.board==="swot"?tally(a.key):0));
+  const body=sigItems.length?sigItems.map(it=>scoreItem(it)).join(""):`<p class="empty">Nothing is marked significant yet. ${S.isFac?"Mark items on the PESTLE, SWOT, Vote or Interested parties steps.":"The facilitator will mark the items to score."}</p>`;
+  return stageHead(i,"Score, own and act","For each significant point, show your score: how likely, and how bad (or how good) would it be? The room's spread appears live. The facilitator records what the group agrees.")+
+  `<div class="cols"><div class="items">${body}</div><div class="side">
+  ${youPanel(["Pick Likelihood 1 to 5 and Consequence (or Benefit) 1 to 5 for each item.","Open Scoring card at the top if you are unsure what the numbers mean.","If the room splits, the group takes the higher number and the owner checks it against records.","Speak up if you think you should, or should not, own an item."])}
+  ${facPanel("We will not score everything today. For the top items we give a rough score, an owner and a first action. Owners finish the rest in the next week.",
+   ["Take items in order. For draft items already in the register, ask: does the score still feel right?","Write the description as cause, event, effect: Because..., ... may happen, so ....","Press Use room's score, then pick the owner (a role) and the first action.","If an argument passes 2 minutes, take the higher score and move on.","Aim for the top 10; the rest go to owners."])}</div></div>`}
+function scoreItem(it){
+  const k=it.key;const my=S.mine.scores[k]||{};const reg=S.register.items[k]||{};const type=reg.type||defaultType(it);
+  const dl=dist(k,"l"),dc=dist(k,"c");const sl=suggest(dl),sc=suggest(dc);
+  const existing=(it.links||"").split(/,\s*/).filter(x=>REG[x]);
+  const exHtml=existing.length?`<div class="meta" style="margin-top:6px;display:grid;gap:2px">${existing.map(x=>`<span><span class="tag">${x}</span> ${esc(REG[x][0])}${REG[x][1]?" · deck score "+REG[x][1]:""}</span>`).join("")}</div>`:"";
+  const pick=(axis,cur)=>`<div class="pick" role="group">${[1,2,3,4,5].map(v=>`<button type="button" class="${cur===v?"on":""}" data-score="${esc(k)}" data-axis="${axis}" data-v="${v}" aria-pressed="${cur===v}" ${S.canWrite?"":"disabled"}>${v}</button>`).join("")}</div>`;
+  const bars=d=>{const max=Math.max(1,...d.slice(1));return `<div class="dist" aria-hidden="true">${[1,2,3,4,5].map(v=>`<div><span style="height:${Math.round(d[v]/max*30)+2}px"></span>${d[v]||""}</div>`).join("")}</div>`};
+  const agreedScore=reg.l&&reg.c?reg.l*reg.c:0;
+  let right;
+  if(S.isFac){const f=x=>`sc-${k.replace(/[^a-z0-9]/gi,"")}-${x}`;
+    right=`<div class="eyebrow">Facilitator: record the agreement</div>
+     <div class="grid2" style="margin-top:6px">
+      <div class="field"><label for="${f("type")}">Type</label><select id="${f("type")}" data-reg="${esc(k)}" data-f="type"><option ${type==="Risk"?"selected":""}>Risk</option><option ${type==="Opportunity"?"selected":""}>Opportunity</option></select></div>
+      <div class="field"><label for="${f("id")}">Register ID</label><input id="${f("id")}" data-reg="${esc(k)}" data-f="id" value="${esc(reg.id||(existing[0]||""))}" placeholder="${nextRegId(type)} (new)"></div>
+      <div class="field full"><label for="${f("desc")}">Description: because (cause), may happen (event), so (effect)</label><textarea id="${f("desc")}" data-reg="${esc(k)}" data-f="desc" rows="2">${esc(reg.desc||"")}</textarea></div>
+      <div class="field"><label for="${f("l")}">Likelihood</label><select id="${f("l")}" data-reg="${esc(k)}" data-f="l"><option value="">-</option>${[1,2,3,4,5].map(v=>`<option ${reg.l===v?"selected":""}>${v}</option>`).join("")}</select></div>
+      <div class="field"><label for="${f("c")}">${type==="Opportunity"?"Benefit":"Consequence"}</label><select id="${f("c")}" data-reg="${esc(k)}" data-f="c"><option value="">-</option>${[1,2,3,4,5].map(v=>`<option ${reg.c===v?"selected":""}>${v}</option>`).join("")}</select></div>
+      <div class="field"><label for="${f("tr")}">Treatment</label><select id="${f("tr")}" data-reg="${esc(k)}" data-f="treat"><option value="">-</option>${TREAT[type].map(v=>`<option ${reg.treat===v?"selected":""}>${v}</option>`).join("")}</select></div>
+      <div class="field"><label for="${f("due")}">Due date</label><input type="date" id="${f("due")}" data-reg="${esc(k)}" data-f="due" value="${esc(reg.due||"")}"></div>
+      <div class="field full"><label for="${f("own")}">Owner (role)</label><select id="${f("own")}" data-reg="${esc(k)}" data-f="owner"><option value="">-</option>${ROLES.map(r=>`<option ${reg.owner===r?"selected":""}>${esc(r)}</option>`).join("")}</select></div>
+      <div class="field full"><label for="${f("act")}">First action</label><textarea id="${f("act")}" data-reg="${esc(k)}" data-f="action" rows="2">${esc(reg.action||"")}</textarea></div>
+     </div>
+     <div class="row" style="margin-top:8px;justify-content:space-between"><button class="btn small" data-useroom="${esc(k)}" type="button" ${sl&&sc?"":"disabled"}>Use room's score${sl&&sc?` (${sl} x ${sc})`:""}</button>${lvlBadge(agreedScore,type)}</div>`;
+  }else{
+    right=`<div class="eyebrow">Agreed by the group</div>${agreedScore?`<p style="margin-top:6px">${lvlBadge(agreedScore,type)} <span class="muted">L${reg.l} x ${type==="Opportunity"?"B":"C"}${reg.c}</span></p>`:`<p class="muted" style="margin-top:6px">Not agreed yet.</p>`}
+     ${reg.owner?`<p style="margin-top:6px"><b>Owner:</b> ${esc(reg.owner)}</p>`:""}${reg.action?`<p><b>Action:</b> ${esc(reg.action)}</p>`:""}${reg.due?`<p><b>Due:</b> ${esc(reg.due)}</p>`:""}${reg.id?`<p class="mono" style="margin-top:6px">Register ${esc(reg.id)}</p>`:""}`;
+  }
+  return `<article class="sitem"><div>
+   <div class="meta row"><span class="tag ${it.ref?"":"new"}">${esc(it.ref||"new")}</span><span class="mono">${it.board.toUpperCase()}</span>${it.board==="swot"?`<span class="tally">${"<i></i>".repeat(tally(k))}</span>`:""}</div>
+   <p style="margin-top:6px;font-weight:500">${esc(it.text)}</p>${exHtml}
+   <div class="grid2" style="margin-top:12px"><div><div class="mono">Likelihood · you</div>${pick("l",my.l)}<div class="mono" style="margin-top:6px">Room ${sl?"· middle "+sl:""}</div>${bars(dl)}</div>
+   <div><div class="mono">${type==="Opportunity"?"Benefit":"Consequence"} · you</div>${pick("c",my.c)}<div class="mono" style="margin-top:6px">Room ${sc?"· middle "+sc:""}</div>${bars(dc)}</div></div>
+  </div><div class="agree">${right}</div></article>`}
+
+function regRows(){
+  return allItems().filter(it=>S.session.sig[it.key]).map(it=>{const r=S.register.items[it.key]||{};const type=r.type||defaultType(it);const sc=r.l&&r.c?r.l*r.c:"";
+    return {id:r.id||"",type,src:it.ref||"",summary:it.text,desc:r.desc||"",l:r.l||"",c:r.c||"",score:sc,level:level(sc,type),treat:r.treat||"",action:r.action||"",owner:r.owner||"",due:r.due||""}})
+   .sort((a,b)=>(b.score||0)-(a.score||0));
+}
+function vWrap(i){
+  const rows=regRows();const fb=itemsGen("feedback");
+  const counts={};rows.forEach(r=>{if(r.level){const k=(r.type==="Opportunity"?"o":"")+r.level;counts[k]=(counts[k]||0)+1}});
+  return stageHead(i,"Wrap-up and next steps","Here is what we agreed today. Owners: please check your items in the next week. The final version goes to the Managing Director for approval and to the next management review.")+
+  `<div class="cols"><div style="display:grid;gap:16px">
+   <div class="panel"><div class="eyebrow">Today's register entries</div><h3>${rows.length} significant item${rows.length===1?"":"s"}</h3>
+    <div class="row" style="margin:6px 0 10px">${Object.entries(counts).map(([k,n])=>`<span class="lvl ${k}">${n} ${k.replace(/^o/,"")}${k.startsWith("o")?" opp.":""}</span>`).join("")||`<span class="muted">No agreed scores yet.</span>`}</div>
+    <div class="tblwrap"><table class="sum"><tr><th>ID</th><th>Source</th><th>Item</th><th>Score</th><th>Owner</th><th>Action</th><th>Due</th></tr>
+    ${rows.map(r=>`<tr><td class="mono">${esc(r.id||"new")}</td><td class="mono">${esc(r.src)}</td><td>${esc(r.desc||r.summary)}</td><td>${r.score?lvlBadge(r.score,r.type):"-"}</td><td>${esc(r.owner||"-")}</td><td>${esc(r.action||"-")}</td><td>${esc(r.due||"-")}</td></tr>`).join("")||`<tr><td colspan="7" class="muted">Nothing marked significant yet.</td></tr>`}</table></div>
+    ${S.isFac?`<div class="row" style="margin-top:12px"><button class="btn primary" data-export="register" type="button">Download register rows (CSV)</button><button class="btn" data-export="items" type="button">Download all notes (CSV)</button><button class="btn" data-copy-tsv="1" type="button">Copy register rows for Excel</button></div>
+    <p class="muted" style="margin-top:8px;font-size:.88rem">The columns follow the Register tab of PP-IMS-REG-004. Source references link each row to its SWOT, PESTLE or interested party line.</p>`:""}
+   </div>
+   <section class="lane"><header><h3>One thing to do differently next time</h3><span class="mono">${fb.length}</span></header>
+    <div class="notes">${fb.length?fb.map(n=>noteCard(n,{sig:false})).join(""):`<p class="empty">Add your feedback.</p>`}</div>${addForm("feedback","GEN",false)}</section>
+  </div><div class="side">
+   ${youPanel(["Check the items you own in the table.","Add one feedback note.","Within a week: confirm your score, action and due date with the facilitator."])}
+   ${facPanel("Thank you. Here are the top risks and opportunities we agreed, and who owns each one. Owners, please check your entries in the next week.",
+    ["Read back the top items, owners and dates.","Agree the follow-up date, about two weeks out.","Download the CSVs (or ask Claude to copy the results into the REG-004 workbook).","Within 2 weeks: Managing Director approves; record on F02, REG-004 and the next F22 management review."])}
+  </div></div>`}
+
+/* ---------------- export ---------------- */
+function csv(rows){return rows.map(r=>r.map(v=>{const s=String(v==null?"":v);return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s}).join(",")).join("\r\n")}
+function save(name,text){const blob=new Blob(["﻿"+text],{type:"text/csv;charset=utf-8"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000)}
+function regTable(){const head=["ID","Type","Primary source","Source summary","Description (cause, event, effect)","Likelihood","Consequence or benefit","Inherent score","Inherent level","Treatment","Action","Owner (role)","Due date"];
+  return [head,...regRows().map(r=>[r.id,r.type,r.src,r.summary,r.desc,r.l,r.c,r.score,r.level,r.treat,r.action,r.owner,r.due])]}
+
+/* ---------------- events ---------------- */
+document.addEventListener("click",async e=>{
+  const t=e.target.closest("button");if(!t)return;const d=t.dataset;
+  if(d.go!==undefined){goStage(+d.go);window.scrollTo({top:0});return}
+  if(d.follow){setFollow(true);return}
+  if(d.vote){toggleVote(d.vote,d.cat);return}
+  if(d.score){setScore(d.score,d.axis,+d.v);return}
+  if(d.del){delNote(d.del);return}
+  if(d.copy){const it=findItem(d.copy);if(it){addNote("swot",it.flag==="O"?"O":"T",it.text,it.evidence,"","",it.ref||"");toast("Copied to the SWOT as "+(it.flag==="O"?"an opportunity":"a threat")+".")}return}
+  if(d.sig){const it=findItem(d.sig);if(it)toggleSig(it);return}
+  if(d.hide){const h=S.session.hidden;if(h[d.hide])delete h[d.hide];else h[d.hide]=true;saveSession();return}
+  if(d.reveal){S.session.reveal[d.reveal]=!S.session.reveal[d.reveal];saveSession();return}
+  if(d.timer!==undefined){setTimer(+d.timer);return}
+  if(d.top){const n=+d.top;const sw=items("swot");SW_CATS.forEach(([c])=>{sw.filter(x=>x.cat===c&&tally(x.key)>0).sort((a,b)=>tally(b.key)-tally(a.key)).slice(0,n).forEach(it=>{if(!S.session.sig[it.key]){S.session.sig[it.key]=true;if(!it.draft&&!S.session.refs[it.key])S.session.refs[it.key]=nextRef("swot",c)}})});saveSession();toast("Top voted items marked significant.");return}
+  if(d.useroom){const k=d.useroom;const sl=suggest(dist(k,"l")),sc=suggest(dist(k,"c"));if(sl&&sc){const r=S.register.items[k]=Object.assign({},S.register.items[k]||{});r.l=sl;r.c=sc;if(!r.type){const it=findItem(k);r.type=it?defaultType(it):"Risk"}saveRegister()}return}
+  if(d.export==="register"){save("PP-IMS-REG-004_workshop_register_rows.csv",csv(regTable()));return}
+  if(d.export==="items"){const rows=[["Board","Reference","Category","Text","Evidence","Threat/Opportunity","Dots","Significant","Added by","Starting draft"]];
+    ["pestle","swot","ip"].forEach(b=>items(b).forEach(it=>rows.push([b.toUpperCase(),it.ref||"",it.cat,it.text,it.evidence||"",it.flag||"",tally(it.key),S.session.sig[it.key]?"Yes":"",it.draft?"":(it.saidBy||nameOf(it.author)),it.draft?"Yes":""])));
+    ["warmup","feedback"].forEach(b=>itemsGen(b).forEach(it=>rows.push([b.toUpperCase(),"","",it.text,it.evidence||"","","","",it.saidBy||nameOf(it.author),""])));
+    save("Context_workshop_all_notes.csv",csv(rows));return}
+  if(d.copyTsv){const tsv=regTable().map(r=>r.map(v=>String(v).replace(/[\t\n]/g," ")).join("\t")).join("\n");
+    try{await navigator.clipboard.writeText(tsv);toast("Copied. Paste into a blank sheet, then move the columns into the Register tab.")}catch(err){toast("Copy is blocked here. Use Download instead.")}return}
+  if(d.reset){const ok=await confirmBox("Clear the whole workshop?","This deletes every note, dot, score and agreed decision for everyone. It cannot be undone.");if(!ok)return;await resetAll();return}
+});
+document.addEventListener("submit",e=>{const f=e.target.closest("form.addform");if(!f)return;e.preventDefault();
+  const v={text:f.text.value,ev:f.evidence?f.evidence.value:"",fl:f.flag?f.flag.value:"",sb:f.saidBy?f.saidBy.value:""};const id=f.text.id;
+  if(!v.text.trim()){toast("Write something first.");return}
+  f.text.value="";if(f.evidence)f.evidence.value="";if(f.saidBy)f.saidBy.value="";
+  addNote(f.dataset.add,f.dataset.cat,v.text,v.ev,v.fl,v.sb);setTimeout(()=>{const el=document.getElementById(id);if(el)el.focus()},0)});
+document.addEventListener("change",e=>{const el=e.target;if(!el.dataset||!el.dataset.reg)return;const k=el.dataset.reg,f=el.dataset.f;
+  const r=S.register.items[k]=Object.assign({},S.register.items[k]||{});let v=el.value;if(f==="l"||f==="c")v=v?+v:null;r[f]=v;
+  if(f==="type"){r.treat="";}saveRegister()});
+document.addEventListener("input",e=>{const el=e.target;if(!el.dataset||!el.dataset.reg)return;const f=el.dataset.f;if(f!=="desc"&&f!=="action"&&f!=="id")return;
+  const k=el.dataset.reg;const r=S.register.items[k]=Object.assign({},S.register.items[k]||{});r[f]=el.value.slice(0,500);
+  if(!S.live)return;clearTimeout(regQ.t);regQ.t=setTimeout(flushRegister,800)});
+$("#followBtn").addEventListener("click",()=>setFollow(!S.follow));
+$("#cardBtn").addEventListener("click",()=>$("#card").showModal());
+$("#cardClose").addEventListener("click",()=>$("#card").close());
+(function(){let h="<tr><th>L \\ C</th>"+[1,2,3,4,5].map(c=>`<th>${c}</th>`).join("")+"</tr>";
+ for(let l=5;l>=1;l--){h+=`<tr><th>${l}</th>`+[1,2,3,4,5].map(c=>{const v=l*c;const bg=v>=17?"var(--crit)":v>=10?"var(--high)":v>=5?"var(--mod)":"var(--low)";return `<td style="background:${bg};color:${v>=17?"#fff":"#1f2022"}">${v}</td>`}).join("")+"</tr>"}
+ $("#mx").innerHTML=h})();
+
+/* timer tick (display only, no writes) */
+setInterval(()=>{const s=S.session;const c=$("#clock"),l=$("#timerLabel");
+  if(!s.timerEnd){c.textContent="--:--";c.classList.remove("up");l.textContent="No timer running";return}
+  const ms=s.timerEnd-(Date.now()+S.offset);if(ms<=0){c.textContent="00:00";c.classList.add("up");l.textContent="Time's up · "+(s.timerLabel||"");return}
+  const m=Math.floor(ms/60000),sec=Math.floor(ms%60000/1000);c.textContent=String(m).padStart(2,"0")+":"+String(sec).padStart(2,"0");c.classList.remove("up");l.textContent=s.timerLabel||""},500);
+
+/* ---------------- live wiring ---------------- */
+async function resetAll(){
+  try{await rpc("ws_fac_reset",{p_code:S.room,p_pin:S.pin})}catch(e){toast("Could not clear the workshop. Try again.");return}
+  S.session={stage:0,timerEnd:0,timerLabel:"",reveal:{},hidden:{},sig:{},refs:{}};S.register={items:{}};S.mine={notes:{},votes:{},scores:{}};S.contribs={};S.view=0;S.rev=0;
+  await rpc("ws_join",{p_code:S.room,p_pid:S.me,p_secret:S.secret,p_name:S.myName}).catch(()=>{});
+  render();toast("Workshop cleared.")}
+function presence(){}
+const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+function applyState(st){
+  if(!st)return;S.offset=(st.now||Date.now())-Date.now();S.online=st.online||[];
+  if(st.full){S.rev=st.rev;
+    if(st.drafts){REG=st.drafts.REG||{};DRAFT=st.drafts.DRAFT||{pestle:[],swot:[],ip:[]}}
+    if(!(S.isFac&&(facQ.busy||facQ.t))){S.session=Object.assign({stage:0,timerEnd:0,timerLabel:"",reveal:{},hidden:{},sig:{},refs:{}},st.session||{});
+      const ae=document.activeElement;if(!(ae&&ae.dataset&&ae.dataset.reg))S.register=Object.assign({items:{}},st.register||{})}
+    const c={},n={};(st.contribs||[]).forEach(x=>{c[x.pid]=x.data||{};n[x.pid]=x.name||"Participant"});
+    if(c[S.me]&&!mineBusy&&!mineTimer&&!S.loaded.contrib)S.mine=Object.assign({notes:{},votes:{},scores:{}},c[S.me]);
+    c[S.me]=JSON.parse(JSON.stringify(S.mine));S.contribs=c;S.names=n;S.loaded.contrib=true;S.loaded.session=true;
+    if(!S.isFac&&S.follow)S.view=S.session.stage;if(S.isFac&&!facQ.busy&&!facQ.t)S.view=S.session.stage;
+    render()}else renderPeople();
+}
+let failCount=0;
+async function poll(){
+  try{const st=await rpc("ws_state",{p_code:S.room,p_rev:S.rev});if(st===null){banner("This room no longer exists. Ask the facilitator for the room code.");return}
+    applyState(st);if(failCount>2)banner("");failCount=0}
+  catch(e){failCount++;if(failCount===3)banner("Lost connection to the workshop. Retrying...")}
+  setTimeout(poll,document.hidden?8000:2000)}
+setInterval(()=>{if(S.room)rpc("ws_touch",{p_code:S.room,p_pid:S.me,p_secret:S.secret}).catch(()=>{})},40000);
+function randomId(n){const a=new Uint8Array(n);crypto.getRandomValues(a);return Array.from(a,b=>"abcdefghjkmnpqrstuvwxyz23456789"[b%31]).join("")}
+async function join(e){e.preventDefault();const err=$("#jErr");err.textContent="";
+  const name=$("#jName").value.trim(),code=$("#jCode").value.trim().toUpperCase(),pin=$("#jPin").value.trim();
+  if(!name||!code){err.textContent="Type your name and the room code.";return}
+  $("#jBtn").disabled=true;$("#jBtn").textContent="Joining...";
+  try{
+    let pid=store.get("ws_pid_"+code),secret=store.get("ws_secret_"+code);
+    if(!pid||!secret){pid="p_"+randomId(12);secret=randomId(24);store.set("ws_pid_"+code,pid);store.set("ws_secret_"+code,secret)}
+    const r=await rpc("ws_join",{p_code:code,p_pid:pid,p_secret:secret,p_name:name});
+    if(!r||r.ok!==true){err.textContent=r&&r.error==="room"?"That room code was not found. Check it with the facilitator.":r&&r.error==="full"?"This room is full.":"Could not join. Check the room code.";throw 0}
+    let fac=false;if(pin){fac=await rpc("ws_fac",{p_code:code,p_pin:pin});if(!fac){err.textContent="That PIN is not right. Leave it blank to join as a participant.";throw 0}}
+    S.room=code;S.me=pid;S.secret=secret;S.pin=fac?pin:"";S.isFac=!!fac;S.canWrite=true;S.myName=name;S.live=true;
+    store.set("ws_name",name);store.set("ws_code",code);
+    $("#join").hidden=true;
+    const rc=$("#roomCode");if(rc){rc.textContent=code}
+    render();await poll();
+  }catch(x){if(x!==0&&!err.textContent)err.textContent="Could not reach the workshop. Check your internet connection and try again."}
+  $("#jBtn").disabled=false;$("#jBtn").textContent="Join the workshop"}
+function start(){
+  S.me="";S.isFac=false;S.canWrite=false;
+  const m=location.hash.match(/room=([A-Za-z0-9-]+)/);
+  $("#jCode").value=(m?m[1]:store.get("ws_code")||"").toUpperCase();$("#jName").value=store.get("ws_name")||"";
+  $("#joinForm").addEventListener("submit",join);render();
+  const link=location.origin+location.pathname;setTimeout(()=>{const rl=$("#roomLink");if(rl)rl.textContent=link},0);
+}
+start();
+})();
+</script>
+</body></html>
